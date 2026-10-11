@@ -809,10 +809,15 @@ private fun MainApplication() {
                         }
                     },
 
-                    onRequestClick = {
-                        // The existing callback has no request ID.
-                        // Open history until RequestScreen supplies an ID.
-                        mainNavController.navigate(ROUTE_REQUEST_HISTORY) {
+                    onRequestClick = { request ->
+                        // UI preview: map recent cards to the same demo IDs
+                        // used by RequestHistoryScreen / RequestDetailsScreen.
+                        val demoRequestId = when (request.type) {
+                            com.prodigit.bodhiattendance.ui.requests.EmployeeRequestType.REGULARIZATION -> "RG-DEMO-001"
+                            com.prodigit.bodhiattendance.ui.requests.EmployeeRequestType.PERMISSION -> "PS-DEMO-002"
+                            com.prodigit.bodhiattendance.ui.requests.EmployeeRequestType.ATTENDANCE_ISSUE -> "AI-DEMO-003"
+                        }
+                        mainNavController.navigate("request_details/$demoRequestId") {
                             launchSingleTop = true
                         }
                     }
