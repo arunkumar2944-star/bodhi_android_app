@@ -644,13 +644,14 @@ private fun AttendanceWeekStrip(
         Row(
             modifier = Modifier.fillMaxWidth(),
             verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.SpaceBetween
+            horizontalArrangement = Arrangement.spacedBy(2.dp)
         ) {
             WeekNavigationButton(Icons.Outlined.KeyboardArrowLeft) { weekOffset-- }
             days.forEach { calendar ->
                 val key = parser.format(calendar.time)
                 val status = attendanceList.firstOrNull { it.date == key }?.status
                 WeekDayItem(
+                    modifier = Modifier.weight(1f),
                     day = dayFormat.format(calendar.time),
                     date = calendar.get(Calendar.DAY_OF_MONTH).toString(),
                     statusColor = when (status) {
@@ -671,7 +672,7 @@ private fun AttendanceWeekStrip(
 private fun WeekNavigationButton(icon: ImageVector, onClick: () -> Unit) {
     Surface(
         onClick = onClick,
-        modifier = Modifier.size(34.dp),
+        modifier = Modifier.size(38.dp),
         shape = RoundedCornerShape(11.dp),
         color = Color(0xFFF2F7FF),
         border = BorderStroke(1.dp, Color(0xFFD9E7FC))
@@ -684,6 +685,7 @@ private fun WeekNavigationButton(icon: ImageVector, onClick: () -> Unit) {
 
 @Composable
 private fun WeekDayItem(
+    modifier: Modifier = Modifier,
     day: String,
     date: String,
     statusColor: Color,
@@ -691,13 +693,13 @@ private fun WeekDayItem(
     onClick: () -> Unit
 ) {
     Column(
-        modifier = Modifier
+        modifier = modifier
             .clickable(onClick = onClick)
             .background(
                 if (selected) Color(0xFFEDF5FF) else Color.Transparent,
                 RoundedCornerShape(14.dp)
             )
-            .padding(horizontal = if (selected) 9.dp else 4.dp, vertical = 7.dp),
+            .padding(horizontal = 1.dp, vertical = 7.dp),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
         Text(day, fontSize = 11.sp,
@@ -705,7 +707,7 @@ private fun WeekDayItem(
         Spacer(Modifier.height(4.dp))
         Surface(shape = RoundedCornerShape(10.dp),
             color = if (selected) Color(0xFF116BF0) else Color.Transparent) {
-            Text(date, modifier = Modifier.padding(horizontal = 8.dp, vertical = 5.dp),
+            Text(date, modifier = Modifier.padding(horizontal = 3.dp, vertical = 5.dp),
                 color = if (selected) Color.White else Color(0xFF131D44),
                 fontSize = 15.sp, fontWeight = FontWeight.SemiBold)
         }
