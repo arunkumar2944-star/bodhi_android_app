@@ -60,7 +60,7 @@ import androidx.compose.runtime.setValue
 
 import com.prodigit.bodhiattendance.ui.systemhealth.TrustedTimeScreen
 import com.prodigit.bodhiattendance.ui.systemhealth.AttendanceConfigurationScreen
-
+import com.prodigit.bodhiattendance.ui.notifications.NotificationsScreen
 
 
 // ============================================================
@@ -81,7 +81,7 @@ private const val ROUTE_MAIN =
 
 private const val ROUTE_DEVICE_BLOCKED =
     "device_blocked"
-
+private const val ROUTE_NOTIFICATIONS = "notifications"
 
 // ============================================================
 // AUTHENTICATED APPLICATION ROUTES
@@ -506,8 +506,9 @@ private fun MainApplication() {
             0,
 
         onNotificationClick = {
-
-            // Notification route will be connected later.
+            mainNavController.navigate(ROUTE_NOTIFICATIONS) {
+                launchSingleTop = true
+            }
         }
 
     ) {
@@ -712,7 +713,9 @@ private fun MainApplication() {
                 )
             }
 
-
+            composable(ROUTE_NOTIFICATIONS) {
+                NotificationsScreen()
+            }
 
             composable(ROUTE_TRUSTED_TIME) {
                 TrustedTimeScreen(
