@@ -138,8 +138,8 @@ fun RequestScreen(
                     id = 1,
                     type = EmployeeRequestType.REGULARIZATION,
                     title = "Attendance Regularization",
-                    date = "06 Oct 2026",
-                    description = "Missed checkout due to client meeting",
+                    date = "08 Oct 2026",
+                    description = "Missed checkout event",
                     status = EmployeeRequestStatus.PENDING
                 ),
 
@@ -157,7 +157,7 @@ fun RequestScreen(
                     type = EmployeeRequestType.ATTENDANCE_ISSUE,
                     title = "Attendance Issue",
                     date = "02 Oct 2026",
-                    description = "BLE not detected at Main Office",
+                    description = "BLE detection issue",
                     status = EmployeeRequestStatus.REJECTED
                 )
             )
