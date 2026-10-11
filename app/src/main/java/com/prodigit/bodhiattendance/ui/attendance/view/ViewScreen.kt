@@ -327,6 +327,7 @@ fun ViewScreen(
 
 
     var selectedDate by remember { mutableStateOf(attendanceList.firstOrNull()?.date) }
+    var visibleWeekOffset by remember { mutableStateOf(0) }
 
     BackHandler(enabled = selectedAttendance != null) {
         selectedAttendance = null
@@ -350,6 +351,8 @@ fun ViewScreen(
                 attendanceList,
 
             selectedDate = selectedDate,
+            weekOffset = visibleWeekOffset,
+            onWeekOffsetChange = { visibleWeekOffset = it },
             onAttendanceClick = { selectedAttendance = it; selectedDate = it.date },
             onDateClick = { date ->
                 selectedDate = date
@@ -397,6 +400,8 @@ private fun AttendanceHistoryScreenContent(
     attendanceList: List<AttendanceViewItem>,
 
     selectedDate: String?,
+    weekOffset: Int,
+    onWeekOffsetChange: (Int) -> Unit,
     onAttendanceClick: (AttendanceViewItem) -> Unit,
     onDateClick: (String) -> Unit
 
@@ -470,7 +475,13 @@ private fun AttendanceHistoryScreenContent(
 
         item {
 
-            AttendanceWeekStrip(attendanceList = attendanceList, selectedDate = selectedDate, onDateClick = onDateClick)
+            AttendanceWeekStrip(
+                attendanceList = attendanceList,
+                selectedDate = selectedDate,
+                weekOffset = weekOffset,
+                onWeekOffsetChange = onWeekOffsetChange,
+                onDateClick = onDateClick
+            )
         }
 
 
@@ -628,6 +639,8 @@ private fun AttendanceHistoryHeader() {
 private fun AttendanceWeekStrip(
     attendanceList: List<AttendanceViewItem>,
     selectedDate: String?,
+    weekOffset: Int,
+    onWeekOffsetChange: (Int) -> Unit,
     onDateClick: (String) -> Unit
 ) {
     val parser = remember { SimpleDateFormat("dd MMM yyyy", Locale.ENGLISH) }
@@ -639,7 +652,6 @@ private fun AttendanceWeekStrip(
             add(Calendar.DAY_OF_MONTH, -4)
         }
     }
-    var weekOffset by remember { mutableStateOf(0) }
     val days = (0..5).map { index ->
         (reference.clone() as Calendar).apply {
             add(Calendar.DAY_OF_MONTH, weekOffset * 6 + index)
@@ -651,7 +663,7 @@ private fun AttendanceWeekStrip(
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(2.dp)
         ) {
-            WeekNavigationButton(Icons.Outlined.KeyboardArrowLeft) { weekOffset-- }
+            WeekNavigationButton(Icons.Outlined.KeyboardArrowLeft) { onWeekOffsetChange(weekOffset - 1) }
             days.forEach { calendar ->
                 val key = parser.format(calendar.time)
                 val status = attendanceList.firstOrNull { it.date == key }?.status
@@ -668,7 +680,7 @@ private fun AttendanceWeekStrip(
                     onClick = { onDateClick(key) }
                 )
             }
-            WeekNavigationButton(Icons.Outlined.KeyboardArrowRight) { weekOffset++ }
+            WeekNavigationButton(Icons.Outlined.KeyboardArrowRight) { onWeekOffsetChange(weekOffset + 1) }
         }
     }
 }
