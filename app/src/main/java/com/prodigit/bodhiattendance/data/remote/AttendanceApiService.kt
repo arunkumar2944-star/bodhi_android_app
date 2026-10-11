@@ -4,8 +4,6 @@ import com.prodigit.bodhiattendance.data.remote.dto.attendance.AttendanceBootstr
 import com.prodigit.bodhiattendance.data.remote.dto.attendance.AttendanceConfigResponse
 import com.prodigit.bodhiattendance.data.remote.dto.attendance.AttendanceEventRequest
 import com.prodigit.bodhiattendance.data.remote.dto.attendance.AttendanceEventResponse
-import com.prodigit.bodhiattendance.data.remote.dto.attendance.CreateTimeAnchorRequest
-import com.prodigit.bodhiattendance.data.remote.dto.attendance.CreateTimeAnchorResponse
 import com.prodigit.bodhiattendance.data.remote.dto.attendance.TimeAnchorRequest
 import com.prodigit.bodhiattendance.data.remote.dto.attendance.TimeAnchorResponse
 
@@ -193,8 +191,4 @@ interface AttendanceApiService {
 
     ): Response<AttendanceBootstrapResponse>
 
-    @POST("api/v1/attendance/time-anchor")
-    suspend fun createTimeAnchor(
-        @Body request: CreateTimeAnchorRequest
-    ): Response<CreateTimeAnchorResponse>
 }
