@@ -714,7 +714,18 @@ private fun MainApplication() {
             }
 
             composable(ROUTE_NOTIFICATIONS) {
-                NotificationsScreen()
+                NotificationsScreen(
+                    onBack = {
+                        if (!mainNavController.popBackStack()) {
+                            mainNavController.navigate(ROUTE_DASHBOARD) {
+                                popUpTo(ROUTE_DASHBOARD) {
+                                    inclusive = false
+                                }
+                                launchSingleTop = true
+                            }
+                        }
+                    }
+                )
             }
 
             composable(ROUTE_TRUSTED_TIME) {
