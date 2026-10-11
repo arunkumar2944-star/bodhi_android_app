@@ -326,6 +326,8 @@ fun ViewScreen(
     }
 
 
+    var selectedDate by remember { mutableStateOf(attendanceList.firstOrNull()?.date) }
+
     BackHandler(enabled = selectedAttendance != null) {
         selectedAttendance = null
     }
@@ -347,8 +349,10 @@ fun ViewScreen(
             attendanceList =
                 attendanceList,
 
-            onAttendanceClick = { selectedAttendance = it },
+            selectedDate = selectedDate,
+            onAttendanceClick = { selectedAttendance = it; selectedDate = it.date },
             onDateClick = { date ->
+                selectedDate = date
                 selectedAttendance = attendanceList.firstOrNull { it.date == date }
                     ?: AttendanceViewItem(
                         date = date,
@@ -392,6 +396,7 @@ private fun AttendanceHistoryScreenContent(
 
     attendanceList: List<AttendanceViewItem>,
 
+    selectedDate: String?,
     onAttendanceClick: (AttendanceViewItem) -> Unit,
     onDateClick: (String) -> Unit
 
@@ -465,7 +470,7 @@ private fun AttendanceHistoryScreenContent(
 
         item {
 
-            AttendanceWeekStrip(attendanceList = attendanceList, onDateClick = onDateClick)
+            AttendanceWeekStrip(attendanceList = attendanceList, selectedDate = selectedDate, onDateClick = onDateClick)
         }
 
 
@@ -622,6 +627,7 @@ private fun AttendanceHistoryHeader() {
 @Composable
 private fun AttendanceWeekStrip(
     attendanceList: List<AttendanceViewItem>,
+    selectedDate: String?,
     onDateClick: (String) -> Unit
 ) {
     val parser = remember { SimpleDateFormat("dd MMM yyyy", Locale.ENGLISH) }
@@ -634,7 +640,6 @@ private fun AttendanceWeekStrip(
         }
     }
     var weekOffset by remember { mutableStateOf(0) }
-    var chosenDate by remember { mutableStateOf(attendanceList.firstOrNull()?.date) }
     val days = (0..5).map { index ->
         (reference.clone() as Calendar).apply {
             add(Calendar.DAY_OF_MONTH, weekOffset * 6 + index)
@@ -659,8 +664,8 @@ private fun AttendanceWeekStrip(
                         "Absent" -> Color(0xFFF03649)
                         else -> Color(0xFF98A1BB)
                     },
-                    selected = chosenDate == key,
-                    onClick = { chosenDate = key; onDateClick(key) }
+                    selected = selectedDate == key,
+                    onClick = { onDateClick(key) }
                 )
             }
             WeekNavigationButton(Icons.Outlined.KeyboardArrowRight) { weekOffset++ }
