@@ -1,0 +1,37 @@
+# Gradle
+.gradle/
+**/build/
+build/
+.gradle/config.properties
+
+# Android Studio
+.idea/workspace.xml
+.idea/caches/
+.idea/shelf/
+.idea/libraries/
+*.iml
+
+# Local SDK configuration
+local.properties
+
+# Build outputs
+*.apk
+*.aab
+captures/
+.externalNativeBuild/
+.cxx/
+
+# Signing keys
+*.jks
+*.keystore
+*.p12
+
+# Secrets
+.env
+.env.*
+secrets.properties
+google-services.json
+
+# OS files
+.DS_Store
+Thumbs.db
