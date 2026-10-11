@@ -48,6 +48,10 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 
 import androidx.compose.runtime.Composable
+import androidx.activity.compose.BackHandler
+import java.text.SimpleDateFormat
+import java.util.Calendar
+import java.util.Locale
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -322,6 +326,10 @@ fun ViewScreen(
     }
 
 
+    BackHandler(enabled = selectedAttendance != null) {
+        selectedAttendance = null
+    }
+
     // ========================================================
     // HISTORY / DETAILS
     // ========================================================
@@ -339,10 +347,17 @@ fun ViewScreen(
             attendanceList =
                 attendanceList,
 
-            onAttendanceClick = {
-
-                selectedAttendance =
-                    it
+            onAttendanceClick = { selectedAttendance = it },
+            onDateClick = { date ->
+                selectedAttendance = attendanceList.firstOrNull { it.date == date }
+                    ?: AttendanceViewItem(
+                        date = date,
+                        day = SimpleDateFormat("EEEE", Locale.ENGLISH).format(
+                            SimpleDateFormat("dd MMM yyyy", Locale.ENGLISH).parse(date)!!
+                        ),
+                        checkIn = "--", checkOut = "--", workDuration = "--",
+                        status = "No Record", officeName = "--", totalBreak = "--"
+                    )
             }
         )
 
@@ -377,7 +392,8 @@ private fun AttendanceHistoryScreenContent(
 
     attendanceList: List<AttendanceViewItem>,
 
-    onAttendanceClick: (AttendanceViewItem) -> Unit
+    onAttendanceClick: (AttendanceViewItem) -> Unit,
+    onDateClick: (String) -> Unit
 
 ) {
 
@@ -449,7 +465,7 @@ private fun AttendanceHistoryScreenContent(
 
         item {
 
-            AttendanceWeekStrip()
+            AttendanceWeekStrip(attendanceList = attendanceList, onDateClick = onDateClick)
         }
 
 
@@ -604,391 +620,97 @@ private fun AttendanceHistoryHeader() {
 // ============================================================
 
 @Composable
-private fun AttendanceWeekStrip() {
-
+private fun AttendanceWeekStrip(
+    attendanceList: List<AttendanceViewItem>,
+    onDateClick: (String) -> Unit
+) {
+    val parser = remember { SimpleDateFormat("dd MMM yyyy", Locale.ENGLISH) }
+    val dayFormat = remember { SimpleDateFormat("EEE", Locale.ENGLISH) }
+    val reference = remember {
+        Calendar.getInstance().apply {
+            time = parser.parse(attendanceList.firstOrNull()?.date ?: "06 Oct 2026")
+                ?: java.util.Date()
+            add(Calendar.DAY_OF_MONTH, -4)
+        }
+    }
+    var weekOffset by remember { mutableStateOf(0) }
+    var chosenDate by remember { mutableStateOf(attendanceList.firstOrNull()?.date) }
+    val days = (0..5).map { index ->
+        (reference.clone() as Calendar).apply {
+            add(Calendar.DAY_OF_MONTH, weekOffset * 6 + index)
+        }
+    }
     AttendanceBaseCard {
-
         Row(
-
-            modifier =
-                Modifier.fillMaxWidth(),
-
-            verticalAlignment =
-                Alignment.CenterVertically,
-
-            horizontalArrangement =
-                Arrangement.SpaceBetween
-
+            modifier = Modifier.fillMaxWidth(),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.SpaceBetween
         ) {
-
-
-            WeekNavigationButton(
-
-                icon =
-                    Icons.Outlined.KeyboardArrowLeft
-            )
-
-
-            WeekDayItem(
-
-                day =
-                    "Fri",
-
-                date =
-                    "2",
-
-                statusColor =
-                    Color(
-                        0xFF1AB455
-                    )
-            )
-
-
-            WeekDayItem(
-
-                day =
-                    "Sat",
-
-                date =
-                    "3",
-
-                statusColor =
-                    Color(
-                        0xFF1AB455
-                    )
-            )
-
-
-            WeekDayItem(
-
-                day =
-                    "Sun",
-
-                date =
-                    "4",
-
-                statusColor =
-                    Color(
-                        0xFF98A1BB
-                    )
-            )
-
-
-            WeekDayItem(
-
-                day =
-                    "Mon",
-
-                date =
-                    "5",
-
-                statusColor =
-                    Color(
-                        0xFF1AB455
-                    )
-            )
-
-
-            WeekDayItem(
-
-                day =
-                    "Tue",
-
-                date =
-                    "6",
-
-                statusColor =
-                    Color(
-                        0xFF1AB455
-                    ),
-
-                selected =
-                    true
-            )
-
-
-            WeekDayItem(
-
-                day =
-                    "Wed",
-
-                date =
-                    "7",
-
-                statusColor =
-                    Color(
-                        0xFF98A1BB
-                    )
-            )
-
-
-            WeekNavigationButton(
-
-                icon =
-                    Icons.Outlined.KeyboardArrowRight
-            )
+            WeekNavigationButton(Icons.Outlined.KeyboardArrowLeft) { weekOffset-- }
+            days.forEach { calendar ->
+                val key = parser.format(calendar.time)
+                val status = attendanceList.firstOrNull { it.date == key }?.status
+                WeekDayItem(
+                    day = dayFormat.format(calendar.time),
+                    date = calendar.get(Calendar.DAY_OF_MONTH).toString(),
+                    statusColor = when (status) {
+                        "Present", "Working" -> Color(0xFF1AB455)
+                        "Absent" -> Color(0xFFF03649)
+                        else -> Color(0xFF98A1BB)
+                    },
+                    selected = chosenDate == key,
+                    onClick = { chosenDate = key; onDateClick(key) }
+                )
+            }
+            WeekNavigationButton(Icons.Outlined.KeyboardArrowRight) { weekOffset++ }
         }
     }
 }
-
-
-// ============================================================
-// WEEK NAVIGATION BUTTON
-// ============================================================
 
 @Composable
-private fun WeekNavigationButton(
-
-    icon: ImageVector
-
-) {
-
+private fun WeekNavigationButton(icon: ImageVector, onClick: () -> Unit) {
     Surface(
-
-        modifier =
-            Modifier.size(
-                34.dp
-            ),
-
-        shape =
-            RoundedCornerShape(
-                11.dp
-            ),
-
-        color =
-            Color(
-                0xFFF2F7FF
-            ),
-
-        border =
-            BorderStroke(
-
-                width =
-                    1.dp,
-
-                color =
-                    Color(
-                        0xFFD9E7FC
-                    )
-            )
-
+        onClick = onClick,
+        modifier = Modifier.size(34.dp),
+        shape = RoundedCornerShape(11.dp),
+        color = Color(0xFFF2F7FF),
+        border = BorderStroke(1.dp, Color(0xFFD9E7FC))
     ) {
-
-        Box(
-
-            contentAlignment =
-                Alignment.Center
-
-        ) {
-
-            Icon(
-
-                imageVector =
-                    icon,
-
-                contentDescription =
-                    null,
-
-                tint =
-                    Color(
-                        0xFF1267DF
-                    )
-            )
+        Box(contentAlignment = Alignment.Center) {
+            Icon(icon, contentDescription = "Change week", tint = Color(0xFF1267DF))
         }
     }
 }
-
-
-// ============================================================
-// WEEK DAY ITEM
-// ============================================================
 
 @Composable
 private fun WeekDayItem(
-
     day: String,
-
     date: String,
-
     statusColor: Color,
-
-    selected: Boolean = false
-
+    selected: Boolean = false,
+    onClick: () -> Unit
 ) {
-
     Column(
-
-        modifier =
-
-            if (
-                selected
-            ) {
-
-                Modifier
-                    .background(
-
-                        color =
-                            Color(
-                                0xFFEDF5FF
-                            ),
-
-                        shape =
-                            RoundedCornerShape(
-                                14.dp
-                            )
-                    )
-                    .padding(
-
-                        horizontal =
-                            9.dp,
-
-                        vertical =
-                            7.dp
-                    )
-
-            } else {
-
-                Modifier.padding(
-
-                    horizontal =
-                        4.dp,
-
-                    vertical =
-                        7.dp
-                )
-            },
-
-        horizontalAlignment =
-            Alignment.CenterHorizontally
-
-    ) {
-
-        Text(
-
-            text =
-                day,
-
-            fontSize =
-                11.sp,
-
-            color =
-
-                if (
-                    selected
-                ) {
-
-                    Color(
-                        0xFF1267DF
-                    )
-
-                } else {
-
-                    Color(
-                        0xFF68718D
-                    )
-                }
-        )
-
-
-        Spacer(
-
-            modifier =
-                Modifier.height(
-                    4.dp
-                )
-        )
-
-
-        if (
-            selected
-        ) {
-
-            Surface(
-
-                shape =
-                    RoundedCornerShape(
-                        10.dp
-                    ),
-
-                color =
-                    Color(
-                        0xFF116BF0
-                    )
-
-            ) {
-
-                Text(
-
-                    text =
-                        date,
-
-                    modifier =
-                        Modifier.padding(
-
-                            horizontal =
-                                11.dp,
-
-                            vertical =
-                                5.dp
-                        ),
-
-                    color =
-                        Color.White,
-
-                    fontSize =
-                        15.sp,
-
-                    fontWeight =
-                        FontWeight.Bold
-                )
-            }
-
-        } else {
-
-            Text(
-
-                text =
-                    date,
-
-                color =
-                    Color(
-                        0xFF131D44
-                    ),
-
-                fontSize =
-                    15.sp,
-
-                fontWeight =
-                    FontWeight.SemiBold
+        modifier = Modifier
+            .clickable(onClick = onClick)
+            .background(
+                if (selected) Color(0xFFEDF5FF) else Color.Transparent,
+                RoundedCornerShape(14.dp)
             )
+            .padding(horizontal = if (selected) 9.dp else 4.dp, vertical = 7.dp),
+        horizontalAlignment = Alignment.CenterHorizontally
+    ) {
+        Text(day, fontSize = 11.sp,
+            color = if (selected) Color(0xFF1267DF) else Color(0xFF68718D))
+        Spacer(Modifier.height(4.dp))
+        Surface(shape = RoundedCornerShape(10.dp),
+            color = if (selected) Color(0xFF116BF0) else Color.Transparent) {
+            Text(date, modifier = Modifier.padding(horizontal = 8.dp, vertical = 5.dp),
+                color = if (selected) Color.White else Color(0xFF131D44),
+                fontSize = 15.sp, fontWeight = FontWeight.SemiBold)
         }
-
-
-        Spacer(
-
-            modifier =
-                Modifier.height(
-                    5.dp
-                )
-        )
-
-
-        Box(
-
-            modifier =
-                Modifier
-                    .size(
-                        7.dp
-                    )
-                    .background(
-
-                        color =
-                            statusColor,
-
-                        shape =
-                            CircleShape
-                    )
-        )
+        Spacer(Modifier.height(5.dp))
+        Box(Modifier.size(7.dp).background(statusColor, CircleShape))
     }
 }
 
@@ -2112,6 +1834,21 @@ private fun AttendanceDetailsScreenContent(
     onBackClick: () -> Unit
 
 ) {
+
+    if (attendance.status == "No Record") {
+        Column(
+            modifier = modifier.fillMaxSize().padding(16.dp),
+            verticalArrangement = Arrangement.spacedBy(16.dp)
+        ) {
+            IconButton(onClick = onBackClick) {
+                Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
+            }
+            Text("Attendance Details", fontSize = 22.sp, fontWeight = FontWeight.Bold)
+            Text(attendance.date, fontSize = 16.sp)
+            Text("No attendance record available for this date.", color = Color(0xFF68718C))
+        }
+        return
+    }
 
     LazyColumn(
 
