@@ -48,6 +48,10 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 
 import androidx.compose.runtime.Composable
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.TextButton
+import androidx.compose.foundation.layout.FlowRow
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.activity.compose.BackHandler
 import java.text.SimpleDateFormat
 import java.util.Calendar
@@ -328,6 +332,36 @@ fun ViewScreen(
 
     var selectedDate by remember { mutableStateOf(attendanceList.firstOrNull()?.date) }
     var visibleWeekOffset by remember { mutableStateOf(0) }
+    val parser = remember { SimpleDateFormat("dd MMM yyyy", Locale.ENGLISH) }
+    val baseSunday = remember {
+        Calendar.getInstance().apply {
+            time = parser.parse(attendanceList.firstOrNull()?.date ?: "06 Oct 2026") ?: java.util.Date()
+            add(Calendar.DAY_OF_MONTH, -(get(Calendar.DAY_OF_WEEK) - Calendar.SUNDAY))
+        }
+    }
+    var displayedMonth by remember { mutableStateOf(baseSunday.get(Calendar.MONTH)) }
+    var displayedYear by remember { mutableStateOf(baseSunday.get(Calendar.YEAR)) }
+    // Start with the month containing the latest attendance, not the preceding Sunday.
+    val firstRecord = remember { Calendar.getInstance().apply {
+        time = parser.parse(attendanceList.firstOrNull()?.date ?: "06 Oct 2026") ?: java.util.Date()
+    } }
+    var monthInitialized by remember { mutableStateOf(false) }
+    if (!monthInitialized) {
+        displayedMonth = firstRecord.get(Calendar.MONTH)
+        displayedYear = firstRecord.get(Calendar.YEAR)
+        monthInitialized = true
+    }
+    fun chooseMonth(year: Int, month: Int) {
+        displayedYear = year
+        displayedMonth = month
+        val sunday = Calendar.getInstance().apply {
+            clear()
+            set(year, month, 1)
+            add(Calendar.DAY_OF_MONTH, -(get(Calendar.DAY_OF_WEEK) - Calendar.SUNDAY))
+        }
+        val delta = (sunday.timeInMillis - baseSunday.timeInMillis) / 86400000L
+        visibleWeekOffset = Math.floorDiv(delta, 7L).toInt()
+    }
 
     BackHandler(enabled = selectedAttendance != null) {
         selectedAttendance = null
@@ -351,8 +385,19 @@ fun ViewScreen(
                 attendanceList,
 
             selectedDate = selectedDate,
+            displayedMonth = displayedMonth,
+            displayedYear = displayedYear,
+            onMonthSelected = ::chooseMonth,
             weekOffset = visibleWeekOffset,
-            onWeekOffsetChange = { visibleWeekOffset = it },
+            onWeekOffsetChange = { newOffset ->
+                val goingForward = newOffset > visibleWeekOffset
+                visibleWeekOffset = newOffset
+                val edge = (baseSunday.clone() as Calendar).apply {
+                    add(Calendar.DAY_OF_MONTH, newOffset * 7 + if (goingForward) 6 else 0)
+                }
+                displayedMonth = edge.get(Calendar.MONTH)
+                displayedYear = edge.get(Calendar.YEAR)
+            },
             onAttendanceClick = { selectedAttendance = it; selectedDate = it.date },
             onDateClick = { date ->
                 selectedDate = date
@@ -400,6 +445,9 @@ private fun AttendanceHistoryScreenContent(
     attendanceList: List<AttendanceViewItem>,
 
     selectedDate: String?,
+    displayedMonth: Int,
+    displayedYear: Int,
+    onMonthSelected: (Int, Int) -> Unit,
     weekOffset: Int,
     onWeekOffsetChange: (Int) -> Unit,
     onAttendanceClick: (AttendanceViewItem) -> Unit,
@@ -465,7 +513,7 @@ private fun AttendanceHistoryScreenContent(
 
         item {
 
-            AttendanceFilterCard()
+            AttendanceFilterCard(displayedYear, displayedMonth, onMonthSelected)
         }
 
 
@@ -478,6 +526,8 @@ private fun AttendanceHistoryScreenContent(
             AttendanceWeekStrip(
                 attendanceList = attendanceList,
                 selectedDate = selectedDate,
+                displayedMonth = displayedMonth,
+                displayedYear = displayedYear,
                 weekOffset = weekOffset,
                 onWeekOffsetChange = onWeekOffsetChange,
                 onDateClick = onDateClick
@@ -639,6 +689,8 @@ private fun AttendanceHistoryHeader() {
 private fun AttendanceWeekStrip(
     attendanceList: List<AttendanceViewItem>,
     selectedDate: String?,
+    displayedMonth: Int,
+    displayedYear: Int,
     weekOffset: Int,
     onWeekOffsetChange: (Int) -> Unit,
     onDateClick: (String) -> Unit
@@ -668,6 +720,7 @@ private fun AttendanceWeekStrip(
             days.forEach { calendar ->
                 val key = parser.format(calendar.time)
                 val status = attendanceList.firstOrNull { it.date == key }?.status
+                val active = calendar.get(Calendar.MONTH) == displayedMonth && calendar.get(Calendar.YEAR) == displayedYear
                 WeekDayItem(
                     modifier = Modifier.weight(1f),
                     day = dayFormat.format(calendar.time),
@@ -677,8 +730,9 @@ private fun AttendanceWeekStrip(
                         "Absent" -> Color(0xFFF03649)
                         else -> Color(0xFF98A1BB)
                     },
-                    selected = selectedDate == key,
-                    onClick = { onDateClick(key) }
+                    selected = active && selectedDate == key,
+                    enabled = active,
+                    onClick = { if (active) onDateClick(key) }
                 )
             }
             WeekNavigationButton(Icons.Outlined.KeyboardArrowRight) { onWeekOffsetChange(weekOffset + 1) }
@@ -708,11 +762,12 @@ private fun WeekDayItem(
     date: String,
     statusColor: Color,
     selected: Boolean = false,
+    enabled: Boolean = true,
     onClick: () -> Unit
 ) {
     Column(
         modifier = modifier
-            .clickable(onClick = onClick)
+            .clickable(enabled = enabled, onClick = onClick)
             .background(
                 if (selected) Color(0xFFEDF5FF) else Color.Transparent,
                 RoundedCornerShape(14.dp)
@@ -721,16 +776,16 @@ private fun WeekDayItem(
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
         Text(day, fontSize = 11.sp,
-            color = if (selected) Color(0xFF1267DF) else Color(0xFF68718D))
+            color = if (!enabled) Color(0xFFB8BFCD) else if (selected) Color(0xFF1267DF) else Color(0xFF68718D))
         Spacer(Modifier.height(4.dp))
         Surface(shape = RoundedCornerShape(10.dp),
             color = if (selected) Color(0xFF116BF0) else Color.Transparent) {
             Text(date, modifier = Modifier.padding(horizontal = 3.dp, vertical = 5.dp),
-                color = if (selected) Color.White else Color(0xFF131D44),
+                color = if (!enabled) Color(0xFFC5CBD6) else if (selected) Color.White else Color(0xFF131D44),
                 fontSize = 15.sp, fontWeight = FontWeight.SemiBold)
         }
         Spacer(Modifier.height(5.dp))
-        Box(Modifier.size(7.dp).background(statusColor, CircleShape))
+        Box(Modifier.size(7.dp).background(if (enabled) statusColor else Color(0xFFE3E7EF), CircleShape))
     }
 }
 
@@ -2914,7 +2969,44 @@ private fun AttendanceBaseCard(
 // ============================================================
 
 @Composable
-private fun AttendanceFilterCard() {
+@OptIn(ExperimentalLayoutApi::class)
+@Composable
+private fun AttendanceFilterCard(
+    displayedYear: Int,
+    displayedMonth: Int,
+    onMonthSelected: (Int, Int) -> Unit
+) {
+    var showPicker by remember { mutableStateOf(false) }
+    var pickerYear by remember { mutableStateOf(displayedYear) }
+    if (showPicker) {
+        AlertDialog(
+            onDismissRequest = { showPicker = false },
+            title = { Text("Select attendance month") },
+            text = {
+                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        TextButton(onClick = { pickerYear-- }) { Text("‹") }
+                        Text(pickerYear.toString(), fontWeight = FontWeight.Bold)
+                        TextButton(onClick = { pickerYear++ }) { Text("›") }
+                    }
+                    FlowRow(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+                        val months = java.text.DateFormatSymbols(Locale.ENGLISH).shortMonths
+                        (0..11).forEach { month ->
+                            TextButton(onClick = {
+                                onMonthSelected(pickerYear, month)
+                                showPicker = false
+                            }) { Text(months[month]) }
+                        }
+                    }
+                }
+            },
+            confirmButton = { TextButton(onClick = { showPicker = false }) { Text("Cancel") } }
+        )
+    }
 
     AttendanceBaseCard {
 
@@ -3011,7 +3103,9 @@ private fun AttendanceFilterCard() {
                 Text(
 
                     text =
-                        "October 2026",
+                        SimpleDateFormat("MMMM yyyy", Locale.ENGLISH).format(
+                            Calendar.getInstance().apply { set(displayedYear, displayedMonth, 1) }.time
+                        ),
 
                     color =
                         Color(
@@ -3028,6 +3122,7 @@ private fun AttendanceFilterCard() {
 
 
             Surface(
+                onClick = { pickerYear = displayedYear; showPicker = true },
 
                 shape =
                     RoundedCornerShape(
