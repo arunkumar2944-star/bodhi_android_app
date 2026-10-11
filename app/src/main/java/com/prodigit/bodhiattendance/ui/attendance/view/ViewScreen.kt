@@ -2968,7 +2968,6 @@ private fun AttendanceBaseCard(
 // ATTENDANCE FILTER CARD
 // ============================================================
 
-@Composable
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
 private fun AttendanceFilterCard(
