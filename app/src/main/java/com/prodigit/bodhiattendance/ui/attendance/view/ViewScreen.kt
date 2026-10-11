@@ -649,12 +649,13 @@ private fun AttendanceWeekStrip(
         Calendar.getInstance().apply {
             time = parser.parse(attendanceList.firstOrNull()?.date ?: "06 Oct 2026")
                 ?: java.util.Date()
-            add(Calendar.DAY_OF_MONTH, -4)
+            // Anchor every page to Sunday, regardless of selected/demo date.
+            add(Calendar.DAY_OF_MONTH, -(get(Calendar.DAY_OF_WEEK) - Calendar.SUNDAY))
         }
     }
-    val days = (0..5).map { index ->
+    val days = (0..6).map { index ->
         (reference.clone() as Calendar).apply {
-            add(Calendar.DAY_OF_MONTH, weekOffset * 6 + index)
+            add(Calendar.DAY_OF_MONTH, weekOffset * 7 + index)
         }
     }
     AttendanceBaseCard {
