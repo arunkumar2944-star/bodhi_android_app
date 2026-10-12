@@ -548,107 +548,12 @@ class StartupViewModel(
 
 
                     // =================================================
-                    // STEP 5 — TRUSTED TIME INITIALIZATION
+                    // RESTORE LOCAL RUNTIME BEFORE SELECTING ANCHOR OWNER
                     // =================================================
 
                     Log.d(
                         "STARTUP_DEBUG",
-                        "Device active + onboarded - initializing trusted time"
-                    )
-
-
-                    val anchorResult =
-                        timeAnchorManager
-                            .ensureCurrentAnchor(
-
-                                token =
-                                    token,
-
-                                deviceId =
-                                    deviceId
-                            )
-
-
-                    // =================================================
-                    // TRUSTED TIME FAILURE
-                    // =================================================
-
-                    if (
-                        anchorResult.isFailure
-                    ) {
-
-                        val error =
-                            anchorResult
-                                .exceptionOrNull()
-
-
-                        Log.e(
-                            "STARTUP_DEBUG",
-                            "Trusted TimeAnchor initialization failed",
-                            error
-                        )
-
-
-                        _networkError.value =
-                            true
-
-
-                        _destination.value =
-                            StartupDestination.LOADING
-
-
-                        retryDeviceValidation()
-
-                        return@onSuccess
-                    }
-
-
-                    // =================================================
-                    // TRUSTED TIME READY
-                    // =================================================
-
-                    val anchor =
-                        anchorResult
-                            .getOrThrow()
-
-
-                    Log.d(
-                        "STARTUP_DEBUG",
-                        "Trusted TimeAnchor READY"
-                    )
-
-
-                    Log.d(
-                        "STARTUP_DEBUG",
-                        "TimeAnchor UUID: ${anchor.anchorUuid}"
-                    )
-
-
-                    Log.d(
-                        "STARTUP_DEBUG",
-                        "TimeAnchor bootId: ${anchor.bootId}"
-                    )
-
-
-                    Log.d(
-                        "STARTUP_DEBUG",
-                        "TimeAnchor elapsedRealtimeMs: ${anchor.elapsedRealtimeMs}"
-                    )
-
-
-                    Log.d(
-                        "STARTUP_DEBUG",
-                        "TimeAnchor serverTime: ${anchor.serverTime}"
-                    )
-
-
-                    // =================================================
-                    // STEP 6 — INITIALIZE ATTENDANCE RUNTIME
-                    // =================================================
-
-                    Log.d(
-                        "STARTUP_DEBUG",
-                        "Trusted time ready - initializing attendance runtime"
+                        "Checking local attendance runtime; reconciliation owns fresh anchor creation"
                     )
 
 
@@ -680,6 +585,102 @@ class StartupViewModel(
                         // =============================================
 
                         is AttendanceEngineRuntimeStartResult.Ready -> {
+
+                            // =================================================
+                            // RESTORED RUNTIME — ENSURE TRUSTED TIME
+                            // =================================================
+
+                            Log.d(
+                                "STARTUP_DEBUG",
+                                "Local runtime restored - ensuring trusted time"
+                            )
+
+
+                            val anchorResult =
+                                timeAnchorManager
+                                    .ensureCurrentAnchor(
+
+                                        token =
+                                            token,
+
+                                        deviceId =
+                                            deviceId
+                                    )
+
+
+                            // =================================================
+                            // TRUSTED TIME FAILURE
+                            // =================================================
+
+                            if (
+                                anchorResult.isFailure
+                            ) {
+
+                                val error =
+                                    anchorResult
+                                        .exceptionOrNull()
+
+
+                                Log.e(
+                                    "STARTUP_DEBUG",
+                                    "Trusted TimeAnchor initialization failed",
+                                    error
+                                )
+
+
+                                _networkError.value =
+                                    true
+
+
+                                _destination.value =
+                                    StartupDestination.LOADING
+
+
+                                retryDeviceValidation()
+
+                                return@onSuccess
+                            }
+
+
+                            // =================================================
+                            // TRUSTED TIME READY
+                            // =================================================
+
+                            val anchor =
+                                anchorResult
+                                    .getOrThrow()
+
+
+                            Log.d(
+                                "STARTUP_DEBUG",
+                                "Trusted TimeAnchor READY"
+                            )
+
+
+                            Log.d(
+                                "STARTUP_DEBUG",
+                                "TimeAnchor UUID: ${anchor.anchorUuid}"
+                            )
+
+
+                            Log.d(
+                                "STARTUP_DEBUG",
+                                "TimeAnchor bootId: ${anchor.bootId}"
+                            )
+
+
+                            Log.d(
+                                "STARTUP_DEBUG",
+                                "TimeAnchor elapsedRealtimeMs: ${anchor.elapsedRealtimeMs}"
+                            )
+
+
+                            Log.d(
+                                "STARTUP_DEBUG",
+                                "TimeAnchor serverTime: ${anchor.serverTime}"
+                            )
+
+
 
 
                             Log.d(
