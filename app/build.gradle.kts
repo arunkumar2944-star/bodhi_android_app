@@ -108,7 +108,7 @@ androidComponents {
             val apkName =
                 if (variant.buildType == "debug") {
 
-                    "BodhiAttendance-Prototype.apk"
+                    "BodhiAttendance-Debug.apk"
 
                 } else {
 

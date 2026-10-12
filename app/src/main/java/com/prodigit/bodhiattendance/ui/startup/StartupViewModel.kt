@@ -37,38 +37,6 @@ class StartupViewModel(
 
 
     // ============================================================
-    // TEMPORARY UI DEVELOPMENT MODE
-    //
-    // true:
-    //
-    // - App opens Dashboard immediately.
-    // - No 9-second launch delay.
-    // - No device backend validation.
-    // - No TimeAnchor initialization.
-    // - No Attendance Engine initialization.
-    // - No reconciliation.
-    //
-    // This is ONLY for Android screen development.
-    //
-    // IMPORTANT:
-    //
-    // The complete production startup flow remains below.
-    //
-    // When backend / attendance-engine development resumes,
-    // simply change:
-    //
-    // UI_DEVELOPMENT_MODE = false
-    //
-    // ============================================================
-
-    companion object {
-
-        private const val UI_DEVELOPMENT_MODE =
-            true
-    }
-
-
-    // ============================================================
     // SESSION
     // ============================================================
 
@@ -183,58 +151,11 @@ class StartupViewModel(
     // ============================================================
 
     init {
-
-        // ========================================================
-        // TEMPORARY UI DEVELOPMENT BYPASS
-        // ========================================================
-
-        if (
-            UI_DEVELOPMENT_MODE
-        ) {
-
-            Log.d(
-                "STARTUP_DEBUG",
-                "UI DEVELOPMENT MODE enabled"
-            )
-
-
-            Log.d(
-                "STARTUP_DEBUG",
-                "Attendance startup temporarily skipped"
-            )
-
-
-            Log.d(
-                "STARTUP_DEBUG",
-                "Opening Dashboard directly"
-            )
-
-
-            _networkError.value =
-                false
-
-
-            _destination.value =
-                StartupDestination.DASHBOARD
-
-        } else {
-
-            // ====================================================
-            // NORMAL PRODUCTION STARTUP
-            // ====================================================
-
-            checkStartupState()
-        }
+        // All app launches must validate the session, registered device,
+        // trusted time and attendance runtime before opening the dashboard.
+        checkStartupState()
     }
 
-
-    // ============================================================
-    // NORMAL STARTUP
-    //
-    // This entire flow remains untouched and will work again when:
-    //
-    // UI_DEVELOPMENT_MODE = false
-    // ============================================================
 
     private fun checkStartupState() {
 

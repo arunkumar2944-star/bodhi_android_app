@@ -231,7 +231,7 @@ fun AppNavigation() {
                 onSetupCompleted = {
 
                     navController.navigate(
-                        ROUTE_MAIN
+                        ROUTE_LAUNCH
                     ) {
 
                         popUpTo(
