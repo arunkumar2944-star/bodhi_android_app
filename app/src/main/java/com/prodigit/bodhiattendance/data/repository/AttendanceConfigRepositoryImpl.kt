@@ -196,8 +196,8 @@ class AttendanceConfigRepositoryImpl(
             maxAccuracyMeters =
                 maxAccuracyMeters,
 
-            wifiRequired = wifiRequired ?: true,
-            bleRequired = bleRequired ?: true,
+            wifiRequired = wifiRequired,
+            bleRequired = bleRequired,
 
 
             // -------------------------------------------------

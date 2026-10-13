@@ -80,5 +80,9 @@ data class AttendanceLocationEntity(
     // written into the local cache.
     // ========================================================
 
-    val cachedAt: Long
+    val cachedAt: Long,
+
+    // Unknown until CRM supplies policy; never infer requirements locally.
+    val wifiRequired: Boolean? = null,
+    val bleRequired: Boolean? = null
 )

@@ -97,6 +97,9 @@ class AttendanceConfigCacheRepository(
                     maxAccuracyMeters =
                         location.maxAccuracyMeters,
 
+                    wifiRequired = location.wifiRequired,
+                    bleRequired = location.bleRequired,
+
                     cachedAt =
                         cachedAt
                 )
@@ -250,6 +253,9 @@ class AttendanceConfigCacheRepository(
 
                 maxAccuracyMeters =
                     location.maxAccuracyMeters,
+
+                wifiRequired = location.wifiRequired,
+                bleRequired = location.bleRequired,
 
 
                 // =============================================

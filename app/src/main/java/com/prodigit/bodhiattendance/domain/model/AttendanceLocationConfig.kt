@@ -46,8 +46,8 @@ data class AttendanceLocationConfig(
 
     val maxAccuracyMeters: Double?,
 
-    val wifiRequired: Boolean = true,
-    val bleRequired: Boolean = true,
+    val wifiRequired: Boolean? = null,
+    val bleRequired: Boolean? = null,
 
 
     // ========================================================

@@ -6,13 +6,8 @@ package com.prodigit.bodhiattendance.domain.attendance
 //
 // Represents one evaluated office-presence observation.
 //
-// V1 production presence rule:
-//
-// Geofence verified
-// AND
-// approved Office Wi-Fi / BSSID verified
-//
-// BLE is intentionally NOT part of the V1 decision.
+// Geofence evidence plus the Wi-Fi / BLE requirements supplied by CRM.
+// Missing CRM flags block evaluation; Android does not select office policy.
 //
 // capturedAtElapsedRealtimeMs is monotonic Android time.
 // Phone wall-clock time is NOT used.
@@ -31,7 +26,8 @@ data class OfficePresenceSnapshot(
 ) {
 
     fun isValidOfficePresence(policy: AttendanceEnginePolicy): Boolean =
-        geofenceVerified &&
+        policy.wifiRequired != null && policy.bleRequired != null &&
+            geofenceVerified &&
             (policy.wifiRequired == false || wifiVerified) &&
             (policy.bleRequired == false || beaconVerified)
 }

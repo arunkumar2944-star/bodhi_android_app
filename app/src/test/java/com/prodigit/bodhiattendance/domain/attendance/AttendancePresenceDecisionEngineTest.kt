@@ -684,4 +684,22 @@ class AttendancePresenceDecisionEngineTest {
         )
         assertTrue(result is AttendanceEngineDecision.Blocked)
     }
+    @Test
+    fun crmPolicyControlsRequiredEvidence() {
+        val gpsOnlyEvidence = OfficePresenceSnapshot(true, false, false, 1000L)
+        assertTrue(gpsOnlyEvidence.isValidOfficePresence(policy.copy(wifiRequired = false)))
+        assertEquals(false, gpsOnlyEvidence.isValidOfficePresence(policy.copy(wifiRequired = true)))
+        assertEquals(false, gpsOnlyEvidence.isValidOfficePresence(policy.copy(wifiRequired = false, bleRequired = true)))
+    }
+
+    @Test
+    fun missingCrmPolicyBlocksEvaluation() {
+        val result = AttendancePresenceDecisionEngine.evaluate(
+            AttendanceState.NOT_CHECKED_IN,
+            AttendanceEnginePhase.NotMonitoring,
+            OfficePresenceSnapshot(true, true, true, 1000L),
+            policy.copy(wifiRequired = null)
+        )
+        assertTrue(result is AttendanceEngineDecision.Blocked)
+    }
 }
