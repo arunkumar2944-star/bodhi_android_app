@@ -592,13 +592,13 @@ class StartupViewModel(
 
                             Log.d(
                                 "STARTUP_DEBUG",
-                                "Local runtime restored - ensuring trusted time"
+                                "Local runtime restored - creating fresh server trusted-time anchor"
                             )
 
 
                             val anchorResult =
                                 timeAnchorManager
-                                    .ensureCurrentAnchor(
+                                    .createFreshAnchor(
 
                                         token =
                                             token,
