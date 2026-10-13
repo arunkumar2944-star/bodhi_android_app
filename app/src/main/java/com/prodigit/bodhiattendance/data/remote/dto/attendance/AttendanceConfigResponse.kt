@@ -1,23 +1,15 @@
 package com.prodigit.bodhiattendance.data.remote.dto.attendance
 
-
-
-// ============================================================
-// ACTIVE ATTENDANCE CONFIG RESPONSE
-//
-// Response from:
-//
-// GET /api/v1/attendance/locations/active
-//
-// Contains all active attendance locations available to the
-// authenticated employee/company.
-// ============================================================
+import com.google.gson.annotations.SerializedName
 
 data class AttendanceConfigResponse(
-
     val success: Boolean,
+    val count: Int = 0,
+    val data: AttendanceConfigDataDto? = null
+)
 
-    val message: String? = null,
-
-    val data: List<AttendanceLocationDto> = emptyList()
+data class AttendanceConfigDataDto(
+    @SerializedName("configuration_version") val configurationVersion: String? = null,
+    @SerializedName("server_time") val serverTime: String? = null,
+    val locations: List<AttendanceLocationDto> = emptyList()
 )
