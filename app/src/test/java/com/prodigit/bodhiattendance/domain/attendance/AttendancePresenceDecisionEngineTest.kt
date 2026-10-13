@@ -17,7 +17,9 @@ class AttendancePresenceDecisionEngineTest {
     private val policy =
         AttendanceEnginePolicy(
             gracePeriodMs = 3 * 60 * 1000L,
-            maximumAbsenceMs = 90 * 60 * 1000L
+            maximumAbsenceMs = 90 * 60 * 1000L,
+            wifiRequired = true,
+            bleRequired = false
         )
 
 
