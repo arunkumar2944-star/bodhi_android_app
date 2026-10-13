@@ -102,18 +102,20 @@ class AttendancePresenceService : Service(), LocationListener {
     companion object {
         private const val CHANNEL_ID = "attendance_presence"
         private const val NOTIFICATION_ID = 2401
-        fun start(context: Context) {
+        fun start(context: Context): Boolean {
             if (ContextCompat.checkSelfPermission(context, Manifest.permission.ACCESS_FINE_LOCATION) !=
                 PackageManager.PERMISSION_GRANTED) {
                 Log.w("ATTENDANCE_MONITOR", "Cannot start; fine location permission missing")
-                return
+                return false
             }
             try {
                 ContextCompat.startForegroundService(
                     context, Intent(context, AttendancePresenceService::class.java)
                 )
+                return true
             } catch (e: RuntimeException) {
                 Log.e("ATTENDANCE_MONITOR", "Foreground monitoring start blocked", e)
+                return false
             }
         }
     }
