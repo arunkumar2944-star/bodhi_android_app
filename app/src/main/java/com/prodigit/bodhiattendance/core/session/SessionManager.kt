@@ -5,6 +5,7 @@ import android.content.Context
 class SessionManager(
     context: Context
 ) {
+    private val preferencesContext = context.applicationContext
 
     private val preferences =
         context.getSharedPreferences(
@@ -54,6 +55,12 @@ class SessionManager(
         )
     }
 
+
+    fun updateAccessToken(token: String) {
+        check(preferences.edit().putString(KEY_TOKEN, token).commit()) {
+            "Access token persistence failed"
+        }
+    }
 
     // ============================================================
     // CHECK SESSION
@@ -143,8 +150,7 @@ class SessionManager(
 
         if (JwtUtils.isTokenExpired(token)) {
 
-            clearSession()
-
+            // Expiry must not erase the device identity or offline queue.
             return false
         }
 
@@ -157,6 +163,7 @@ class SessionManager(
 
     fun clearSession() {
 
+        SecureAndroidRefreshStore(preferencesContext).clear()
         preferences
             .edit()
             .clear()
