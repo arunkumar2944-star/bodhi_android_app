@@ -1,20 +1,10 @@
 package com.prodigit.bodhiattendance.data.remote.dto.attendance
 
-
-// ============================================================
-// BLE BEACON DTO
-//
-// Represents one active BLE beacon configured for an
-// attendance location from React CRM.
-// ============================================================
+import com.google.gson.annotations.SerializedName
 
 data class AttendanceBeaconDto(
-
-    val id: Long,
-
-    val name: String,
-
-    val identifier: String,
-
-    val expectedMinRssi: Int? = null
+    @SerializedName("beacon_id") val id: Long,
+    @SerializedName("beacon_name") val name: String,
+    @SerializedName("beacon_identifier") val identifier: String,
+    @SerializedName("expected_min_rssi") val expectedMinRssi: Int? = null
 )
