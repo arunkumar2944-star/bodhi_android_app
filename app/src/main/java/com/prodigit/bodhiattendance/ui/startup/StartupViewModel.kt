@@ -13,6 +13,7 @@ import com.prodigit.bodhiattendance.core.device.DeviceIdManager
 import com.prodigit.bodhiattendance.core.monitoring.AttendanceMonitorStartGate
 import com.prodigit.bodhiattendance.core.network.RetrofitClient
 import com.prodigit.bodhiattendance.core.session.SessionManager
+import com.prodigit.bodhiattendance.core.session.AndroidTokenManager
 
 import com.prodigit.bodhiattendance.data.repository.DeviceRepositoryImpl
 
@@ -40,6 +41,8 @@ class StartupViewModel(
     // ============================================================
     // SESSION
     // ============================================================
+
+    private val tokenManager = AndroidTokenManager(appContext)
 
     private val sessionManager =
         SessionManager(
@@ -257,63 +260,19 @@ class StartupViewModel(
         // STEP 1 — LOCAL SESSION
         // ========================================================
 
-        val hasValidSession =
-            sessionManager
-                .hasValidSession()
-
-
-        Log.d(
-            "STARTUP_DEBUG",
-            "Valid session: $hasValidSession"
-        )
-
-
-        if (
-            !hasValidSession
-        ) {
-
-            Log.d(
-                "STARTUP_DEBUG",
-                "No valid session - moving to LOGIN"
-            )
-
-
-            _destination.value =
-                StartupDestination.LOGIN
-
+        val token = tokenManager.usableAccessToken()
+        if (token.isNullOrBlank()) {
+            if (tokenManager.hasRefreshCredential()) {
+                Log.w("STARTUP_DEBUG", "Token temporarily unavailable; retrying without clearing saved identity")
+                _networkError.value = true
+                _destination.value = StartupDestination.LOADING
+                retryDeviceValidation()
+            } else {
+                Log.w("STARTUP_DEBUG", "No valid access or refresh token; login required")
+                _destination.value = StartupDestination.LOGIN
+            }
             return
         }
-
-
-        // ========================================================
-        // STEP 2 — JWT TOKEN
-        // ========================================================
-
-        val token =
-            sessionManager
-                .getToken()
-
-
-        if (
-            token.isNullOrBlank()
-        ) {
-
-            Log.d(
-                "STARTUP_DEBUG",
-                "Token missing - clearing session"
-            )
-
-
-            sessionManager
-                .clearSession()
-
-
-            _destination.value =
-                StartupDestination.LOGIN
-
-            return
-        }
-
 
         // ========================================================
         // STEP 3 — INSTALLATION DEVICE ID
@@ -547,6 +506,16 @@ class StartupViewModel(
                         return@onSuccess
                     }
 
+
+                    // Provision a rotating refresh credential after the
+                    // backend has confirmed this registered device.
+                    if (!tokenManager.activateOnApprovedDevice()) {
+                        Log.w("STARTUP_DEBUG", "Android refresh session unavailable; retrying before runtime activation")
+                        _networkError.value = true
+                        _destination.value = StartupDestination.LOADING
+                        retryDeviceValidation()
+                        return@onSuccess
+                    }
 
                     // =================================================
                     // RESTORE LOCAL RUNTIME BEFORE SELECTING ANCHOR OWNER
