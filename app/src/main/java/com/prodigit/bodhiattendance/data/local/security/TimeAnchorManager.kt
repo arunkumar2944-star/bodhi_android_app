@@ -751,10 +751,14 @@ class TimeAnchorManager(
                 getCurrentAnchor()
 
             if (currentAnchor != null) {
-
-                return Result.success(
-                    currentAnchor
-                )
+                val persisted = getAnchorByUuid(currentAnchor.anchorUuid)
+                if (persisted != null && persisted.deviceId == deviceId &&
+                    persisted.bootId == currentAnchor.bootId &&
+                    persisted.elapsedRealtimeMs == currentAnchor.elapsedRealtimeMs) {
+                    return Result.success(currentAnchor)
+                }
+                // A cache entry alone cannot authorize events after Room cleanup.
+                clearAnchor()
             }
 
 
