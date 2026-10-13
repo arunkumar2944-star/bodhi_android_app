@@ -112,7 +112,7 @@ class AttendanceConfigRepositoryImpl(
                 // =================================================
 
                 val locations =
-                    body.data?.locations.orEmpty().filter { it.isEnabled }.map { locationDto ->
+                    body.data?.locations.orEmpty().filter { it.isEnabled == true && it.wifiRequired != null && it.bleRequired != null }.map { locationDto ->
 
                         locationDto.toDomain()
                     }
@@ -195,6 +195,9 @@ class AttendanceConfigRepositoryImpl(
 
             maxAccuracyMeters =
                 maxAccuracyMeters,
+
+            wifiRequired = wifiRequired ?: true,
+            bleRequired = bleRequired ?: true,
 
 
             // -------------------------------------------------
