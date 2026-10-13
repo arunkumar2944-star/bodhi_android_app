@@ -10,6 +10,7 @@ import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 
 import com.prodigit.bodhiattendance.core.device.DeviceIdManager
+import com.prodigit.bodhiattendance.core.monitoring.AttendancePresenceService
 import com.prodigit.bodhiattendance.core.network.RetrofitClient
 import com.prodigit.bodhiattendance.core.session.SessionManager
 
@@ -695,6 +696,9 @@ class StartupViewModel(
 
                             _destination.value =
                                 StartupDestination.DASHBOARD
+
+                            // Independent foreground location observer; never checks in on dashboard navigation.
+                            AttendancePresenceService.start(appContext)
                         }
 
 
@@ -974,6 +978,8 @@ class StartupViewModel(
 
             _destination.value =
                 StartupDestination.DASHBOARD
+
+            AttendancePresenceService.start(appContext)
 
 
             return
