@@ -17,7 +17,7 @@ import android.os.Build
 import android.os.IBinder
 import android.os.Looper
 import android.os.SystemClock
-import com.prodigit.bodhiattendance.core.session.SessionManager
+import com.prodigit.bodhiattendance.core.session.AndroidTokenManager
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -37,6 +37,7 @@ class AttendancePresenceService : Service(), LocationListener {
     private val tag = "ATTENDANCE_MONITOR"
     private lateinit var locationManager: LocationManager
     private var subscribed = false
+    private val tokenManager by lazy { AndroidTokenManager(applicationContext) }
     private val monitorScope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
     private var lastConfigCheckElapsedMs = -60000L
 
@@ -96,13 +97,13 @@ class AttendancePresenceService : Service(), LocationListener {
         val elapsed = SystemClock.elapsedRealtime()
         if (elapsed - lastConfigCheckElapsedMs >= 60000L) {
             lastConfigCheckElapsedMs = elapsed
-            val token = SessionManager(applicationContext).getToken()
-            if (!token.isNullOrBlank()) {
-                monitorScope.launch {
+            monitorScope.launch {
+                val token = tokenManager.usableAccessToken()
+                if (!token.isNullOrBlank()) {
                     OfficeLocationPreflight.check(token, location.latitude, location.longitude, location.accuracy, wifi?.bssid)
+                } else {
+                    Log.w(tag, "Authenticated office preflight paused; refresh unavailable")
                 }
-            } else {
-                Log.w(tag, "No session token; office preflight skipped")
             }
         }
         Log.d(tag, "GPS fix: lat=${location.latitude}, lon=${location.longitude}, accuracy=${location.accuracy}m; connectedBssid=${wifi?.bssid ?: "unavailable"}")
