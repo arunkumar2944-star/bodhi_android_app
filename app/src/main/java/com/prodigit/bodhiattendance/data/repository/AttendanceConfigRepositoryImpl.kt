@@ -101,8 +101,7 @@ class AttendanceConfigRepositoryImpl(
                     return Result.failure(
 
                         IllegalStateException(
-                            body.message
-                                ?: "Unable to load attendance configuration"
+                            "Unable to load attendance configuration"
                         )
                     )
                 }
@@ -113,7 +112,7 @@ class AttendanceConfigRepositoryImpl(
                 // =================================================
 
                 val locations =
-                    body.data.map { locationDto ->
+                    body.data?.locations.orEmpty().filter { it.isEnabled }.map { locationDto ->
 
                         locationDto.toDomain()
                     }
