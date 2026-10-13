@@ -31,8 +31,6 @@ import com.prodigit.bodhiattendance.ui.components.EmployeeStatusCard
 import com.prodigit.bodhiattendance.ui.components.QuickAccessCard
 import com.prodigit.bodhiattendance.ui.components.TodayAttendanceCard
 
-import com.prodigit.bodhiattendance.ui.attendance.TimeAnchorViewModel
-import com.prodigit.bodhiattendance.ui.attendance.AttendanceEventViewModel
 
 
 // ============================================================
@@ -62,11 +60,7 @@ fun DashboardScreen(
 
     onSystemHealthClick: () -> Unit = {},
 
-    viewModel: DashboardViewModel = viewModel(),
-
-    timeAnchorViewModel: TimeAnchorViewModel = viewModel(),
-
-    attendanceEventViewModel: AttendanceEventViewModel = viewModel()
+    viewModel: DashboardViewModel = viewModel()
 
 ) {
 
@@ -133,20 +127,7 @@ fun DashboardScreen(
                 onRequestsClick,
 
             onSystemHealthClick =
-                onSystemHealthClick,
-
-            onTestTimeAnchorClick = {
-
-                timeAnchorViewModel
-                    .createTimeAnchor()
-            },
-
-            onTestCheckInClick = {
-
-                attendanceEventViewModel.testAttendanceEvent(
-                    eventType = "BREAK_START"
-                )
-            }
+                onSystemHealthClick
         )
     }
 }
@@ -169,11 +150,7 @@ private fun DashboardContent(
 
     onRequestsClick: () -> Unit,
 
-    onSystemHealthClick: () -> Unit,
-
-    onTestTimeAnchorClick: () -> Unit,
-
-    onTestCheckInClick: () -> Unit
+    onSystemHealthClick: () -> Unit
 
 ) {
 
@@ -340,31 +317,6 @@ private fun DashboardContent(
                 )
             }
         }
-
-
-        // ====================================================
-        // TEMPORARY ATTENDANCE EVENT TEST
-        //
-        // DEVELOPMENT ONLY.
-        // ====================================================
-
-//        item {
-//
-//            Button(
-//
-//                onClick =
-//                    onTestCheckInClick,
-//
-//                modifier =
-//                    Modifier.fillMaxWidth()
-//
-//            ) {
-//
-//                Text(
-//                    text = "Test BREAK_START"
-//                )
-//            }
-//        }
 
 
         // ====================================================
