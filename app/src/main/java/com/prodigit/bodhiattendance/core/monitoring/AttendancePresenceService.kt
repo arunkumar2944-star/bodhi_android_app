@@ -16,6 +16,13 @@ import android.net.wifi.WifiManager
 import android.os.Build
 import android.os.IBinder
 import android.os.Looper
+import android.os.SystemClock
+import com.prodigit.bodhiattendance.core.session.SessionManager
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.cancel
+import kotlinx.coroutines.launch
 import android.util.Log
 import androidx.core.app.NotificationCompat
 import androidx.core.content.ContextCompat
@@ -30,6 +37,8 @@ class AttendancePresenceService : Service(), LocationListener {
     private val tag = "ATTENDANCE_MONITOR"
     private lateinit var locationManager: LocationManager
     private var subscribed = false
+    private val monitorScope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
+    private var lastConfigCheckElapsedMs = -60000L
 
     override fun onCreate() {
         super.onCreate()
@@ -84,6 +93,18 @@ class AttendancePresenceService : Service(), LocationListener {
         @Suppress("DEPRECATION")
         val wifi = wifiManager.connectionInfo
         AttendanceMonitorStatus.observation(location.latitude, location.longitude, location.accuracy, wifi?.bssid)
+        val elapsed = SystemClock.elapsedRealtime()
+        if (elapsed - lastConfigCheckElapsedMs >= 60000L) {
+            lastConfigCheckElapsedMs = elapsed
+            val token = SessionManager(applicationContext).getToken()
+            if (!token.isNullOrBlank()) {
+                monitorScope.launch {
+                    OfficeLocationPreflight.check(token, location.latitude, location.longitude, location.accuracy, wifi?.bssid)
+                }
+            } else {
+                Log.w(tag, "No session token; office preflight skipped")
+            }
+        }
         Log.d(tag, "GPS fix: lat=${location.latitude}, lon=${location.longitude}, accuracy=${location.accuracy}m; connectedBssid=${wifi?.bssid ?: "unavailable"}")
         // No automatic event here: next integration stage must match the
         // company office and validate full per-office policy first.
@@ -97,6 +118,7 @@ class AttendancePresenceService : Service(), LocationListener {
         if (subscribed) locationManager.removeUpdates(this)
         subscribed = false
         AttendanceMonitorStatus.stopped()
+        monitorScope.cancel()
         super.onDestroy()
     }
 
