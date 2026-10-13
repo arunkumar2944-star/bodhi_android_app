@@ -28,14 +28,16 @@ class SecureAndroidRefreshStore(context: Context) {
             return generator.generateKey()
         }
 
-    fun get(): String? = try {
+    fun get(): String? {
+        return try {
         val encrypted = preferences.getString("secret", null) ?: return null
         val raw = Base64.decode(encrypted, Base64.NO_WRAP)
         if (raw.size <= 12) return null
         val cipher = Cipher.getInstance("AES/GCM/NoPadding")
         cipher.init(Cipher.DECRYPT_MODE, key, GCMParameterSpec(128, raw.copyOfRange(0, 12)))
         String(cipher.doFinal(raw.copyOfRange(12, raw.size)), Charsets.UTF_8)
-    } catch (_: Exception) { null }
+        } catch (_: Exception) { null }
+    }
 
     fun put(token: String) {
         val cipher = Cipher.getInstance("AES/GCM/NoPadding")
