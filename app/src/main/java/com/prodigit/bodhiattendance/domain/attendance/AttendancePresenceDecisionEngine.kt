@@ -24,14 +24,16 @@ data class OfficePresenceSnapshot(
 
     val wifiVerified: Boolean,
 
+    val beaconVerified: Boolean = false,
+
     val capturedAtElapsedRealtimeMs: Long
 
 ) {
 
-    val isValidOfficePresence: Boolean
-        get() =
-            geofenceVerified &&
-                    wifiVerified
+    fun isValidOfficePresence(policy: AttendanceEnginePolicy): Boolean =
+        geofenceVerified &&
+            (policy.wifiRequired == false || wifiVerified) &&
+            (policy.bleRequired == false || beaconVerified)
 }
 
 
@@ -52,7 +54,11 @@ data class AttendanceEnginePolicy(
 
     val gracePeriodMs: Long,
 
-    val maximumAbsenceMs: Long
+    val maximumAbsenceMs: Long,
+
+    // Must be supplied from the matched CRM office. Null blocks evaluation.
+    val wifiRequired: Boolean? = null,
+    val bleRequired: Boolean? = null
 
 )
 
@@ -238,6 +244,13 @@ object AttendancePresenceDecisionEngine {
         // POLICY VALIDATION
         // ====================================================
 
+        if (policy.wifiRequired == null || policy.bleRequired == null) {
+            return AttendanceEngineDecision.Blocked(
+                nextPhase = currentPhase,
+                reason = "Required CRM office policy flags are unavailable"
+            )
+        }
+
         if (policy.gracePeriodMs < 0L) {
 
             return AttendanceEngineDecision.Blocked(
@@ -288,7 +301,8 @@ object AttendancePresenceDecisionEngine {
 
             AttendanceState.NOT_CHECKED_IN ->
                 evaluateNotCheckedIn(
-                    presence = presence
+                    presence = presence,
+                    policy = policy
                 )
 
 
@@ -350,12 +364,13 @@ object AttendancePresenceDecisionEngine {
 
     private fun evaluateNotCheckedIn(
 
-        presence: OfficePresenceSnapshot
+        presence: OfficePresenceSnapshot,
+        policy: AttendanceEnginePolicy
 
     ): AttendanceEngineDecision {
 
 
-        if (!presence.isValidOfficePresence) {
+        if (!presence.isValidOfficePresence(policy)) {
 
             return AttendanceEngineDecision
                 .NoAttendanceEvent(
@@ -421,7 +436,7 @@ object AttendancePresenceDecisionEngine {
         // OFFICE PRESENCE VALID
         // ====================================================
 
-        if (presence.isValidOfficePresence) {
+        if (presence.isValidOfficePresence(policy)) {
 
 
             return when (currentPhase) {
@@ -690,7 +705,7 @@ object AttendancePresenceDecisionEngine {
         // EMPLOYEE RETURNED TO VALID OFFICE PRESENCE
         // ====================================================
 
-        if (presence.isValidOfficePresence) {
+        if (presence.isValidOfficePresence(policy)) {
 
 
             return createNormalAttendanceEvent(
