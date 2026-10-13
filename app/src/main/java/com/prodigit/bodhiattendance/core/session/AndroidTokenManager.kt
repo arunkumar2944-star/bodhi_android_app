@@ -21,7 +21,7 @@ class AndroidTokenManager(context: Context) {
 
     suspend fun usableAccessToken(): String? = rotationLock.withLock {
         val current = sessions.getToken() ?: return@withLock null
-        if (!JwtUtils.isTokenExpired(current)) return@withLock current
+        if (!JwtUtils.expiresWithin(current)) return@withLock current
         val refresh = credentials.get() ?: return@withLock null
         val deviceId = deviceIds.getDeviceId() ?: return@withLock null
         try {
