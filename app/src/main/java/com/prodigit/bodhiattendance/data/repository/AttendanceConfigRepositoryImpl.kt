@@ -198,6 +198,8 @@ class AttendanceConfigRepositoryImpl(
 
             wifiRequired = wifiRequired,
             bleRequired = bleRequired,
+            gracePeriodMinutes = gracePeriodMinutes,
+            maximumAbsenceMinutes = maximumAbsenceMinutes,
 
 
             // -------------------------------------------------

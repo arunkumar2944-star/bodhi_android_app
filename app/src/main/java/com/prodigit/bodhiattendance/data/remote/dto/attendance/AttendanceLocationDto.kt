@@ -13,6 +13,8 @@ data class AttendanceLocationDto(
     @SerializedName("wifi_required") val wifiRequired: Boolean?,
     @SerializedName("ble_required") val bleRequired: Boolean?,
     @SerializedName("is_enabled") val isEnabled: Boolean?,
+    @SerializedName("grace_period_minutes") val gracePeriodMinutes: Long? = null,
+    @SerializedName("maximum_absence_minutes") val maximumAbsenceMinutes: Long? = null,
     val beacons: List<AttendanceBeaconDto> = emptyList(),
     val wifi: List<AttendanceWifiDto> = emptyList()
 )

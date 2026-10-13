@@ -99,6 +99,8 @@ class AttendanceConfigCacheRepository(
 
                     wifiRequired = location.wifiRequired,
                     bleRequired = location.bleRequired,
+                gracePeriodMinutes = location.gracePeriodMinutes,
+                maximumAbsenceMinutes = location.maximumAbsenceMinutes,
 
                     cachedAt =
                         cachedAt
@@ -256,6 +258,8 @@ class AttendanceConfigCacheRepository(
 
                 wifiRequired = location.wifiRequired,
                 bleRequired = location.bleRequired,
+                gracePeriodMinutes = location.gracePeriodMinutes,
+                maximumAbsenceMinutes = location.maximumAbsenceMinutes,
 
 
                 // =============================================

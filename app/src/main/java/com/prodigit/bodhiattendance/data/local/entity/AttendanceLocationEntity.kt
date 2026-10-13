@@ -84,5 +84,7 @@ data class AttendanceLocationEntity(
 
     // Unknown until CRM supplies policy; never infer requirements locally.
     val wifiRequired: Boolean? = null,
-    val bleRequired: Boolean? = null
+    val bleRequired: Boolean? = null,
+    val gracePeriodMinutes: Long? = null,
+    val maximumAbsenceMinutes: Long? = null
 )
