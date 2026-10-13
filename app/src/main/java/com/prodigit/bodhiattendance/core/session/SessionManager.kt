@@ -29,6 +29,8 @@ class SessionManager(
         companyId: Int
     ) {
 
+        // A new interactive login must never inherit another device session.
+        SecureAndroidRefreshStore(preferencesContext).clear()
         preferences
             .edit()
             .putString(KEY_TOKEN, token)
