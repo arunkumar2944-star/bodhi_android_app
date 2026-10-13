@@ -91,6 +91,11 @@
 
         </activity>
 
+        <service
+            android:name=".core.monitoring.AttendancePresenceService"
+            android:exported="false"
+            android:foregroundServiceType="location" />
+
     </application>
 
 </manifest>
