@@ -78,6 +78,8 @@ data class AttendanceEngineEvidence(
             wifiVerified =
                 wifiVerified,
 
+            beaconVerified = beaconDetected,
+
             capturedAtElapsedRealtimeMs =
                 capturedAtElapsedRealtimeMs
         )
