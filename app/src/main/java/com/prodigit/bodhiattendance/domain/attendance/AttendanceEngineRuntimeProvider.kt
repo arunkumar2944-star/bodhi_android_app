@@ -504,4 +504,11 @@ class AttendanceEngineRuntimeProvider(
         get() =
             timeAnchorManager
 
+    companion object {
+        @Volatile private var shared: AttendanceEngineRuntimeProvider? = null
+        fun getInstance(context: Context): AttendanceEngineRuntimeProvider =
+            shared ?: synchronized(this) {
+                shared ?: AttendanceEngineRuntimeProvider(context.applicationContext).also { shared = it }
+            }
+    }
 }

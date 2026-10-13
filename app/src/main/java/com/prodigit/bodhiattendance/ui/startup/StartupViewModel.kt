@@ -92,7 +92,7 @@ class StartupViewModel(
     // ============================================================
 
     private val attendanceRuntimeProvider =
-        AttendanceEngineRuntimeProvider(
+        AttendanceEngineRuntimeProvider.getInstance(
             appContext
         )
 

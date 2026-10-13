@@ -28,14 +28,13 @@ import androidx.core.app.NotificationCompat
 import androidx.core.content.ContextCompat
 
 /**
- * Phase 1: Background GPS / connected Wi-Fi observation only.
- *
- * Never writes attendance events. The server configuration and
- * attendance state machine must verify evidence first.
+ * Observes GPS / connected Wi-Fi and evaluates CRM-configured attendance.
+ * Event creation remains owned by the validated Room-first runtime coordinator.
  */
 class AttendancePresenceService : Service(), LocationListener {
     private val tag = "ATTENDANCE_MONITOR"
     private lateinit var locationManager: LocationManager
+    private val automaticEvaluator by lazy { AutomaticAttendanceEvaluator(applicationContext) }
     private var subscribed = false
     private val monitorScope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
     private var lastConfigCheckElapsedMs = -60000L
@@ -73,7 +72,7 @@ class AttendancePresenceService : Service(), LocationListener {
                 )
                 subscribed = true
                 AttendanceMonitorStatus.running()
-                Log.i(tag, "GPS observer registered; awaiting verified office evidence")
+                Log.i(tag, "GPS observer registered; awaiting CRM-policy attendance evaluation")
             }
         } catch (e: SecurityException) {
             Log.e(tag, "Location foreground service permission denied", e)
@@ -99,15 +98,14 @@ class AttendancePresenceService : Service(), LocationListener {
             val token = SessionManager(applicationContext).getToken()
             if (!token.isNullOrBlank()) {
                 monitorScope.launch {
-                    OfficeLocationPreflight.check(token, location.latitude, location.longitude, location.accuracy, wifi?.bssid)
+                    automaticEvaluator.observe(Location(location), wifi?.bssid)
                 }
             } else {
                 Log.w(tag, "No session token; office preflight skipped")
             }
         }
         Log.d(tag, "GPS fix: lat=${location.latitude}, lon=${location.longitude}, accuracy=${location.accuracy}m; connectedBssid=${wifi?.bssid ?: "unavailable"}")
-        // No automatic event here: next integration stage must match the
-        // company office and validate full per-office policy first.
+        // AutomaticAttendanceEvaluator validates policy and identity before runtime evaluation.
     }
 
     private fun hasLocationPermission(): Boolean =
