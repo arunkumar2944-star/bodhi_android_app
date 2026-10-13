@@ -1,6 +1,7 @@
 package com.prodigit.bodhiattendance.core.network
 
 import com.prodigit.bodhiattendance.BuildConfig
+import com.prodigit.bodhiattendance.data.remote.AndroidSessionApi
 import com.prodigit.bodhiattendance.data.remote.AuthApiService
 import com.prodigit.bodhiattendance.data.remote.DeviceApiService
 import com.prodigit.bodhiattendance.data.remote.AttendanceApiService
@@ -40,6 +41,8 @@ object RetrofitClient {
     // ============================================================
     // AUTH API
     // ============================================================
+
+    val androidSessionApi: AndroidSessionApi by lazy { retrofit.create(AndroidSessionApi::class.java) }
 
     val authApi: AuthApiService by lazy {
 
