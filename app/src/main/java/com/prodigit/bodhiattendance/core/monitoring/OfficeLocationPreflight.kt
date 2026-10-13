@@ -22,11 +22,13 @@ object OfficeLocationPreflight {
                 Log.w(TAG, "Active CRM configuration unavailable: HTTP ${response.code()}")
                 return
             }
-            val matched = body.data.mapNotNull { office ->
+            val offices = body.data?.locations.orEmpty().filter { it.isEnabled }
+            Log.i(TAG, "Loaded ${offices.size} enabled CRM offices; version=${body.data?.configurationVersion}")
+            val matched = offices.mapNotNull { office ->
                 val distance = FloatArray(1)
                 Location.distanceBetween(latitude, longitude, office.latitude, office.longitude, distance)
                 val configuredAccuracy = office.maxAccuracyMeters
-                if (configuredAccuracy == null || configuredAccuracy <= 0.0) {
+                if (configuredAccuracy <= 0.0) {
                     Log.w(TAG, "Office ${office.id} has no usable accuracy policy; skipping")
                     null
                 } else if (distance[0] > office.geofenceRadiusMeters ||
@@ -46,7 +48,9 @@ object OfficeLocationPreflight {
                 office.wifi.any { it.bssid.equals(bssid, ignoreCase = true) }
             } ?: false
             Log.i(TAG, "GPS-preflight officeId=${office.id}, accuracy=${accuracyMeters}m, " +
-                "wifiBssidConfigured=$approvedBssid; event submission disabled pending full office policy verification")
+                "wifiRequired=${office.wifiRequired}, wifiBssidConfigured=$approvedBssid, " +
+                "wifiRequirementMet=${!office.wifiRequired || approvedBssid}, bleRequired=${office.bleRequired}; " +
+                "event submission disabled pending full office policy verification")
         } catch (error: Exception) {
             if (error is kotlinx.coroutines.CancellationException) throw error
             Log.w(TAG, "Unable to load/verify CRM office configuration", error)
