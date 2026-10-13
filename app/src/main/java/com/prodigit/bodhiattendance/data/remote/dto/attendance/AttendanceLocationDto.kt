@@ -10,9 +10,9 @@ data class AttendanceLocationDto(
     val longitude: Double,
     @SerializedName("geofence_radius_meters") val geofenceRadiusMeters: Double,
     @SerializedName("max_accuracy_meters") val maxAccuracyMeters: Double,
-    @SerializedName("wifi_required") val wifiRequired: Boolean,
-    @SerializedName("ble_required") val bleRequired: Boolean,
-    @SerializedName("is_enabled") val isEnabled: Boolean,
+    @SerializedName("wifi_required") val wifiRequired: Boolean?,
+    @SerializedName("ble_required") val bleRequired: Boolean?,
+    @SerializedName("is_enabled") val isEnabled: Boolean?,
     val beacons: List<AttendanceBeaconDto> = emptyList(),
     val wifi: List<AttendanceWifiDto> = emptyList()
 )
