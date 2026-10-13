@@ -59,5 +59,25 @@ class AndroidTokenManager(context: Context) {
         false
     }
 
+    /** Explicit sign-out: revoke on server before clearing local credentials.
+     * Do not invoke automatically on mere access-token expiry.
+     */
+    suspend fun revokeOnLogout() = rotationLock.withLock {
+        val refreshToken = credentials.get()
+        val deviceId = deviceIds.getDeviceId()
+        if (refreshToken != null && deviceId != null) {
+            try {
+                RetrofitClient.androidSessionApi.revoke(
+                    "Bearer " + (sessions.getToken() ?: ""),
+                    AndroidRefreshRequest(deviceId, refreshToken)
+                )
+            } catch (_: Exception) {
+                // Offline revocation must be retried by server-side administrative
+                // controls; clearing locally alone does NOT revoke the remote family.
+            }
+        }
+        sessions.clearSession()
+    }
+
     companion object { private val rotationLock = Mutex() }
 }
