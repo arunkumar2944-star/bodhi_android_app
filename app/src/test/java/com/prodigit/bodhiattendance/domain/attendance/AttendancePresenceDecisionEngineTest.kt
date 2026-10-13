@@ -623,4 +623,65 @@ class AttendancePresenceDecisionEngineTest {
             snapshot.isValidOfficePresence
         )
     }
+
+    @Test
+    fun gpsOnlyOffice_allowsCheckInWithoutWifiOrBle() {
+        val result = AttendancePresenceDecisionEngine.evaluate(
+            attendanceState = AttendanceState.NOT_CHECKED_IN,
+            currentPhase = AttendanceEnginePhase.NotMonitoring,
+            presence = OfficePresenceSnapshot(
+                geofenceVerified = true,
+                wifiVerified = false,
+                capturedAtElapsedRealtimeMs = 1_000L
+            ),
+            policy = policy.copy(wifiRequired = false, bleRequired = false)
+        )
+        assertTrue(result is AttendanceEngineDecision.CreateAttendanceEvent)
+    }
+
+    @Test
+    fun mandatoryWifi_blocksCheckInWhenWifiMissing() {
+        val result = AttendancePresenceDecisionEngine.evaluate(
+            attendanceState = AttendanceState.NOT_CHECKED_IN,
+            currentPhase = AttendanceEnginePhase.NotMonitoring,
+            presence = OfficePresenceSnapshot(
+                geofenceVerified = true,
+                wifiVerified = false,
+                capturedAtElapsedRealtimeMs = 1_000L
+            ),
+            policy = policy.copy(wifiRequired = true, bleRequired = false)
+        )
+        assertTrue(result is AttendanceEngineDecision.NoAttendanceEvent)
+    }
+
+    @Test
+    fun mandatoryBeacon_blocksCheckInWhenBeaconMissing() {
+        val result = AttendancePresenceDecisionEngine.evaluate(
+            attendanceState = AttendanceState.NOT_CHECKED_IN,
+            currentPhase = AttendanceEnginePhase.NotMonitoring,
+            presence = OfficePresenceSnapshot(
+                geofenceVerified = true,
+                wifiVerified = true,
+                beaconVerified = false,
+                capturedAtElapsedRealtimeMs = 1_000L
+            ),
+            policy = policy.copy(wifiRequired = true, bleRequired = true)
+        )
+        assertTrue(result is AttendanceEngineDecision.NoAttendanceEvent)
+    }
+
+    @Test
+    fun missingOfficeRequirements_blocksEngine() {
+        val result = AttendancePresenceDecisionEngine.evaluate(
+            attendanceState = AttendanceState.NOT_CHECKED_IN,
+            currentPhase = AttendanceEnginePhase.NotMonitoring,
+            presence = OfficePresenceSnapshot(
+                geofenceVerified = true,
+                wifiVerified = true,
+                capturedAtElapsedRealtimeMs = 1_000L
+            ),
+            policy = policy.copy(wifiRequired = null)
+        )
+        assertTrue(result is AttendanceEngineDecision.Blocked)
+    }
 }
