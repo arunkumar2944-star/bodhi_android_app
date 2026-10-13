@@ -63,6 +63,7 @@ class AttendancePresenceService : Service(), LocationListener {
                     LocationManager.GPS_PROVIDER, 15000L, 3f, this, Looper.getMainLooper()
                 )
                 subscribed = true
+                AttendanceMonitorStatus.running()
                 Log.i(tag, "GPS observer registered; awaiting verified office evidence")
             }
         } catch (e: SecurityException) {
@@ -82,6 +83,7 @@ class AttendancePresenceService : Service(), LocationListener {
         val wifiManager = applicationContext.getSystemService(Context.WIFI_SERVICE) as WifiManager
         @Suppress("DEPRECATION")
         val wifi = wifiManager.connectionInfo
+        AttendanceMonitorStatus.observation(location.latitude, location.longitude, location.accuracy, wifi?.bssid)
         Log.d(tag, "GPS fix: lat=${location.latitude}, lon=${location.longitude}, accuracy=${location.accuracy}m; connectedBssid=${wifi?.bssid ?: "unavailable"}")
         // No automatic event here: next integration stage must match the
         // company office and validate full per-office policy first.
@@ -94,6 +96,7 @@ class AttendancePresenceService : Service(), LocationListener {
     override fun onDestroy() {
         if (subscribed) locationManager.removeUpdates(this)
         subscribed = false
+        AttendanceMonitorStatus.stopped()
         super.onDestroy()
     }
 
