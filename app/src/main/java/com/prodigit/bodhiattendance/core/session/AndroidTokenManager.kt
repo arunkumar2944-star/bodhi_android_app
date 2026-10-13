@@ -17,6 +17,8 @@ class AndroidTokenManager(context: Context) {
     private val credentials = SecureAndroidRefreshStore(context.applicationContext)
     private val deviceIds = DeviceIdManager(context.applicationContext)
 
+    fun hasRefreshCredential(): Boolean = credentials.get() != null
+
     suspend fun usableAccessToken(): String? = rotationLock.withLock {
         val current = sessions.getToken() ?: return@withLock null
         if (!JwtUtils.isTokenExpired(current)) return@withLock current

@@ -17,7 +17,7 @@ import android.os.Build
 import android.os.IBinder
 import android.os.Looper
 import android.os.SystemClock
-import com.prodigit.bodhiattendance.core.session.SessionManager
+import com.prodigit.bodhiattendance.core.session.AndroidTokenManager
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -28,14 +28,16 @@ import androidx.core.app.NotificationCompat
 import androidx.core.content.ContextCompat
 
 /**
- * Observes GPS / connected Wi-Fi and evaluates CRM-configured attendance.
- * Event creation remains owned by the validated Room-first runtime coordinator.
+ * GPS / connected Wi-Fi observation and CRM-policy attendance evaluation.
+ *
+ * The validated runtime owns Room-first events and server submission.
  */
 class AttendancePresenceService : Service(), LocationListener {
     private val tag = "ATTENDANCE_MONITOR"
     private lateinit var locationManager: LocationManager
     private val automaticEvaluator by lazy { AutomaticAttendanceEvaluator(applicationContext) }
     private var subscribed = false
+    private val tokenManager by lazy { AndroidTokenManager(applicationContext) }
     private val monitorScope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
     private var lastConfigCheckElapsedMs = -60000L
 
@@ -95,17 +97,17 @@ class AttendancePresenceService : Service(), LocationListener {
         val elapsed = SystemClock.elapsedRealtime()
         if (elapsed - lastConfigCheckElapsedMs >= 60000L) {
             lastConfigCheckElapsedMs = elapsed
-            val token = SessionManager(applicationContext).getToken()
-            if (!token.isNullOrBlank()) {
-                monitorScope.launch {
+            monitorScope.launch {
+                val token = tokenManager.usableAccessToken()
+                if (!token.isNullOrBlank()) {
                     automaticEvaluator.observe(Location(location), wifi?.bssid)
+                } else {
+                    Log.w(tag, "Authenticated office preflight paused; refresh unavailable")
                 }
-            } else {
-                Log.w(tag, "No session token; office preflight skipped")
             }
         }
         Log.d(tag, "GPS fix: lat=${location.latitude}, lon=${location.longitude}, accuracy=${location.accuracy}m; connectedBssid=${wifi?.bssid ?: "unavailable"}")
-        // AutomaticAttendanceEvaluator validates policy and identity before runtime evaluation.
+        // AutomaticAttendanceEvaluator validates policy before runtime evaluation.
     }
 
     private fun hasLocationPermission(): Boolean =
