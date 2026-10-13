@@ -507,121 +507,51 @@ fun BodhiLaunchScreen(
                 // LOADING / NETWORK STATUS
                 // =================================================
 
-                if (networkError) {
-
-
-                    // ---------------------------------------------
-                    // NETWORK ERROR TITLE
-                    // ---------------------------------------------
-
-                    Text(
-                        text =
-                            "Network Error",
-
-                        fontSize =
-                            15.sp,
-
-                        fontWeight =
-                            FontWeight.ExtraBold,
-
-                        letterSpacing =
-                            0.5.sp,
-
-                        color =
-                            Color(0xFFD32F2F)
-                                .copy(
-                                    alpha =
-                                        bottomAlpha.value
-                                ),
-
-                        textAlign =
-                            TextAlign.Center
-                    )
-
-
-                    Spacer(
-                        modifier =
-                            Modifier.height(4.dp)
-                    )
-
-
-                    // ---------------------------------------------
-                    // NETWORK ERROR MESSAGE
-                    // ---------------------------------------------
-
-                    Text(
-                        text =
-                            "Please check your internet connection",
-
-                        fontSize =
-                            12.sp,
-
-                        fontWeight =
-                            FontWeight.Medium,
-
-                        letterSpacing =
-                            0.2.sp,
-
-                        color =
-                            Color(0xFFD32F2F)
-                                .copy(
-                                    alpha =
-                                        bottomAlpha.value
-                                ),
-
-                        textAlign =
-                            TextAlign.Center
-                    )
-
-
-                    Spacer(
-                        modifier =
-                            Modifier.height(3.dp)
-                    )
-
-
-                    // ---------------------------------------------
-                    // RETRY MESSAGE
-                    // ---------------------------------------------
-
-                    Text(
-                        text =
-                            "Waiting for network...",
-
-                        fontSize =
-                            11.sp,
-
-                        fontWeight =
-                            FontWeight.Medium,
-
-                        letterSpacing =
-                            0.2.sp,
-
-                        color =
-                            Color(0xFF455A64)
-                                .copy(
-                                    alpha =
-                                        bottomAlpha.value *
-                                                0.85f
-                                ),
-
-                        textAlign =
-                            TextAlign.Center
-                    )
-
-                } else {
-
-
-                    // ---------------------------------------------
-                    // NORMAL LOADING
-                    // ---------------------------------------------
-
-                    LoadingTextAnimation(
-                        alphaMultiplier =
-                            bottomAlpha.value
-                    )
+                // Keep the exact same space for loading and error messages.
+                // Without a stable container the taller network-error text remeasures
+                // the Column and makes the animated orbit appear to jump.
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(86.dp),
+                    contentAlignment = Alignment.Center
+                ) {
+                    if (networkError) {
+                        Column(
+                            horizontalAlignment = Alignment.CenterHorizontally,
+                            verticalArrangement = Arrangement.Center
+                        ) {
+                            Text(
+                                text = "Network Error",
+                                fontSize = 15.sp,
+                                fontWeight = FontWeight.ExtraBold,
+                                letterSpacing = 0.5.sp,
+                                color = Color(0xFFD32F2F).copy(alpha = bottomAlpha.value),
+                                textAlign = TextAlign.Center
+                            )
+                            Spacer(modifier = Modifier.height(4.dp))
+                            Text(
+                                text = "Please check your internet connection",
+                                fontSize = 12.sp,
+                                fontWeight = FontWeight.Medium,
+                                letterSpacing = 0.2.sp,
+                                color = Color(0xFFD32F2F).copy(alpha = bottomAlpha.value),
+                                textAlign = TextAlign.Center
+                            )
+                            Spacer(modifier = Modifier.height(3.dp))
+                            Text(
+                                text = "Waiting for network...",
+                                fontSize = 11.sp,
+                                fontWeight = FontWeight.Medium,
+                                letterSpacing = 0.2.sp,
+                                color = Color(0xFF455A64).copy(alpha = bottomAlpha.value * 0.85f),
+                                textAlign = TextAlign.Center
+                            )
+                        }
+                    } else {
+                        LoadingTextAnimation(alphaMultiplier = bottomAlpha.value)
+                    }
                 }
-
 
                 Spacer(
                     modifier =
