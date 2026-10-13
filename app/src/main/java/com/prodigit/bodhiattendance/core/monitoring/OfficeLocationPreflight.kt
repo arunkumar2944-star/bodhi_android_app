@@ -22,9 +22,18 @@ object OfficeLocationPreflight {
                 Log.w(TAG, "Active CRM configuration unavailable: HTTP ${response.code()}")
                 return
             }
-            val offices = body.data?.locations.orEmpty().filter { it.isEnabled }
+            val offices = body.data?.locations.orEmpty().filter { it.isEnabled == true }
             Log.i(TAG, "Loaded ${offices.size} enabled CRM offices; version=${body.data?.configurationVersion}")
-            val matched = offices.mapNotNull { office ->
+            offices.forEach { office ->
+                Log.i(TAG, "CRM policy officeId=${office.id}: wifiRequired=${office.wifiRequired}, " +
+                    "bleRequired=${office.bleRequired}, enabled=${office.isEnabled}, " +
+                    "wifiAccessPoints=${office.wifi.size}")
+                if (office.wifiRequired == null || office.bleRequired == null) {
+                    Log.e(TAG, "Missing mandatory policy flags for officeId=${office.id}; fail closed")
+                }
+            }
+            val matched = offices.filter { it.wifiRequired != null && it.bleRequired != null }
+                .mapNotNull { office ->
                 val distance = FloatArray(1)
                 Location.distanceBetween(latitude, longitude, office.latitude, office.longitude, distance)
                 val configuredAccuracy = office.maxAccuracyMeters
@@ -49,7 +58,7 @@ object OfficeLocationPreflight {
             } ?: false
             Log.i(TAG, "GPS-preflight officeId=${office.id}, accuracy=${accuracyMeters}m, " +
                 "wifiRequired=${office.wifiRequired}, wifiBssidConfigured=$approvedBssid, " +
-                "wifiRequirementMet=${!office.wifiRequired || approvedBssid}, bleRequired=${office.bleRequired}; " +
+                "wifiRequirementMet=${office.wifiRequired == false || approvedBssid}, bleRequired=${office.bleRequired}; " +
                 "event submission disabled pending full office policy verification")
         } catch (error: Exception) {
             if (error is kotlinx.coroutines.CancellationException) throw error
