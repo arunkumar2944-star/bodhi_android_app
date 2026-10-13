@@ -5,6 +5,18 @@ import org.json.JSONObject
 
 object JwtUtils {
 
+    /** True for expired, invalid, or nearly-expired access tokens. */
+    fun expiresWithin(token: String, seconds: Long = 300L): Boolean {
+        return try {
+            val payload = token.split(".").getOrNull(1) ?: return true
+            val bytes = Base64.decode(payload, Base64.URL_SAFE or Base64.NO_PADDING or Base64.NO_WRAP)
+            val exp = JSONObject(String(bytes, Charsets.UTF_8)).getLong("exp")
+            exp <= (System.currentTimeMillis() / 1000L + seconds)
+        } catch (_: Exception) {
+            true
+        }
+    }
+
     fun isTokenExpired(
         token: String
     ): Boolean {
