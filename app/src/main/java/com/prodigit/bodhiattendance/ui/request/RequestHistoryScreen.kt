@@ -49,41 +49,6 @@ data class BodhiRequest(
     val reviewRemarks: String? = null
 )
 
-// TEMPORARY DEMO DATA.
-// Replace with repository/ViewModel data after API integration.
-object RequestDemoData {
-    val requests = listOf(
-        BodhiRequest(
-            id = "RG-DEMO-001",
-            type = BodhiRequestType.REGULARIZATION,
-            status = BodhiRequestStatus.PENDING,
-            requestDate = "2026-10-08",
-            description = "Missed checkout event"
-        ),
-        BodhiRequest(
-            id = "PS-DEMO-002",
-            type = BodhiRequestType.PERMISSION,
-            status = BodhiRequestStatus.APPROVED,
-            requestDate = "2026-10-04",
-            description = "Early departure",
-            durationMinutes = 45,
-            reviewedBy = "CRM Administrator",
-            reviewedAt = "2026-10-04",
-            reviewRemarks = "Permission approved"
-        ),
-        BodhiRequest(
-            id = "AI-DEMO-003",
-            type = BodhiRequestType.ATTENDANCE_ISSUE,
-            status = BodhiRequestStatus.REJECTED,
-            requestDate = "2026-10-02",
-            description = "BLE detection issue",
-            reviewedBy = "CRM Administrator",
-            reviewedAt = "2026-10-03",
-            reviewRemarks = "Sample rejection remark"
-        )
-    )
-}
-
 // =====================================================
 // COLORS
 // =====================================================
@@ -125,8 +90,7 @@ fun RequestHistoryScreen(
     requests: List<BodhiRequest>,
     onBack: () -> Unit,
     onRequestClick: (String) -> Unit,
-    modifier: Modifier = Modifier,
-    isDemo: Boolean = false
+    modifier: Modifier = Modifier
 ) {
     var selectedFilter by remember {
         mutableStateOf("All")
@@ -174,9 +138,7 @@ fun RequestHistoryScreen(
                     verticalArrangement =
                         Arrangement.spacedBy(12.dp)
                 ) {
-                    if (isDemo) {
-                        DemoNotice()
-                    }
+
 
                     Text(
                         "My Requests",
@@ -466,21 +428,6 @@ fun RequestStatusBadge(
             color = statusColor(status),
             fontSize = 10.sp,
             fontWeight = FontWeight.Bold
-        )
-    }
-}
-
-@Composable
-fun DemoNotice() {
-    Surface(
-        color = Color(0xFFFFF3DB),
-        shape = RoundedCornerShape(12.dp)
-    ) {
-        Text(
-            "Demo data — CRM request API not connected",
-            modifier = Modifier.padding(12.dp),
-            color = Color(0xFF956000),
-            fontSize = 12.sp
         )
     }
 }

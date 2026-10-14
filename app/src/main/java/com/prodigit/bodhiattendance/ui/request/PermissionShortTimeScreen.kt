@@ -73,8 +73,8 @@ data class PermissionRequestData(
 @Composable
 fun PermissionShortTimeScreen(
     modifier: Modifier = Modifier,
-    shiftStartTime: String = "09:30 AM",
-    shiftEndTime: String = "06:00 PM",
+    shiftStartTime: String = "Not supplied by CRM",
+    shiftEndTime: String = "Not supplied by CRM",
     onBack: () -> Unit = {},
     onSubmit: (PermissionRequestData) -> Unit = {}
 ) {

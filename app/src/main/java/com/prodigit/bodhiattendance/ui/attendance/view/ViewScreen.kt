@@ -98,7 +98,9 @@ data class AttendanceViewItem(
 
     val lunchBreakStart: String = "--",
 
-    val lunchBreakEnd: String = "--"
+    val lunchBreakEnd: String = "--",
+
+    val events: List<com.prodigit.bodhiattendance.data.remote.MobileEvent> = emptyList()
 )
 
 
@@ -128,194 +130,24 @@ fun ViewScreen(
 ) {
 
 
-    // ========================================================
-    // SAMPLE DATA
-    //
-    // Temporary until CRM attendance APIs are connected.
-    // ========================================================
-
-    val attendanceList =
-        remember {
-
-            listOf(
-
-                AttendanceViewItem(
-
-                    date =
-                        "06 Oct 2026",
-
-                    day =
-                        "Tuesday",
-
-                    checkIn =
-                        "09:12 AM",
-
-                    checkOut =
-                        "--",
-
-                    workDuration =
-                        "05h 48m",
-
-                    status =
-                        "Working",
-
-                    officeName =
-                        "Main Office",
-
-                    totalBreak =
-                        "46 min",
-
-                    teaBreakStart =
-                        "11:15 AM",
-
-                    teaBreakEnd =
-                        "11:30 AM",
-
-                    lunchBreakStart =
-                        "01:00 PM",
-
-                    lunchBreakEnd =
-                        "01:31 PM"
-                ),
-
-
-                AttendanceViewItem(
-
-                    date =
-                        "05 Oct 2026",
-
-                    day =
-                        "Monday",
-
-                    checkIn =
-                        "09:08 AM",
-
-                    checkOut =
-                        "06:02 PM",
-
-                    workDuration =
-                        "08h 12m",
-
-                    status =
-                        "Present",
-
-                    officeName =
-                        "Main Office",
-
-                    totalBreak =
-                        "42 min",
-
-                    teaBreakStart =
-                        "11:05 AM",
-
-                    teaBreakEnd =
-                        "11:17 AM",
-
-                    lunchBreakStart =
-                        "01:10 PM",
-
-                    lunchBreakEnd =
-                        "01:40 PM"
-                ),
-
-
-                AttendanceViewItem(
-
-                    date =
-                        "04 Oct 2026",
-
-                    day =
-                        "Sunday",
-
-                    checkIn =
-                        "--",
-
-                    checkOut =
-                        "--",
-
-                    workDuration =
-                        "--",
-
-                    status =
-                        "Holiday",
-
-                    officeName =
-                        "--",
-
-                    totalBreak =
-                        "--"
-                ),
-
-
-                AttendanceViewItem(
-
-                    date =
-                        "03 Oct 2026",
-
-                    day =
-                        "Saturday",
-
-                    checkIn =
-                        "09:02 AM",
-
-                    checkOut =
-                        "06:00 PM",
-
-                    workDuration =
-                        "08h 18m",
-
-                    status =
-                        "Present",
-
-                    officeName =
-                        "Main Office",
-
-                    totalBreak =
-                        "40 min",
-
-                    teaBreakStart =
-                        "11:10 AM",
-
-                    teaBreakEnd =
-                        "11:20 AM",
-
-                    lunchBreakStart =
-                        "01:05 PM",
-
-                    lunchBreakEnd =
-                        "01:35 PM"
-                ),
-
-
-                AttendanceViewItem(
-
-                    date =
-                        "02 Oct 2026",
-
-                    day =
-                        "Friday",
-
-                    checkIn =
-                        "--",
-
-                    checkOut =
-                        "--",
-
-                    workDuration =
-                        "--",
-
-                    status =
-                        "Holiday",
-
-                    officeName =
-                        "--",
-
-                    totalBreak =
-                        "--"
-                )
-            )
-        }
-
+    val live = com.prodigit.bodhiattendance.ui.live.liveUiState()
+    if (live.attendance == null) {
+        com.prodigit.bodhiattendance.ui.live.DataUnavailable("Attendance", live.errors["attendance"] ?: live.errors["all"], live.loading)
+        return
+    }
+    val attendanceList = live.attendance.days.map { day ->
+        AttendanceViewItem(
+            date = com.prodigit.bodhiattendance.ui.live.displayDate(day.date),
+            day = java.time.LocalDate.parse(day.date).dayOfWeek.toString().lowercase().replaceFirstChar { it.uppercase() },
+            checkIn = com.prodigit.bodhiattendance.ui.live.displayTime(day.checkInTimeMs),
+            checkOut = com.prodigit.bodhiattendance.ui.live.displayTime(day.checkOutTimeMs),
+            workDuration = com.prodigit.bodhiattendance.ui.live.durationText(day.workMinutes),
+            status = when(day.state) { "WORKING" -> "Working"; "ON_BREAK" -> "On Break"; "CHECKED_OUT" -> "Checked Out"; else -> day.state.replace('_',' ') },
+            officeName = day.officeName ?: "Office unavailable",
+            totalBreak = com.prodigit.bodhiattendance.ui.live.durationText(day.breakMinutes),
+            events = day.events
+        )
+    }
 
     // ========================================================
     // SELECTED ATTENDANCE
@@ -335,7 +167,7 @@ fun ViewScreen(
     val parser = remember { SimpleDateFormat("dd MMM yyyy", Locale.ENGLISH) }
     val baseSunday = remember {
         Calendar.getInstance().apply {
-            time = parser.parse(attendanceList.firstOrNull()?.date ?: "06 Oct 2026") ?: java.util.Date()
+            time = parser.parse(attendanceList.firstOrNull()?.date ?: SimpleDateFormat("dd MMM yyyy", Locale.ENGLISH).format(java.util.Date())) ?: java.util.Date()
             add(Calendar.DAY_OF_MONTH, -(get(Calendar.DAY_OF_WEEK) - Calendar.SUNDAY))
         }
     }
@@ -343,7 +175,7 @@ fun ViewScreen(
     var displayedYear by remember { mutableStateOf(baseSunday.get(Calendar.YEAR)) }
     // Start with the month containing the latest attendance, not the preceding Sunday.
     val firstRecord = remember { Calendar.getInstance().apply {
-        time = parser.parse(attendanceList.firstOrNull()?.date ?: "06 Oct 2026") ?: java.util.Date()
+        time = parser.parse(attendanceList.firstOrNull()?.date ?: SimpleDateFormat("dd MMM yyyy", Locale.ENGLISH).format(java.util.Date())) ?: java.util.Date()
     } }
     var monthInitialized by remember { mutableStateOf(false) }
     if (!monthInitialized) {
@@ -541,7 +373,7 @@ private fun AttendanceHistoryScreenContent(
 
         item {
 
-            MonthlySummarySection()
+            MonthlySummarySection(displayedYear, displayedMonth)
         }
 
 
@@ -667,7 +499,7 @@ private fun AttendanceHistoryHeader() {
         Text(
 
             text =
-                "View your complete attendance records",
+                "View your latest 90 recorded attendance days",
 
             color =
                 Color(
@@ -699,9 +531,9 @@ private fun AttendanceWeekStrip(
     val dayFormat = remember { SimpleDateFormat("EEE", Locale.ENGLISH) }
     val reference = remember {
         Calendar.getInstance().apply {
-            time = parser.parse(attendanceList.firstOrNull()?.date ?: "06 Oct 2026")
+            time = parser.parse(attendanceList.firstOrNull()?.date ?: SimpleDateFormat("dd MMM yyyy", Locale.ENGLISH).format(java.util.Date()))
                 ?: java.util.Date()
-            // Anchor every page to Sunday, regardless of selected/demo date.
+            // Anchor every page to Sunday.
             add(Calendar.DAY_OF_MONTH, -(get(Calendar.DAY_OF_WEEK) - Calendar.SUNDAY))
         }
     }
@@ -795,7 +627,10 @@ private fun WeekDayItem(
 // ============================================================
 
 @Composable
-private fun MonthlySummarySection() {
+private fun MonthlySummarySection(year: Int, month: Int) {
+    val live = com.prodigit.bodhiattendance.ui.live.liveUiState()
+    val monthKey = "%04d-%02d".format(year, month + 1)
+    val days = live.attendance?.days?.filter { it.date.startsWith(monthKey) }
 
     Column(
 
@@ -826,13 +661,13 @@ private fun MonthlySummarySection() {
                     ),
 
                 title =
-                    "Present",
+                    "Recorded presence",
 
                 value =
-                    "22",
+                    days?.count { it.checkInTimeMs != null }?.toString() ?: "--",
 
                 subtitle =
-                    "Days this month",
+                    "Loaded days in this month",
 
                 icon =
                     Icons.Outlined.CalendarMonth,
@@ -860,10 +695,10 @@ private fun MonthlySummarySection() {
                     "Absent",
 
                 value =
-                    "1",
+                    "Not supplied",
 
                 subtitle =
-                    "Day this month",
+                    "CRM absence roster unavailable",
 
                 icon =
                     Icons.Outlined.CalendarMonth,
@@ -904,10 +739,10 @@ private fun MonthlySummarySection() {
                     "Total Break",
 
                 value =
-                    "18h 25m",
+                    days?.takeIf { it.all { day -> day.breakMinutes != null } }?.let { com.prodigit.bodhiattendance.ui.live.durationText(it.sumOf { day -> day.breakMinutes!! }) } ?: "--",
 
                 subtitle =
-                    "This month",
+                    "Loaded records in month",
 
                 icon =
                     Icons.Outlined.Coffee,
@@ -935,10 +770,10 @@ private fun MonthlySummarySection() {
                     "Work Hours",
 
                 value =
-                    "176h 30m",
+                    days?.takeIf { it.all { day -> day.workMinutes != null } }?.let { com.prodigit.bodhiattendance.ui.live.durationText(it.sumOf { day -> day.workMinutes!! }) } ?: "--",
 
                 subtitle =
-                    "This month",
+                    "Loaded records in month",
 
                 icon =
                     Icons.Outlined.AccessTime,
@@ -1413,6 +1248,17 @@ private fun AttendanceDayCard(
                         )
 
 
+                        attendance.events.filter { it.type in setOf("BREAK_START", "BREAK_END") }.forEach { event ->
+                            AttendanceTimelineRow(
+                                icon = Icons.Outlined.Coffee,
+                                iconColor = Color(0xFF1971E8),
+                                time = com.prodigit.bodhiattendance.ui.live.displayTime(event.timeMs),
+                                title = event.type.replace('_', ' '),
+                                subtitle = "Confirmed by CRM",
+                                trailing = ""
+                            )
+                        }
+
                         if (
                             attendance.teaBreakStart !=
                             "--"
@@ -1438,7 +1284,7 @@ private fun AttendanceDayCard(
                                     "Auto Detected",
 
                                 trailing =
-                                    "15 mins"
+                                    "--"
                             )
                         }
 
@@ -1498,7 +1344,7 @@ private fun AttendanceDayCard(
                                     "Auto Detected",
 
                                 trailing =
-                                    "31 mins"
+                                    "--"
                             )
                         }
 
@@ -2212,62 +2058,14 @@ private fun AttendanceDetailsScreenContent(
 
             ) {
 
-                BreakTimelineItem(
-
-                    icon =
-                        Icons.Outlined.Coffee,
-
-                    title =
-                        "Tea Break",
-
-                    start =
-                        attendance.teaBreakStart,
-
-                    end =
-                        attendance.teaBreakEnd,
-
-                    accent =
-                        Color(
-                            0xFF176DE5
-                        )
-                )
-
-
-                HorizontalDivider(
-
-                    modifier =
-                        Modifier.padding(
-
-                            vertical =
-                                11.dp
-                        ),
-
-                    color =
-                        Color(
-                            0xFFE9EDF4
-                        )
-                )
-
-
-                BreakTimelineItem(
-
-                    icon =
-                        Icons.Outlined.Restaurant,
-
-                    title =
-                        "Lunch Break",
-
-                    start =
-                        attendance.lunchBreakStart,
-
-                    end =
-                        attendance.lunchBreakEnd,
-
-                    accent =
-                        Color(
-                            0xFF7438ED
-                        )
-                )
+                val breaks = attendance.events.filter { it.type == "BREAK_START" }
+                if (breaks.isEmpty()) Text("No accepted break events for this day")
+                breaks.forEachIndexed { index, start ->
+                    val end = attendance.events.firstOrNull { it.type == "BREAK_END" && it.timeMs >= start.timeMs }
+                    BreakTimelineItem(Icons.Outlined.Coffee, "Break ${index + 1}",
+                        com.prodigit.bodhiattendance.ui.live.displayTime(start.timeMs),
+                        com.prodigit.bodhiattendance.ui.live.displayTime(end?.timeMs), Color(0xFF176DE5))
+                }
             }
         }
 
@@ -3302,7 +3100,7 @@ private fun AttendanceFilterCard(
                     Text(
 
                         text =
-                            "Main Office",
+                            "See attendance record",
 
                         color =
                             Color(

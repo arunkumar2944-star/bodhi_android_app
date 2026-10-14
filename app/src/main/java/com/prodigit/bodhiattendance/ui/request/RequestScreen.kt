@@ -85,7 +85,7 @@ enum class EmployeeRequestStatus {
 
 data class EmployeeRequestItem(
 
-    val id: Int,
+    val id: String,
 
     val type: EmployeeRequestType,
 
@@ -129,40 +129,17 @@ fun RequestScreen(
 
 ) {
 
-    val requests =
-        remember {
-
-            listOf(
-
-                EmployeeRequestItem(
-                    id = 1,
-                    type = EmployeeRequestType.REGULARIZATION,
-                    title = "Attendance Regularization",
-                    date = "08 Oct 2026",
-                    description = "Missed checkout event",
-                    status = EmployeeRequestStatus.PENDING
-                ),
-
-                EmployeeRequestItem(
-                    id = 2,
-                    type = EmployeeRequestType.PERMISSION,
-                    title = "Permission / Short-Time",
-                    date = "04 Oct 2026",
-                    description = "Early departure • 45 minutes",
-                    status = EmployeeRequestStatus.APPROVED
-                ),
-
-                EmployeeRequestItem(
-                    id = 3,
-                    type = EmployeeRequestType.ATTENDANCE_ISSUE,
-                    title = "Attendance Issue",
-                    date = "02 Oct 2026",
-                    description = "BLE detection issue",
-                    status = EmployeeRequestStatus.REJECTED
-                )
-            )
-        }
-
+    val live = com.prodigit.bodhiattendance.ui.live.liveUiState()
+    if (live.requests == null) {
+        com.prodigit.bodhiattendance.ui.live.DataUnavailable("Requests", live.errors["requests"] ?: live.errors["all"], live.loading)
+        return
+    }
+    val requests = live.requests.mapNotNull { item ->
+        val type = EmployeeRequestType.entries.firstOrNull { it.name == item.type } ?: return@mapNotNull null
+        val status = EmployeeRequestStatus.entries.firstOrNull { it.name == item.status } ?: return@mapNotNull null
+        EmployeeRequestItem(item.id, type, item.type.replace('_', ' '),
+            com.prodigit.bodhiattendance.ui.live.displayDate(item.requestDate), item.description, status)
+    }
 
     val pendingCount =
         requests.count {

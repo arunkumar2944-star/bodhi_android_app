@@ -30,8 +30,8 @@ fun AboutAppScreen(onBack: () -> Unit) {
             PrototypeHeading(Icons.Outlined.Info, "Bodhi Attendance", "Automatic Attendance System", ProtoBlue)
             PrototypeDetail("Application", "Bodhi Attendance")
             PrototypeDetail("Platform", "Android • Jetpack Compose")
-            PrototypeDetail("Release stage", "MD prototype")
-            PrototypeDetail("App version", "See installed app details")
+            PrototypeDetail("Build type", com.prodigit.bodhiattendance.BuildConfig.BUILD_TYPE)
+            PrototypeDetail("App version", com.prodigit.bodhiattendance.BuildConfig.VERSION_NAME)
         }
         Spacer(Modifier.height(15.dp))
         PrototypePanel {
@@ -39,6 +39,6 @@ fun AboutAppScreen(onBack: () -> Unit) {
             Text("Automatic attendance uses GPS/geofencing and office-specific Wi-Fi router verification. BLE beacon evidence is optional. Employee identity, device registration, permissions and audit events require secure handling. Production data processing and employee policy must be reviewed by the company.", color = ProtoMuted, fontSize = 12.sp, lineHeight = 19.sp)
         }
         Spacer(Modifier.height(15.dp))
-        PrototypeNotice("Demonstration build: screens labeled prototype or not loaded do not imply live CRM data or completed attendance integration.")
+        PrototypeNotice("Attendance values come from CRM; queue and audit values come from Room. Unavailable features are labeled explicitly.")
     }
 }

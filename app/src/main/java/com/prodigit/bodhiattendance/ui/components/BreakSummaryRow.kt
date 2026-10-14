@@ -133,7 +133,7 @@ fun BreakSummaryRow(
                     Icons.Outlined.Coffee,
 
                 title =
-                    "Tea Break",
+                    "Tea (not classified)",
 
                 value =
                     teaBreakDuration,
@@ -170,7 +170,7 @@ fun BreakSummaryRow(
                     Icons.Outlined.Restaurant,
 
                 title =
-                    "Lunch Break",
+                    "Lunch (not classified)",
 
                 value =
                     lunchBreakDuration,
@@ -188,7 +188,7 @@ fun BreakSummaryRow(
                     Icons.Outlined.Timer,
 
                 title =
-                    "Other Breaks",
+                    "Total Breaks",
 
                 value =
                     otherBreakDuration,

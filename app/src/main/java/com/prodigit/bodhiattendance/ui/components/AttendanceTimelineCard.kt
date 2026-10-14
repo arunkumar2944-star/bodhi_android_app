@@ -42,7 +42,7 @@ enum class AttendanceTimelineType {
 
     CHECK_IN,
 
-    TEA_BREAK,
+    BREAK_START,
 
     LUNCH_BREAK,
 
@@ -554,7 +554,7 @@ private fun getTimelineVisual(
             )
 
 
-        AttendanceTimelineType.TEA_BREAK ->
+        AttendanceTimelineType.BREAK_START ->
 
             TimelineVisual(
                 icon =

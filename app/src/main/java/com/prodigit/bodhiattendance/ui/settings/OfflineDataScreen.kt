@@ -1,44 +1,32 @@
 package com.prodigit.bodhiattendance.ui.settings
 
-import androidx.compose.foundation.BorderStroke
-import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.verticalScroll
+import androidx.compose.runtime.Composable
+import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.outlined.ArrowBack
-import androidx.compose.material.icons.outlined.*
-import androidx.compose.material3.*
-import androidx.compose.runtime.*
-import androidx.compose.ui.Alignment
-import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.vector.ImageVector
-import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.input.KeyboardType
-import androidx.compose.foundation.text.KeyboardOptions
-import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
-
-// Standalone Settings child screen (MD prototype; no CRM API integration).
+import androidx.compose.material.icons.outlined.Storage
+import com.prodigit.bodhiattendance.ui.live.*
 
 @Composable
 fun OfflineDataScreen(onBack: () -> Unit) {
-    PrototypePage("Offline Data", "Device queue and saved attendance events", onBack) {
+    val live = liveUiState()
+    val model = liveUiViewModel()
+    val rows = live.localEvents
+    PrototypePage("Offline Data", "Actual Room attendance records for this installation", onBack) {
         PrototypePanel {
-            PrototypeHeading(Icons.Outlined.Storage, "Offline event storage", "Room database integration is planned", ProtoPurple)
-            PrototypeDetail("Pending uploads", "Not connected")
-            PrototypeDetail("Stored records", "Not loaded")
-            PrototypeDetail("Failed events", "Not loaded")
+            PrototypeHeading(Icons.Outlined.Storage, "Offline event storage", "Saved locally before upload", ProtoPurple)
+            PrototypeDetail("Stored records", rows?.size?.toString() ?: "Loading")
+            PrototypeDetail("Waiting for upload", rows?.count { it.syncStatus in setOf("PENDING", "SYNCING", "FAILED_RETRYABLE") }?.toString() ?: "Loading")
+            PrototypeDetail("Rejected records", rows?.count { it.syncStatus == "REJECTED" }?.toString() ?: "Loading")
         }
-        Spacer(Modifier.height(15.dp))
-        PrototypePanel {
-            Text("Event queue", fontSize = 16.sp, fontWeight = FontWeight.Bold, color = ProtoNavy)
-            Text("No records loaded in prototype mode", fontSize = 13.sp, color = ProtoMuted)
-            Text("Once connected, this page will show timestamp, event type, sync state, and retry details without editing attendance records.", fontSize = 12.sp, lineHeight = 18.sp, color = ProtoMuted)
+        rows?.filter { it.syncStatus != "SYNCED" }?.take(100)?.forEach { event ->
+            PrototypePanel {
+                PrototypeDetail(event.eventType, event.syncStatus)
+                Text(displayTime(event.eventTime))
+                event.syncError?.let { Text(it) }
+            }
         }
-        Spacer(Modifier.height(15.dp))
-        PrototypeInfo("The UI intentionally does not show '0 Pending' or 'All Synced' without querying the actual local Room queue. Offline attendance sync remains automatic in production.")
+        TextButton(onClick = { model.clearDisplayData() }) { Text("Clear display cache and reload CRM") }
+        PrototypeInfo("Reloading clears screen data only. Attendance records, pending uploads, trusted time and device registration are retained.")
     }
 }

@@ -102,111 +102,16 @@ fun OnDutyScreen(
 ) {
 
 
-    // ========================================================
-    // SAMPLE CRM DATA
-    //
-    // Later replace with API / Room data.
-    // ========================================================
-
-    val allAssignments =
-        remember {
-
-            listOf(
-
-                // OCTOBER 2026
-
-                OnDutyAssignment(
-                    day = 8,
-                    month = Calendar.OCTOBER,
-                    year = 2026,
-                    dutyType = "Client Meeting",
-                    startTime = "10:00 AM",
-                    endTime = "04:00 PM",
-                    location = "ABC Technologies, Trichy",
-                    purpose = "Project discussion and review",
-                    assignedBy = "Manager",
-                    status = "Approved",
-                    remarks = "Attend client project review meeting."
-                ),
-
-                OnDutyAssignment(
-                    day = 17,
-                    month = Calendar.OCTOBER,
-                    year = 2026,
-                    dutyType = "Technical Seminar",
-                    startTime = "09:30 AM",
-                    endTime = "05:00 PM",
-                    location = "Trichy Convention Centre",
-                    purpose = "Technical seminar participation",
-                    assignedBy = "Admin",
-                    status = "Approved",
-                    remarks = "Company nominated technical seminar."
-                ),
-
-                OnDutyAssignment(
-                    day = 24,
-                    month = Calendar.OCTOBER,
-                    year = 2026,
-                    dutyType = "Field Visit",
-                    startTime = "09:00 AM",
-                    endTime = "03:30 PM",
-                    location = "Client Site",
-                    purpose = "Site verification",
-                    assignedBy = "Manager",
-                    status = "Approved",
-                    remarks = "External client site visit."
-                ),
-
-
-                // NOVEMBER 2026
-
-                OnDutyAssignment(
-                    day = 5,
-                    month = Calendar.NOVEMBER,
-                    year = 2026,
-                    dutyType = "Client Visit",
-                    startTime = "09:30 AM",
-                    endTime = "04:30 PM",
-                    location = "Thanjavur",
-                    purpose = "Customer implementation discussion",
-                    assignedBy = "Manager",
-                    status = "Approved",
-                    remarks = "Meet customer implementation team."
-                ),
-
-                OnDutyAssignment(
-                    day = 19,
-                    month = Calendar.NOVEMBER,
-                    year = 2026,
-                    dutyType = "Training",
-                    startTime = "10:00 AM",
-                    endTime = "05:00 PM",
-                    location = "Training Centre",
-                    purpose = "Technical training programme",
-                    assignedBy = "Admin",
-                    status = "Approved",
-                    remarks = "Official company training."
-                ),
-
-
-                // SEPTEMBER 2026
-
-                OnDutyAssignment(
-                    day = 21,
-                    month = Calendar.SEPTEMBER,
-                    year = 2026,
-                    dutyType = "Field Visit",
-                    startTime = "09:00 AM",
-                    endTime = "04:00 PM",
-                    location = "Knowledge Centre",
-                    purpose = "Site inspection",
-                    assignedBy = "Manager",
-                    status = "Approved",
-                    remarks = "Knowledge centre visit."
-                )
-            )
-        }
-
+    val live = com.prodigit.bodhiattendance.ui.live.liveUiState()
+    if (live.onDuty == null) {
+        com.prodigit.bodhiattendance.ui.live.DataUnavailable("On Duty", live.errors["onDuty"] ?: live.errors["all"], live.loading)
+        return
+    }
+    val allAssignments = live.onDuty.map { item ->
+        val date = java.time.LocalDate.parse(item.date)
+        OnDutyAssignment(date.dayOfMonth, date.monthValue - 1, date.year, item.dutyType,
+            item.startTime, item.endTime, item.location, item.purpose, item.assignedBy, item.status, item.remarks)
+    }
 
     // ========================================================
     // CURRENT DISPLAY MONTH
@@ -216,7 +121,7 @@ fun OnDutyScreen(
     remember {
 
         mutableIntStateOf(
-            Calendar.OCTOBER
+            Calendar.getInstance().get(Calendar.MONTH)
         )
     }
 
@@ -225,7 +130,7 @@ fun OnDutyScreen(
     remember {
 
         mutableIntStateOf(
-            2026
+            Calendar.getInstance().get(Calendar.YEAR)
         )
     }
 
@@ -239,8 +144,7 @@ fun OnDutyScreen(
 
         mutableStateOf<OnDutyAssignment?>(
             allAssignments.firstOrNull {
-                it.month == Calendar.OCTOBER &&
-                        it.year == 2026
+                it.month == displayMonth && it.year == displayYear
             }
         )
     }

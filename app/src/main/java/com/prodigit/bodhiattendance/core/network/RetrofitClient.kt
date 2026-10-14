@@ -42,6 +42,8 @@ object RetrofitClient {
     // AUTH API
     // ============================================================
 
+    val mobileUiApi by lazy { retrofit.create(com.prodigit.bodhiattendance.data.remote.MobileUiApi::class.java) }
+
     val androidSessionApi: AndroidSessionApi by lazy { retrofit.create(AndroidSessionApi::class.java) }
 
     val authApi: AuthApiService by lazy {

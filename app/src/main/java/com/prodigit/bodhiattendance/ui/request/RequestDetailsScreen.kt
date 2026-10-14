@@ -28,8 +28,7 @@ private val DetailBlue = Color(0xFF1769E8)
 fun RequestDetailsScreen(
     request: BodhiRequest?,
     onBack: () -> Unit,
-    modifier: Modifier = Modifier,
-    isDemo: Boolean = false
+    modifier: Modifier = Modifier
 ) {
     Column(
         modifier = modifier
@@ -63,9 +62,7 @@ fun RequestDetailsScreen(
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
 
-            if (isDemo) {
-                DemoNotice()
-            }
+
 
             // ============================================
             // REQUEST STATUS CARD

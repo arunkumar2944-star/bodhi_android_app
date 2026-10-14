@@ -27,6 +27,7 @@ class MainActivity : ComponentActivity() {
 
         super.onCreate(savedInstanceState)
         handleCalibrationIntent(intent)
+        handleUiResetIntent(intent)
 
         // =====================================================
         // APP UI
@@ -47,6 +48,14 @@ class MainActivity : ComponentActivity() {
         super.onNewIntent(intent)
         setIntent(intent)
         handleCalibrationIntent(intent)
+        handleUiResetIntent(intent)
+    }
+
+    private fun handleUiResetIntent(intent: android.content.Intent?) {
+        if (BuildConfig.DEBUG && intent?.getBooleanExtra("clear_ui_cache", false) == true) {
+            intent.removeExtra("clear_ui_cache")
+            androidx.lifecycle.ViewModelProvider(this)[com.prodigit.bodhiattendance.ui.live.LiveUiViewModel::class.java].clearDisplayData()
+        }
     }
 
     private fun handleCalibrationIntent(intent: android.content.Intent?) {

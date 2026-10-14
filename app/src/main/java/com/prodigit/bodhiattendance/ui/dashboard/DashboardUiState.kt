@@ -17,7 +17,7 @@ enum class AttendanceWorkStatus {
 
     ON_DUTY,
 
-    OUT_OF_OFFICE,
+    NOT_CHECKED_IN,
 
     CHECKED_OUT
 }

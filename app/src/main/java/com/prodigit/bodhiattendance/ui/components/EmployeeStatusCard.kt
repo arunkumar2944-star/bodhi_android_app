@@ -77,11 +77,13 @@ fun EmployeeStatusCard(
 
     statusSince: String?,
 
-    gpsReady: Boolean = true,
+    gpsReady: Boolean = false,
 
-    bleReady: Boolean = true,
+    bleReady: Boolean = false,
 
-    syncReady: Boolean = true
+    syncReady: Boolean = false,
+
+    showReadiness: Boolean = true
 
 ) {
 
@@ -384,7 +386,7 @@ fun EmployeeStatusCard(
             // DEVICE / ATTENDANCE HEALTH
             // ====================================================
 
-            Surface(
+            if (showReadiness) Surface(
                 modifier =
                     Modifier.fillMaxWidth(),
 
@@ -631,14 +633,14 @@ private fun getStatusInfo(
             )
 
 
-        AttendanceWorkStatus.OUT_OF_OFFICE ->
+        AttendanceWorkStatus.NOT_CHECKED_IN ->
 
             StatusInfo(
                 title =
-                    "Outside Office",
+                    "Not Checked In",
 
                 subtitle =
-                    "Waiting for office detection",
+                    "No accepted check-in today",
 
                 color =
                     StatusGray,
@@ -669,10 +671,10 @@ private fun getStatusInfo(
 
             StatusInfo(
                 title =
-                    "Checking Status",
+                    "Status Unavailable",
 
                 subtitle =
-                    "Verifying attendance environment",
+                    "CRM attendance data has not loaded",
 
                 color =
                     StatusBlue,
@@ -710,8 +712,8 @@ private fun getSinceText(
         AttendanceWorkStatus.CHECKED_OUT ->
             "Checked out at $time"
 
-        AttendanceWorkStatus.OUT_OF_OFFICE ->
-            "Outside since $time"
+        AttendanceWorkStatus.NOT_CHECKED_IN ->
+            "Last attendance update $time"
 
         AttendanceWorkStatus.UNKNOWN ->
             "Last update $time"

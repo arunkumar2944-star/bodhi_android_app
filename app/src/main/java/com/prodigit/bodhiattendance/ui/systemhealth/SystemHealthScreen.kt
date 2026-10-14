@@ -38,7 +38,22 @@ fun SystemHealthScreen(
     onOfficeBeaconClick: () -> Unit = {},
     onOfficeWifiClick: () -> Unit = {}
 ) {
-    val uiState by viewModel.uiState.collectAsState()
+    val diagnostics by viewModel.uiState.collectAsState()
+    val live = com.prodigit.bodhiattendance.ui.live.liveUiState()
+    val day = live.attendance?.let { read -> read.days.firstOrNull { it.date == read.today } }
+    val office = live.configuration?.locations?.firstOrNull { it.id == day?.officeId }
+    fun requirement(required: Boolean?, title: String): HealthItemState = when (required) {
+        false -> HealthItemState(status = HealthStatus.NOT_REQUIRED, title = title, message = "Not required by CRM")
+        true -> HealthItemState(status = HealthStatus.NOT_CONFIGURED, title = title, message = "Required by CRM; live presence is checked by the attendance engine")
+        null -> HealthItemState(status = HealthStatus.NOT_CONFIGURED, title = title, message = "Current office policy not available")
+    }
+    val uiState = diagnostics.copy(
+        attendanceConfiguration = HealthItemState(status = if (live.configuration == null) HealthStatus.NOT_CONFIGURED else HealthStatus.READY,
+            title = "Attendance Configuration", message = live.configuration?.let { "${it.locations.size} CRM offices loaded" } ?: "Configuration unavailable"),
+        officeWifiRequirement = office?.wifiRequired,
+        officeWifi = requirement(office?.wifiRequired, "Office Wi-Fi"),
+        officeBeacon = requirement(office?.bleRequired, "Office BLE")
+    )
     val blue = Color(0xFF1769E8)
 
     LazyColumn(
@@ -90,7 +105,7 @@ fun SystemHealthScreen(
         }
 
         item {
-            HealthTitle("DEVICE SERVICES", "GPS is required; Bluetooth checks are informational (optional BLE)")
+            HealthTitle("DEVICE SERVICES", "GPS and optional device services; office requirements come from CRM")
             Spacer(Modifier.height(8.dp))
             SystemHealthGroupCard {
                 Box(Modifier.fillMaxWidth().clickable(onClick = onPermissionsClick)) {
@@ -113,7 +128,7 @@ fun SystemHealthScreen(
         }
 
         item {
-            HealthTitle("ATTENDANCE ENVIRONMENT", "Main Office: GPS + Wi-Fi; Knowledge Centre: GPS only")
+            HealthTitle("ATTENDANCE ENVIRONMENT", "Office requirements are supplied by CRM")
             Spacer(Modifier.height(8.dp))
             SystemHealthGroupCard {
 
@@ -145,7 +160,7 @@ fun SystemHealthScreen(
             }
             Spacer(Modifier.height(8.dp))
             Text(
-                "Office BLE is optional. Knowledge Centre does not require office Wi-Fi; Main Office requires an approved router. Until the assigned office is verified, Wi-Fi policy stays pending.",
+                "Wi-Fi and BLE requirements are read from the active CRM office policy. Unknown policy or sensor evidence is not treated as verified.",
                 fontSize = 11.sp, lineHeight = 16.sp, color = Color(0xFF75839B)
             )
         }

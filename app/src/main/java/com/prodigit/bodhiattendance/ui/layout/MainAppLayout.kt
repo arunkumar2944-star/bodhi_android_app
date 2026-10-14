@@ -48,7 +48,7 @@ fun MainAppLayout(
     onNotificationClick: () -> Unit = {},
 
     // ON DUTY visibility is provided by ViewModel/Repository.
-    hasUpcomingOnDuty: Boolean = true,
+    hasUpcomingOnDuty: Boolean = false,
 
     content: @Composable () -> Unit
 

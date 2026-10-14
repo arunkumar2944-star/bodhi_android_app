@@ -22,7 +22,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 
-import androidx.lifecycle.viewmodel.compose.viewModel
 
 
 import com.prodigit.bodhiattendance.ui.components.AttendanceTimelineCard
@@ -58,9 +57,7 @@ fun DashboardScreen(
 
     onRequestsClick: () -> Unit = {},
 
-    onSystemHealthClick: () -> Unit = {},
-
-    viewModel: DashboardViewModel = viewModel()
+    onSystemHealthClick: () -> Unit = {}
 
 ) {
 
@@ -68,11 +65,43 @@ fun DashboardScreen(
     // DASHBOARD STATE
     // ========================================================
 
-    val uiState by
-    viewModel
-        .uiState
-        .collectAsState()
-
+    val live = com.prodigit.bodhiattendance.ui.live.liveUiState()
+    val day = live.attendance?.let { read -> read.days.firstOrNull { it.date == read.today } }
+    val uiState = DashboardUiState(
+        isLoading = live.loading,
+        employeeName = listOfNotNull(live.profile?.first_name, live.profile?.last_name).joinToString(" "),
+        employeeId = live.profile?.id?.toString().orEmpty(),
+        designation = live.profile?.role.orEmpty(),
+        workStatus = when {
+            live.attendance == null -> AttendanceWorkStatus.UNKNOWN
+            day?.state == "WORKING" -> AttendanceWorkStatus.IN_OFFICE
+            day?.state == "ON_BREAK" -> AttendanceWorkStatus.ON_BREAK
+            day?.state == "CHECKED_OUT" -> AttendanceWorkStatus.CHECKED_OUT
+            day?.state == "ON_DUTY" -> AttendanceWorkStatus.ON_DUTY
+            else -> AttendanceWorkStatus.NOT_CHECKED_IN
+        },
+        officeName = day?.officeName ?: if (live.attendance == null) "Office unavailable" else "No verified attendance today",
+        statusSince = day?.events?.lastOrNull()?.timeMs?.let { com.prodigit.bodhiattendance.ui.live.displayTime(it) },
+        syncReady = live.localEvents?.let { rows -> rows.none { it.syncStatus != "SYNCED" } } ?: false,
+        checkInTime = day?.checkInTimeMs?.let { com.prodigit.bodhiattendance.ui.live.displayTime(it) },
+        checkInStatus = if (day?.checkInTimeMs != null) "Confirmed by CRM" else null,
+        checkOutTime = day?.checkOutTimeMs?.let { com.prodigit.bodhiattendance.ui.live.displayTime(it) },
+        hasCheckedOut = day?.checkOutTimeMs != null,
+        netWorkHours = day?.let { com.prodigit.bodhiattendance.ui.live.durationText(it.workMinutes) } ?: "--",
+        otherBreakDuration = day?.let { com.prodigit.bodhiattendance.ui.live.durationText(it.breakMinutes) } ?: "--",
+        timelineEvents = day?.events.orEmpty().mapNotNull { event ->
+            val type = when (event.type) {
+                "CHECK_IN" -> com.prodigit.bodhiattendance.ui.components.AttendanceTimelineType.CHECK_IN
+                "BREAK_START" -> com.prodigit.bodhiattendance.ui.components.AttendanceTimelineType.BREAK_START
+                "BREAK_END" -> com.prodigit.bodhiattendance.ui.components.AttendanceTimelineType.BACK_TO_WORK
+                "CHECK_OUT" -> com.prodigit.bodhiattendance.ui.components.AttendanceTimelineType.CHECK_OUT
+                else -> return@mapNotNull null
+            }
+            com.prodigit.bodhiattendance.ui.components.AttendanceTimelineItem(type,
+                com.prodigit.bodhiattendance.ui.live.displayTime(event.timeMs), event.type.replace('_', ' '), "Confirmed by CRM")
+        },
+        errorMessage = live.errors["attendance"] ?: live.errors["all"]
+    )
 
     // ========================================================
     // ATTENDANCE VIEW REDIRECT
@@ -183,6 +212,7 @@ private fun DashboardContent(
         item {
 
             EmployeeStatusCard(
+                showReadiness = false,
 
                 status =
                     uiState.workStatus,

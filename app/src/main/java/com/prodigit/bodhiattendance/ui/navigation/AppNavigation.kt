@@ -41,7 +41,10 @@ import com.prodigit.bodhiattendance.ui.requests.AttendanceIssueScreen
 import com.prodigit.bodhiattendance.ui.requests.AttendanceRegularizationScreen
 import com.prodigit.bodhiattendance.ui.requests.RequestHistoryScreen
 import com.prodigit.bodhiattendance.ui.requests.RequestDetailsScreen
-import com.prodigit.bodhiattendance.ui.requests.RequestDemoData
+import com.prodigit.bodhiattendance.ui.live.*
+import android.widget.Toast
+import kotlinx.coroutines.launch
+import androidx.compose.ui.platform.LocalContext
 import com.prodigit.bodhiattendance.ui.settings.PermissionsScreen
 import com.prodigit.bodhiattendance.ui.settings.BatteryOptimizationScreen
 import com.prodigit.bodhiattendance.ui.settings.AppLockPinScreen
@@ -258,7 +261,12 @@ fun AppNavigation() {
             ROUTE_MAIN
         ) {
 
-            MainApplication()
+            MainApplication(onSignedOut = {
+                navController.navigate(ROUTE_LOGIN) {
+                    popUpTo(ROUTE_MAIN) { inclusive = true }
+                    launchSingleTop = true
+                }
+            })
         }
 
 
@@ -298,12 +306,26 @@ fun AppNavigation() {
 // ============================================================
 
 @Composable
-private fun MainApplication() {
+private fun MainApplication(onSignedOut: () -> Unit) {
+    val liveModel = liveUiViewModel()
+    val live = liveUiState()
+    androidx.compose.runtime.LaunchedEffect(Unit) { liveModel.clearDisplayData() }
+    RefreshLiveUi(liveModel)
+    val liveContext = LocalContext.current
+    fun message(value: String) { Toast.makeText(liveContext, value, Toast.LENGTH_LONG).show() }
+    val confirmedRequests = live.requests.orEmpty().mapNotNull { item ->
+        val type = com.prodigit.bodhiattendance.ui.requests.BodhiRequestType.entries.firstOrNull { it.name == item.type } ?: return@mapNotNull null
+        val status = com.prodigit.bodhiattendance.ui.requests.BodhiRequestStatus.entries.firstOrNull { it.name == item.status } ?: return@mapNotNull null
+        com.prodigit.bodhiattendance.ui.requests.BodhiRequest(item.id,type,status,item.requestDate,item.description,
+            item.durationMinutes,item.reviewedBy,item.reviewedAt,item.reviewRemarks)
+    }
+
 
     val mainNavController =
         rememberNavController()
 
     var showLogoutDialog by remember { mutableStateOf(false) }
+    val logoutScope = androidx.compose.runtime.rememberCoroutineScope()
 
 
     // ========================================================
@@ -389,6 +411,11 @@ private fun MainApplication() {
     // ========================================================
 
     MainAppLayout(
+        hasUpcomingOnDuty = live.onDuty?.any { assignment ->
+            val date = runCatching { java.time.LocalDate.parse(assignment.date) }.getOrNull()
+            val today = java.time.LocalDate.now(java.time.ZoneId.of("Asia/Kolkata"))
+            assignment.status in setOf("APPROVED", "ACTIVE") && date != null && !date.isBefore(today) && !date.isAfter(today.plusDays(15))
+        } == true,
 
         selectedDestination =
             selectedDestination,
@@ -498,12 +525,11 @@ private fun MainApplication() {
         //
         // Notification belongs to AppMasterHeader.
         //
-        // Later we will connect this to shared application
-        // notification state instead of DashboardViewModel.
+        // Notification decisions are loaded from the shared CRM read model.
         // ====================================================
 
         notificationCount =
-            0,
+            live.notifications?.size ?: 0,
 
         onNotificationClick = {
             mainNavController.navigate(ROUTE_NOTIFICATIONS) {
@@ -810,14 +836,7 @@ private fun MainApplication() {
                     },
 
                     onRequestClick = { request ->
-                        // UI preview: map recent cards to the same demo IDs
-                        // used by RequestHistoryScreen / RequestDetailsScreen.
-                        val demoRequestId = when (request.type) {
-                            com.prodigit.bodhiattendance.ui.requests.EmployeeRequestType.REGULARIZATION -> "RG-DEMO-001"
-                            com.prodigit.bodhiattendance.ui.requests.EmployeeRequestType.PERMISSION -> "PS-DEMO-002"
-                            com.prodigit.bodhiattendance.ui.requests.EmployeeRequestType.ATTENDANCE_ISSUE -> "AI-DEMO-003"
-                        }
-                        mainNavController.navigate("request_details/$demoRequestId") {
+                        mainNavController.navigate("request_details/${request.id}") {
                             launchSingleTop = true
                         }
                     }
@@ -830,10 +849,10 @@ private fun MainApplication() {
                         mainNavController.popBackStack()
                     },
                     onSubmit = { request ->
-                        android.util.Log.d(
-                            "PermissionRequest",
-                            "Form validated: $request"
-                        )
+                        val parsedDate = java.text.SimpleDateFormat("dd MMM yyyy", java.util.Locale.ENGLISH).parse(request.date)
+                        if (parsedDate == null) message("Select a valid request date") else
+                            liveModel.submit("PERMISSION", java.text.SimpleDateFormat("yyyy-MM-dd", java.util.Locale.US).format(parsedDate),
+                                request.reason, request.durationMinutes, request.type.name, result = ::message)
                     }
                 )
             }
@@ -847,14 +866,13 @@ private fun MainApplication() {
 
                     onSubmit = { request ->
 
-                        // TODO:
-                        // Send request through ViewModel / Repository.
-                        // Handle API loading, success and failure.
-
-                        android.util.Log.d(
-                            "AttendanceIssue",
-                            "Form validated: $request"
-                        )
+                        if (request.evidenceUri != null) message("Attachment upload is not supported yet; remove the attachment to submit text")
+                        else {
+                            val parsed = java.text.SimpleDateFormat("dd MMM yyyy", java.util.Locale.ENGLISH).parse(request.issueDate)
+                            if (parsed == null) message("Select a valid date") else liveModel.submit("ATTENDANCE_ISSUE",
+                                java.text.SimpleDateFormat("yyyy-MM-dd", java.util.Locale.US).format(parsed),
+                                "${request.issueType} / ${request.affectedEvent}: ${request.description}", result = ::message)
+                        }
                     }
                 )
             }
@@ -867,22 +885,18 @@ private fun MainApplication() {
                     },
 
                     onSubmit = { request ->
-                        // UI stage only.
-                        // Next: RequestViewModel -> Repository -> CRM API
-
-                        android.util.Log.d(
-                            "AttendanceRegularization",
-                            "Validated form: $request"
-                        )
+                        if (request.evidenceUri != null) message("Attachment upload is not supported yet; remove the attachment to submit text")
+                        else liveModel.submit("REGULARIZATION", request.attendanceDate, request.reason,
+                            subtype = request.correctionType.name, requestedTime = request.requestedTime, result = ::message)
                     }
                 )
             }
 
             composable(ROUTE_REQUEST_HISTORY) {
 
-                RequestHistoryScreen(
-                    requests = RequestDemoData.requests,
-                    isDemo = true,
+                if (live.requests == null) DataUnavailable("Request History", live.errors["requests"] ?: live.errors["all"], live.loading)
+                else RequestHistoryScreen(
+                    requests = confirmedRequests,
                     onBack = {
                         mainNavController.popBackStack()
                     },
@@ -900,12 +914,12 @@ private fun MainApplication() {
                 val requestId = entry.arguments
                     ?.getString("requestId")
 
-                val selectedRequest = RequestDemoData.requests
+                val selectedRequest = confirmedRequests
                     .firstOrNull { it.id == requestId }
 
-                RequestDetailsScreen(
+                if (live.requests == null) DataUnavailable("Request Details", live.errors["requests"] ?: live.errors["all"], live.loading)
+                else RequestDetailsScreen(
                     request = selectedRequest,
-                    isDemo = true,
                     onBack = {
                         mainNavController.popBackStack()
                     }
@@ -1008,10 +1022,23 @@ private fun MainApplication() {
         AlertDialog(
             onDismissRequest = { showLogoutDialog = false },
             title = { Text("Sign out of Bodhi Attendance?") },
-            text = { Text("This is a prototype confirmation. Your real session will not be cleared in this demonstration build.") },
+            text = { Text("Signing out stops automatic monitoring on this phone. Saved attendance and device identity are retained. Upload any pending events first.") },
             confirmButton = {
-                TextButton(onClick = { showLogoutDialog = false }) {
-                    Text("Confirm (preview)")
+                TextButton(onClick = {
+                    if (live.submitting || live.localEvents == null || live.localEvents.any { it.syncStatus in setOf("PENDING", "SYNCING", "FAILED_RETRYABLE") }) {
+                        message("Wait for pending attendance uploads before signing out")
+                    } else {
+                        logoutScope.launch {
+                            com.prodigit.bodhiattendance.core.monitoring.AttendanceMonitorStartGate.reset()
+                            liveContext.stopService(android.content.Intent(liveContext, com.prodigit.bodhiattendance.core.monitoring.AttendancePresenceService::class.java))
+                            com.prodigit.bodhiattendance.core.session.AndroidTokenManager(liveContext).revokeOnLogout()
+                            liveModel.clearAfterLogout()
+                            showLogoutDialog = false
+                            onSignedOut()
+                        }
+                    }
+                }) {
+                    Text("Sign out")
                 }
             },
             dismissButton = {
