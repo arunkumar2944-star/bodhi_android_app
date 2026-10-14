@@ -10,7 +10,7 @@ plugins {
 }
 
 
-// Pass the hosted testing API explicitly; never silently test against live CRM.
+// Optional hosted testing API override; never default to the live CRM.
 val hostedApiUrl = providers.gradleProperty("bodhiApiBaseUrl").orNull?.trim()?.let { value ->
     val uri = URI(value)
     require(uri.scheme == "https" && !uri.host.isNullOrBlank() && uri.userInfo == null && uri.query == null && uri.fragment == null) {
@@ -18,11 +18,9 @@ val hostedApiUrl = providers.gradleProperty("bodhiApiBaseUrl").orNull?.trim()?.l
     }
     value.trimEnd('/') + "/"
 }
-tasks.configureEach {
-    if (name.contains("Release")) doFirst {
-        require(hostedApiUrl != null) { "Set -PbodhiApiBaseUrl=https://YOUR_TEST_BACKEND/ before building a release APK" }
-    }
-}
+// Release APKs use the hosted CRM test backend unless explicitly overridden.
+val releaseApiUrl = hostedApiUrl
+    ?: "https://crm-test-backend-rbmdnie75-sarunkumar2944-5912s-projects.vercel.app/"
 
 
 android {
@@ -76,7 +74,7 @@ android {
             buildConfigField(
                 "String",
                 "BASE_URL",
-                "\"${hostedApiUrl ?: "https://example.invalid/"}\""
+                "\"${releaseApiUrl}\""
             )
 
             optimization {
