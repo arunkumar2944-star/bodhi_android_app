@@ -9,6 +9,8 @@ import androidx.room.migration.Migration
 
 import androidx.sqlite.db.SupportSQLiteDatabase
 
+import com.prodigit.bodhiattendance.data.local.dao.RegisteredDeviceDao
+import com.prodigit.bodhiattendance.data.local.entity.RegisteredDeviceEntity
 import com.prodigit.bodhiattendance.data.local.dao.AttendanceConfigDao
 import com.prodigit.bodhiattendance.data.local.dao.AttendanceEngineStateDao
 import com.prodigit.bodhiattendance.data.local.dao.AttendanceEventDao
@@ -108,11 +110,12 @@ import com.prodigit.bodhiattendance.data.local.entity.TimeAnchorEntity
 
         TimeAnchorEntity::class,
 
-        AttendanceEngineStateEntity::class
+        AttendanceEngineStateEntity::class,
+        RegisteredDeviceEntity::class
 
     ],
 
-    version = 7,
+    version = 8,
 
     exportSchema = false
 )
@@ -123,6 +126,8 @@ abstract class AttendanceDatabase :
     // ========================================================
     // ATTENDANCE EVENT DAO
     // ========================================================
+
+    abstract fun registeredDeviceDao(): RegisteredDeviceDao
 
     abstract fun attendanceEventDao():
             AttendanceEventDao
@@ -540,6 +545,21 @@ abstract class AttendanceDatabase :
         // trusted time anchors are preserved.
         // ====================================================
 
+        private val MIGRATION_7_8 = object : Migration(7, 8) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL("""
+                    CREATE TABLE IF NOT EXISTS registered_devices (
+                        userId INTEGER NOT NULL PRIMARY KEY,
+                        registrationId INTEGER NOT NULL,
+                        deviceId TEXT NOT NULL,
+                        companyId INTEGER,
+                        isActive INTEGER NOT NULL,
+                        isOnboarded INTEGER NOT NULL
+                    )
+                """.trimIndent())
+            }
+        }
+
         private val MIGRATION_6_7 = object : Migration(6, 7) {
             override fun migrate(db: SupportSQLiteDatabase) {
                 db.execSQL("ALTER TABLE attendance_locations ADD COLUMN gracePeriodMinutes INTEGER")
@@ -673,7 +693,8 @@ abstract class AttendanceDatabase :
                                 MIGRATION_3_4,
                                 MIGRATION_4_5,
                                 MIGRATION_5_6,
-                                MIGRATION_6_7
+                                MIGRATION_6_7,
+                                MIGRATION_7_8
                             )
 
                             .build()
