@@ -20,7 +20,7 @@ val hostedApiUrl = providers.gradleProperty("bodhiApiBaseUrl").orNull?.trim()?.l
 }
 // Release APKs use the hosted CRM test backend unless explicitly overridden.
 val releaseApiUrl = hostedApiUrl
-    ?: "https://crm-test-backend-rbmdnie75-sarunkumar2944-5912s-projects.vercel.app/"
+    ?: "https://crm-test-backend-phi.vercel.app/"
 
 
 android {
