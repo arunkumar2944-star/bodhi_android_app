@@ -13,6 +13,7 @@ import com.prodigit.bodhiattendance.core.permission.OnboardingPermissionManager
 import com.prodigit.bodhiattendance.core.session.SessionManager
 
 import com.prodigit.bodhiattendance.data.local.database.AttendanceDatabase
+import com.prodigit.bodhiattendance.data.local.repository.RegisteredDeviceStore
 import com.prodigit.bodhiattendance.data.repository.DeviceRepositoryImpl
 
 import kotlinx.coroutines.CancellationException
@@ -57,6 +58,8 @@ class OnboardingViewModel(
     // ============================================================
     // DEVICE ID MANAGER
     // ============================================================
+
+    private val registeredDeviceStore = RegisteredDeviceStore(appContext)
 
     private val deviceIdManager =
         DeviceIdManager(
@@ -497,6 +500,14 @@ class OnboardingViewModel(
                                 "Registered DB ID: ${registeredDevice?.id}"
                             )
 
+
+                            registeredDeviceStore.saveVerified(
+                                userId = sessionManager.getUserId(),
+                                registrationId = registeredDevice!!.id,
+                                deviceId = deviceId,
+                                companyId = registeredDevice.companyId,
+                                onboarded = registeredDevice.isOnboarded
+                            )
 
                             updateDeviceRegistrationState(
                                 true
