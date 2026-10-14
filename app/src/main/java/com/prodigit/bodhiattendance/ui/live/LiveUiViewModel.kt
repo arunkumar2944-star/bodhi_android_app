@@ -32,7 +32,8 @@ data class LiveUiState(
     val onDuty: List<MobileDuty>? = null,
     val localEvents: List<AttendanceEventEntity>? = null,
     val errors: Map<String, String> = emptyMap(),
-    val submitting: Boolean = false
+    val submitting: Boolean = false,
+    val submissionMessage: String? = null
 )
 class LiveUiViewModel(application: Application) : AndroidViewModel(application) {
     private val _state = MutableStateFlow(LiveUiState())
@@ -101,7 +102,7 @@ class LiveUiViewModel(application: Application) : AndroidViewModel(application) 
         if (_state.value.submitting) return
         val key = listOf(type,date,description,duration,subtype,requestedTime).joinToString("\u0000")
         val id = submissionIds.getOrPut(key) { UUID.randomUUID().toString() }
-        _state.update { it.copy(submitting = true) }
+        _state.update { it.copy(submitting = true, submissionMessage = "Submitting request to CRM…") }
         result("Submitting request to CRM…")
         viewModelScope.launch {
             try {
@@ -109,10 +110,14 @@ class LiveUiViewModel(application: Application) : AndroidViewModel(application) 
                 val response = api.submit("Bearer $token", MobileRequestSubmission(id,type,date,description,duration,subtype,requestedTime))
                 val body = response.body()
                 check(response.isSuccessful && body?.success == true && body.data?.id == id) { "Request was not confirmed by CRM (HTTP ${response.code()})" }
+                _state.update { it.copy(submissionMessage = "Request received by CRM; pending review") }
                 result("Request received by CRM; pending review")
                 refresh()
             } catch (cancelled: CancellationException) { throw cancelled }
-            catch (error: Exception) { result(error.message ?: "Request could not be submitted; please retry") }
+            catch (error: Exception) {
+                val message = error.message ?: "Request could not be submitted; please retry"
+                _state.update { it.copy(submissionMessage = message) }; result(message)
+            }
             finally { _state.update { it.copy(submitting = false) } }
         }
     }
@@ -123,7 +128,7 @@ class LiveUiViewModel(application: Application) : AndroidViewModel(application) 
         _state.update { previous ->
             val userId = session.getUserId()
             val deviceId = DeviceIdManager(getApplication<Application>()).getDeviceId()
-            LiveUiState(localEvents = previous.localEvents?.filter { it.userId == userId && it.deviceId == deviceId })
+            LiveUiState(localEvents = previous.localEvents?.filter { it.userId == userId && it.deviceId == deviceId }, submitting = previous.submitting, submissionMessage = previous.submissionMessage)
         }
         viewModelScope.launch { refresh() }
     }

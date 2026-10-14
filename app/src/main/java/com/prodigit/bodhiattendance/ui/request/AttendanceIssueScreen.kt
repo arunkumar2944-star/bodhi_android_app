@@ -82,6 +82,7 @@ fun AttendanceIssueScreen(
     onBack: () -> Unit = {},
     onSubmit: (AttendanceIssueRequestData) -> Unit = {}
 ) {
+    val submission = com.prodigit.bodhiattendance.ui.live.liveUiState()
     val context = LocalContext.current
 
     val dateFormatter = remember {
@@ -335,14 +336,13 @@ fun AttendanceIssueScreen(
 
             IssueSectionHeading(
                 title = "Supporting Evidence",
-                subtitle = "Optional screenshot or image"
+                subtitle = "Text submission supported; attachment API is pending"
             )
 
             OutlinedCard(
                 modifier = Modifier.fillMaxWidth(),
-                onClick = {
-                    imagePicker.launch("image/*")
-                },
+                onClick = {},
+                enabled = false,
                 shape = RoundedCornerShape(18.dp),
                 border = BorderStroke(1.dp, FieldBorder),
                 colors = CardDefaults.outlinedCardColors(
@@ -375,7 +375,7 @@ fun AttendanceIssueScreen(
                     Column(modifier = Modifier.weight(1f)) {
                         Text(
                             if (evidenceUri == null)
-                                "Choose Image"
+                                "Attachments unavailable"
                             else
                                 "Image Selected",
                             color = DarkText,
@@ -387,7 +387,7 @@ fun AttendanceIssueScreen(
 
                         Text(
                             if (evidenceUri == null)
-                                "Tap to attach supporting evidence"
+                                "Current CRM API supports text requests only"
                             else
                                 "Tap to change attachment",
                             color = SecondaryText,
@@ -463,7 +463,9 @@ fun AttendanceIssueScreen(
             // SUBMIT
             // ============================================
 
+            submission.submissionMessage?.let { Text(it) }
             Button(
+                enabled = !submission.submitting,
                 onClick = {
                     when {
                         issueType.isBlank() -> {

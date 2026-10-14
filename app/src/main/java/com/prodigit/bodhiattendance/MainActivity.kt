@@ -2,14 +2,14 @@ package com.prodigit.bodhiattendance
 
 import android.os.Bundle
 import com.prodigit.bodhiattendance.core.monitoring.AttendanceMonitorStartGate
-import androidx.activity.ComponentActivity
+import androidx.fragment.app.FragmentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 import com.prodigit.bodhiattendance.ui.navigation.AppNavigation
 import com.prodigit.bodhiattendance.ui.theme.CRMAttendanceTheme
-class MainActivity : ComponentActivity() {
+class MainActivity : FragmentActivity() {
 
     override fun onResume() {
         super.onResume()

@@ -23,7 +23,7 @@ Apply Backend/src/database/migrations/015_attendance_requests.sql to your TEST N
 | GET | /api/v1/attendance/mobile/on-duty | Explicit 501 until the real CRM assignment schema is supplied |
 | GET | /api/v1/attendance/locations/active | Existing active office configuration |
 
-Authorization is Bearer JWT. User/company identity comes from authentication, not the request body. Request approval does not silently rewrite attendance; regularization processing still needs the CRM workflow. Attachments are not uploaded. Shift hours/department and On Duty assignments are not available from the supplied APIs. UI displays that limitation. PIN/biometric app locking is unavailable; fake preview toggles were removed.
+Authorization is Bearer JWT. User/company identity comes from authentication, not the request body. Request approval does not silently rewrite attendance; regularization processing still needs the CRM workflow. Attachments are not uploaded. Shift hours/department and On Duty assignments are not available from the supplied APIs. UI displays that limitation. App lock and biometric UI are implemented using Android system authentication; see ANDROID_TEST_READINESS.md for device checks.
 
 History shows totals from accepted event sequences, without tea/lunch classification. Incomplete historical sessions show unknown durations. Missing records do not imply absence. Monthly summaries cover the records returned, not a complete absence roster. CRM/API errors show unavailable/retry states, never fake zero counts or fake attendance. Screen reads poll every 30 seconds only while the authenticated UI is visible; this does not change sensor/engine cadence.
 
@@ -43,7 +43,7 @@ Current debug API URL remains http://127.0.0.1:5000/. For USB/local testing:
 & "$env:LOCALAPPDATA\Android\Sdk\platform-tools\adb.exe" -s 7POVXSTOPFGEAMBE reverse tcp:5000 tcp:5000
 ```
 
-When an online testing-branch backend URL is available, configure BASE_URL for that backend before building; do not route this test build to the live main-branch production database.
+When an online testing-branch backend URL is available, pass -PbodhiApiBaseUrl=https://YOUR_TEST_BACKEND/ when building. Release builds require this explicit URL.
 
 ## Validation
 

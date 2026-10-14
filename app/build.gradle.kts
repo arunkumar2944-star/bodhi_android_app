@@ -10,6 +10,21 @@ plugins {
 }
 
 
+// Pass the hosted testing API explicitly; never silently test against live CRM.
+val hostedApiUrl = providers.gradleProperty("bodhiApiBaseUrl").orNull?.trim()?.let { value ->
+    val uri = java.net.URI(value)
+    require(uri.scheme == "https" && !uri.host.isNullOrBlank() && uri.userInfo == null && uri.query == null && uri.fragment == null) {
+        "bodhiApiBaseUrl must be an HTTPS backend URL without credentials, query or fragment"
+    }
+    value.trimEnd('/') + "/"
+}
+tasks.configureEach {
+    if (name.contains("Release")) doFirst {
+        require(hostedApiUrl != null) { "Set -PbodhiApiBaseUrl=https://YOUR_TEST_BACKEND/ before building a release APK" }
+    }
+}
+
+
 android {
 
     namespace =
@@ -52,7 +67,7 @@ android {
             buildConfigField(
                 "String",
                 "BASE_URL",
-                "\"http://127.0.0.1:5000/\""
+                "\"${hostedApiUrl ?: "http://127.0.0.1:5000/"}\""
             )
         }
 
@@ -61,7 +76,7 @@ android {
             buildConfigField(
                 "String",
                 "BASE_URL",
-                "\"https://crm-umber-eta.vercel.app/\""
+                "\"${hostedApiUrl ?: "https://example.invalid/"}\""
             )
 
             optimization {
@@ -124,6 +139,8 @@ androidComponents {
 
 
 dependencies {
+    implementation("androidx.biometric:biometric:1.1.0")
+    implementation("androidx.fragment:fragment-ktx:1.8.9")
     implementation("com.google.android.gms:play-services-location:21.4.0")
 
 

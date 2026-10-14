@@ -79,6 +79,7 @@ fun PermissionShortTimeScreen(
     onSubmit: (PermissionRequestData) -> Unit = {}
 ) {
 
+    val submission = com.prodigit.bodhiattendance.ui.live.liveUiState()
     val context = LocalContext.current
 
     val dateFormat = remember {
@@ -434,7 +435,9 @@ fun PermissionShortTimeScreen(
             // SUBMIT BUTTON
             // ==============================================
 
+            submission.submissionMessage?.let { Text(it) }
             Button(
+                enabled = !submission.submitting,
                 onClick = {
 
                     if (reason.isBlank()) {

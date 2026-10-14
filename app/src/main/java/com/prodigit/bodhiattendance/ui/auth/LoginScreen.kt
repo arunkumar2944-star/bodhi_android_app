@@ -86,6 +86,7 @@ fun LoginScreen(
     // VIEWMODEL STATE
     // ========================================================
 
+    val context = androidx.compose.ui.platform.LocalContext.current
     val state = loginViewModel.uiState
 
 
@@ -875,8 +876,7 @@ fun LoginScreen(
                                     Alignment.End
                                 )
                                 .clickable {
-                                    // TODO:
-                                    // Forgot password navigation
+                                    android.widget.Toast.makeText(context, "Reset your password in the CRM login page or contact your administrator", android.widget.Toast.LENGTH_LONG).show()
                                 }
                     )
 

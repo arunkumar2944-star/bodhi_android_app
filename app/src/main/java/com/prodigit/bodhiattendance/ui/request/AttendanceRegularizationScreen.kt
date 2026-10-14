@@ -77,6 +77,7 @@ fun AttendanceRegularizationScreen(
     onBack: () -> Unit = {},
     onSubmit: (AttendanceRegularizationRequestData) -> Unit = {}
 ) {
+    val submission = com.prodigit.bodhiattendance.ui.live.liveUiState()
     val context = LocalContext.current
 
     val today = remember { Calendar.getInstance() }
@@ -428,7 +429,8 @@ fun AttendanceRegularizationScreen(
             )
 
             OutlinedCard(
-                onClick = { imagePicker.launch("image/*") },
+                onClick = {},
+                enabled = false,
                 modifier = Modifier.fillMaxWidth(),
                 colors = CardDefaults.outlinedCardColors(
                     containerColor = Color.White
@@ -456,7 +458,7 @@ fun AttendanceRegularizationScreen(
                     Column(modifier = Modifier.weight(1f)) {
                         Text(
                             if (evidenceUri == null) {
-                                "Attach Evidence"
+                                "Attachments unavailable"
                             } else {
                                 "Image Selected"
                             },
@@ -466,9 +468,9 @@ fun AttendanceRegularizationScreen(
 
                         Text(
                             if (evidenceUri == null) {
-                                "Select an image from your device"
+                                "Current CRM API supports text requests only"
                             } else {
-                                "Tap to choose another image"
+                                "Current CRM API supports text requests only"
                             },
                             color = RegularizationMuted,
                             fontSize = 12.sp
@@ -532,7 +534,9 @@ fun AttendanceRegularizationScreen(
             // SUBMIT REQUEST
             // ============================================
 
+            submission.submissionMessage?.let { Text(it) }
             Button(
+                enabled = !submission.submitting,
                 onClick = {
                     when {
                         requestedTime.isBlank() -> {

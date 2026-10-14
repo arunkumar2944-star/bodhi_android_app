@@ -58,7 +58,9 @@ data class AttendanceEngineEvidence(
     // Phone wall-clock is NOT authoritative.
     // ========================================================
 
-    val capturedAtElapsedRealtimeMs: Long
+    val capturedAtElapsedRealtimeMs: Long,
+
+    val observationUncertain: Boolean = false
 
 ) {
 
@@ -79,6 +81,7 @@ data class AttendanceEngineEvidence(
                 wifiVerified,
 
             beaconVerified = beaconDetected,
+            observationUncertain = observationUncertain,
 
             capturedAtElapsedRealtimeMs =
                 capturedAtElapsedRealtimeMs

@@ -21,13 +21,19 @@ class AutomaticAttendanceEvaluator(context: Context) {
     private val configuration = AttendanceConfigRepositoryImpl(RetrofitClient.attendanceApi)
     private val mutex = Mutex()
     private var boundOfficeId: Long? = null
+    private var previousOutsideFixMs: Long? = null
+    private var outsideFixCount = 0
+    private var continuousOutsideSinceMs: Long? = null
+    var needsContinuityChecks: Boolean = false
+        private set
     var needsBetterGps: Boolean = false
         private set
     var nextVerificationElapsedMs: Long? = null
         private set
 
-    suspend fun observe(location: Location, bssid: String?) = mutex.withLock {
+    suspend fun observe(location: Location, bssid: String?, wifiDisconnected: Boolean = false) = mutex.withLock {
         needsBetterGps = false
+        needsContinuityChecks = false
         nextVerificationElapsedMs = null
         val tag = "ATTENDANCE_ENGINE"
         @Suppress("DEPRECATION")
@@ -35,6 +41,8 @@ class AutomaticAttendanceEvaluator(context: Context) {
             !location.accuracy.isFinite() || location.accuracy < 0f ||
             location.elapsedRealtimeNanos <= 0L ||
             SystemClock.elapsedRealtimeNanos() - location.elapsedRealtimeNanos !in 0..60_000_000_000L) {
+            previousOutsideFixMs = null
+            continuousOutsideSinceMs = null
             Log.w(tag, "Ignoring mock, stale or invalid GPS evidence")
             return@withLock
         }
@@ -51,6 +59,8 @@ class AutomaticAttendanceEvaluator(context: Context) {
             return@withLock
         }
         val offices = configuration.getActiveAttendanceConfig(token).getOrElse {
+            previousOutsideFixMs = null
+            continuousOutsideSinceMs = null
             Log.w(tag, "Evaluation paused: CRM configuration unavailable", it)
             return@withLock
         }
@@ -66,31 +76,71 @@ class AutomaticAttendanceEvaluator(context: Context) {
             Log.i(tag, "Evaluation paused: no unambiguous CRM office; absence is not inferred")
             return@withLock
         }
-        val accuracyLimit = office.maxAccuracyMeters
-        if (accuracyLimit == null || !accuracyLimit.isFinite() || accuracyLimit <= 0 ||
-            location.accuracy > accuracyLimit || !office.geofenceRadiusMeters.isFinite() || office.geofenceRadiusMeters <= 0) {
-            needsBetterGps = accuracyLimit != null && accuracyLimit.isFinite() && accuracyLimit > 0 &&
-                location.accuracy > accuracyLimit
-            Log.i(tag, "Evaluation paused: GPS accuracy=" + location.accuracy +
-                "m, CRM limit=" + accuracyLimit + "m; automatic retry=" + needsBetterGps)
-            return@withLock
-        }
         val policy = office.toEnginePolicy().getOrElse {
             Log.w(tag, "Evaluation paused: ${it.message}")
             return@withLock
         }
+        suspend fun uncertain(reason: String) {
+            outsideFixCount = 0
+            previousOutsideFixMs = null
+            continuousOutsideSinceMs = null
+            needsBetterGps = true
+            val evidence = AttendanceEngineEvidence(latitude = location.latitude, longitude = location.longitude,
+                accuracyMeters = location.accuracy.toDouble(), capturedAtElapsedRealtimeMs = location.elapsedRealtimeNanos / 1_000_000L,
+                observationUncertain = true)
+            provider.runtimeSession.evaluate(token, session.getUserId(), session.getCompanyId(), deviceId, evidence, policy)
+            Log.i(tag, "Evidence uncertain: $reason; no attendance event")
+        }
+        val accuracyLimit = office.maxAccuracyMeters
+        if (accuracyLimit == null || !accuracyLimit.isFinite() || accuracyLimit <= 0 ||
+            location.accuracy > accuracyLimit || !office.geofenceRadiusMeters.isFinite() || office.geofenceRadiusMeters <= 0) {
+            uncertain("GPS accuracy=${location.accuracy}m, CRM limit=${accuracyLimit}m")
+            return@withLock
+        }
         if (policy.bleRequired == true) {
-            Log.w(tag, "Evaluation paused: required BLE evidence provider is not integrated")
+            uncertain("Required BLE provider is not integrated")
             return@withLock
         }
         val readableBssid = bssid?.takeIf { it.matches(Regex("(?i)([0-9a-f]{2}:){5}[0-9a-f]{2}")) &&
             it != "02:00:00:00:00:00" && it != "00:00:00:00:00:00" }
-        if (policy.wifiRequired == true && readableBssid == null && distance(office) <= office.geofenceRadiusMeters) {
-            Log.i(tag, "Evaluation paused: Wi-Fi evidence unavailable; absence is not inferred")
+        val distanceMeters = distance(office).toDouble()
+        val inside = distanceMeters <= office.geofenceRadiusMeters
+        val wifiVerified = readableBssid != null && office.wifiAccessPoints.any { it.bssid.equals(readableBssid, true) }
+        val definitelyOutside = distanceMeters - location.accuracy > office.geofenceRadiusMeters
+        Log.i(tag, "Evidence officeId=${office.id}; distance=${distanceMeters}m; accuracy=${location.accuracy}m; radius=${office.geofenceRadiusMeters}m; wifiMatched=$wifiVerified; wifiDisconnected=$wifiDisconnected")
+        if (inside && policy.wifiRequired == true && !wifiVerified) {
+            uncertain("Inside GPS with missing or nonmatching office Wi-Fi")
             return@withLock
         }
-        val inside = distance(office) <= office.geofenceRadiusMeters
-        val wifiVerified = readableBssid != null && office.wifiAccessPoints.any { it.bssid.equals(readableBssid, true) }
+        if (!inside) {
+            if (!definitelyOutside || (policy.wifiRequired == true && (wifiVerified || (!wifiDisconnected && readableBssid == null)))) {
+                uncertain("GPS boundary uncertainty or conflicting/unknown Wi-Fi")
+                return@withLock
+            }
+            val now = location.elapsedRealtimeNanos / 1_000_000L
+            // Evidence freshness guard, not a CRM attendance/grace setting.
+            if (previousOutsideFixMs == null || now - previousOutsideFixMs!! !in 1..90_000L) {
+                uncertain("Departure needs another fresh outside observation")
+                previousOutsideFixMs = now
+                outsideFixCount = 1
+                continuousOutsideSinceMs = now
+                return@withLock
+            }
+            previousOutsideFixMs = now
+            outsideFixCount++
+            needsContinuityChecks = snapshot.attendanceState in setOf(AttendanceState.WORKING, AttendanceState.ON_BREAK)
+            val breakPhase = snapshot.phase as? AttendanceEnginePhase.BreakActive
+            if (snapshot.attendanceState == AttendanceState.ON_BREAK && breakPhase != null &&
+                now - breakPhase.absenceStartedElapsedRealtimeMs >= policy.maximumAbsenceMs &&
+                now - (continuousOutsideSinceMs ?: now) < policy.maximumAbsenceMs) {
+                Log.i(tag, "Checkout paused: continuous reliable absence not yet established after evidence gap/restart")
+                return@withLock
+            }
+        } else {
+            outsideFixCount = 0
+            previousOutsideFixMs = null
+            continuousOutsideSinceMs = null
+        }
         if (boundOfficeId == null && (!inside || (policy.wifiRequired == true && !wifiVerified))) {
             Log.i(tag, "Waiting for CRM office presence verification")
             return@withLock

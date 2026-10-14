@@ -121,11 +121,14 @@ class AttendancePresenceService : Service() {
                 if (location != null) {
                     val bssid = readBssid()
                     AttendanceMonitorStatus.observation(location.latitude, location.longitude, location.accuracy, bssid)
-                    if (!calibrating) evaluator.observe(location, bssid)
+                    if (!calibrating) evaluator.observe(location, bssid, wifiDisconnected = isWifiDisconnected())
                 } else Log.w(tag, "No fresh GPS fix; attendance remains unknown")
                 val gpsNeedsRetry = location == null || evaluator.needsBetterGps
                 val due = if (location != null) evaluator.nextVerificationElapsedMs else null
-                waitMs = if (gpsNeedsRetry && gpsRetries < MAX_GPS_RETRIES) {
+                waitMs = if (evaluator.needsContinuityChecks) {
+                    gpsRetries = 0
+                    45_000L
+                } else if (gpsNeedsRetry && gpsRetries < MAX_GPS_RETRIES) {
                     gpsRetries++
                     Log.i(tag, "Automatic GPS retry " + gpsRetries + "/" + MAX_GPS_RETRIES)
                     GPS_RETRY_MS
@@ -184,6 +187,12 @@ class AttendancePresenceService : Service() {
     }
 
     @Suppress("DEPRECATION")
+    private fun isWifiDisconnected(): Boolean = try {
+        connectivity.allNetworks.none { network ->
+            connectivity.getNetworkCapabilities(network)?.hasTransport(NetworkCapabilities.TRANSPORT_WIFI) == true
+        }
+    } catch (_: SecurityException) { false }
+
     private fun readBssid(): String? = try {
         (applicationContext.getSystemService(Context.WIFI_SERVICE) as WifiManager).connectionInfo?.bssid
     } catch (_: SecurityException) { null }

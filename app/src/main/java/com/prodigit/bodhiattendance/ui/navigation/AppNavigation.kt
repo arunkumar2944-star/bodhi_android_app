@@ -261,12 +261,14 @@ fun AppNavigation() {
             ROUTE_MAIN
         ) {
 
+            com.prodigit.bodhiattendance.ui.security.AppAccessGate {
             MainApplication(onSignedOut = {
                 navController.navigate(ROUTE_LOGIN) {
                     popUpTo(ROUTE_MAIN) { inclusive = true }
                     launchSingleTop = true
                 }
             })
+            }
         }
 
 

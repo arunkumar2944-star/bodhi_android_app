@@ -7,6 +7,25 @@ import org.junit.Test
 class AttendancePresenceDecisionEngineTest {
 
 
+    @Test
+    fun uncertainEvidence_cancelsUnconfirmedGrace_withoutEvent() {
+        val result = AttendancePresenceDecisionEngine.evaluate(
+            AttendanceState.WORKING, AttendanceEnginePhase.AbsenceGrace(1000L),
+            OfficePresenceSnapshot(false, true, capturedAtElapsedRealtimeMs = 500000L, observationUncertain = true),
+            AttendanceEnginePolicy(180000L, 5400000L, wifiRequired = true, bleRequired = false))
+        assertTrue(result is AttendanceEngineDecision.NoAttendanceEvent)
+        assertEquals(AttendanceEnginePhase.Present, (result as AttendanceEngineDecision.NoAttendanceEvent).nextPhase)
+    }
+    @Test
+    fun uncertainEvidence_doesNotCheckInOrEndBreak() {
+        val policy = AttendanceEnginePolicy(180000L, 5400000L, true, false)
+        val evidence = OfficePresenceSnapshot(true, true, capturedAtElapsedRealtimeMs = 500000L, observationUncertain = true)
+        val checkIn = AttendancePresenceDecisionEngine.evaluate(AttendanceState.NOT_CHECKED_IN, AttendanceEnginePhase.NotMonitoring, evidence, policy)
+        val endBreak = AttendancePresenceDecisionEngine.evaluate(AttendanceState.ON_BREAK, AttendanceEnginePhase.BreakActive(1000L, 181000L), evidence, policy)
+        assertTrue(checkIn is AttendanceEngineDecision.NoAttendanceEvent)
+        assertTrue(endBreak is AttendanceEngineDecision.NoAttendanceEvent)
+    }
+
     // ========================================================
     // TEST POLICY
     //
@@ -294,7 +313,7 @@ class AttendancePresenceDecisionEngineTest {
 
 
         assertEquals(
-            threeMinutesLater,
+            absenceStarted,
             result.eventElapsedRealtimeMs
         )
 

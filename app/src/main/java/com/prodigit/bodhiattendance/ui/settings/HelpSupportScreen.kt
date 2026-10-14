@@ -29,7 +29,7 @@ private val faq = listOf(
     HelpTopic("Why is background location necessary?", "The automatic attendance engine may need location checks while the app is not on screen. Android still controls when background work can run."),
     HelpTopic("Does Wi-Fi have to be enabled?", "Office Wi-Fi verification depends on the assigned location's configuration. The Knowledge Centre may have no router requirement."),
     HelpTopic("How do I change my registered device?", "Contact your administrator. Device replacement must be authorized through the CRM's device management policy."),
-    HelpTopic("What happens when internet is unavailable?", "Valid events are designed to be saved locally and synchronized automatically when connectivity returns, once production sync integration is complete.")
+    HelpTopic("What happens when internet is unavailable?", "Events already recorded in Room retain their sync status. This build still needs CRM connectivity to load policy before evaluation; an offline period can delay event creation. Report any missed attendance.")
 )
 
 @Composable

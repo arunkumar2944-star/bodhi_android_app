@@ -21,7 +21,9 @@ data class OfficePresenceSnapshot(
 
     val beaconVerified: Boolean = false,
 
-    val capturedAtElapsedRealtimeMs: Long
+    val capturedAtElapsedRealtimeMs: Long,
+
+    val observationUncertain: Boolean = false
 
 ) {
 
@@ -239,6 +241,14 @@ object AttendancePresenceDecisionEngine {
         // ====================================================
         // POLICY VALIDATION
         // ====================================================
+
+        if (presence.observationUncertain) {
+            return AttendanceEngineDecision.NoAttendanceEvent(
+                nextPhase = if (attendanceState == AttendanceState.WORKING && currentPhase is AttendanceEnginePhase.AbsenceGrace)
+                    AttendanceEnginePhase.Present else currentPhase,
+                reason = "Evidence uncertain; no event; unconfirmed absence grace cancelled"
+            )
+        }
 
         if (policy.wifiRequired == null || policy.bleRequired == null) {
             return AttendanceEngineDecision.Blocked(
@@ -578,7 +588,7 @@ object AttendancePresenceDecisionEngine {
                         AttendanceEventType.BREAK_START,
 
                     eventElapsedRealtimeMs =
-                        presence.capturedAtElapsedRealtimeMs,
+                        currentPhase.absenceStartedElapsedRealtimeMs,
 
                     nextPhase =
                         AttendanceEnginePhase
