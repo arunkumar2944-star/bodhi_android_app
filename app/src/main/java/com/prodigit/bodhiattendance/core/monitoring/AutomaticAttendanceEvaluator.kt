@@ -74,6 +74,8 @@ class AutomaticAttendanceEvaluator(context: Context) {
             offices.filter { it.geofenceRadiusMeters > 0 && distance(it) <= it.geofenceRadiusMeters }
                 .singleOrNull()
         if (office == null) {
+            // Retain uncertainty for review, never invent office presence.
+            journal.record(location, null, false, "UNCERTAIN")
             Log.i(tag, "Evaluation paused: no unambiguous CRM office; absence is not inferred")
             return@withLock
         }
