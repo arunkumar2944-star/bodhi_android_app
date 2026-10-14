@@ -37,6 +37,7 @@ class AttendancePresenceService : Service() {
     private val tag = "ATTENDANCE_MONITOR"
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Main.immediate)
     private val evaluator by lazy { AutomaticAttendanceEvaluator(applicationContext) }
+    private val evidenceJournal by lazy { PresenceEvidenceJournal(applicationContext) }
     private val tokens by lazy { AndroidTokenManager(applicationContext) }
     private val fused by lazy { LocationServices.getFusedLocationProviderClient(this) }
     private val fences by lazy { LocationServices.getGeofencingClient(this) }
@@ -129,7 +130,10 @@ class AttendancePresenceService : Service() {
                 if (refinedLocation != null) {
                     val bssid = readBssid()
                     AttendanceMonitorStatus.observation(refinedLocation.latitude, refinedLocation.longitude, refinedLocation.accuracy, bssid)
-                    if (!calibrating) evaluator.observe(refinedLocation, bssid, wifiDisconnected = isWifiDisconnected())
+                    if (!calibrating) {
+                        evaluator.observe(refinedLocation, bssid, wifiDisconnected = isWifiDisconnected())
+                        uploadEvidenceSafely()
+                    }
                 } else Log.w(tag, "No fresh GPS fix; attendance remains unknown")
                 val gpsNeedsRetry = refinedLocation == null || evaluator.needsBetterGps
                 val due = if (refinedLocation != null) evaluator.nextVerificationElapsedMs else null
@@ -210,6 +214,32 @@ class AttendancePresenceService : Service() {
         }
         Log.i(tag, "Fused fix refinement: initial=${initial.accuracy}m, best=${best.accuracy}m")
         return best
+    }
+
+    private suspend fun uploadEvidenceSafely() {
+        // An audit-only upload. Failure never blocks normal attendance processing.
+        val token = tokens.usableAccessToken() ?: return
+        val deviceId = com.prodigit.bodhiattendance.core.device.DeviceIdManager(applicationContext)
+            .getDeviceId() ?: return
+        val pending = evidenceJournal.pending()
+        if (pending.isEmpty()) return
+        try {
+            val batch = com.prodigit.bodhiattendance.data.remote.PresenceEvidenceBatch(
+                deviceId,
+                pending.map {
+                    com.prodigit.bodhiattendance.data.remote.PresenceEvidenceItem(
+                        it.id, it.officeId, it.elapsedMs, it.latitude, it.longitude,
+                        it.accuracyMeters, it.wifiMatched, it.classification
+                    )
+                }
+            )
+            val response = com.prodigit.bodhiattendance.core.network.RetrofitClient
+                .presenceEvidenceApi.upload("Bearer $token", batch)
+            if (response.isSuccessful && response.body()?.success == true) {
+                evidenceJournal.markUploaded(response.body()?.accepted.orEmpty())
+            }
+        } catch (e: CancellationException) { throw e }
+        catch (e: Exception) { Log.w(tag, "Evidence upload deferred; retained for next verification", e) }
     }
 
     private suspend fun refreshGeofences() {
