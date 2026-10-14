@@ -92,7 +92,11 @@ class AutomaticAttendanceEvaluator(context: Context) {
                 accuracyMeters = location.accuracy.toDouble(), capturedAtElapsedRealtimeMs = location.elapsedRealtimeNanos / 1_000_000L,
                 observationUncertain = true)
             provider.runtimeSession.evaluate(token, session.getUserId(), session.getCompanyId(), deviceId, evidence, policy)
-            journal.record(location, office.id, false, "UNCERTAIN")
+            val reportedWifiMatch = bssid?.takeIf {
+                it.matches(Regex("(?i)([0-9a-f]{2}:){5}[0-9a-f]{2}")) &&
+                    it != "02:00:00:00:00:00" && it != "00:00:00:00:00:00"
+            }?.let { found -> office.wifiAccessPoints.any { it.bssid.equals(found, true) } } ?: false
+            journal.record(location, office.id, reportedWifiMatch, "UNCERTAIN")
             Log.i(tag, "Evidence uncertain: $reason; no attendance event")
         }
         val accuracyLimit = office.maxAccuracyMeters
