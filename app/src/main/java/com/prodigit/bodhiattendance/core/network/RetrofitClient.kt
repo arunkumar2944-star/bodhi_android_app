@@ -69,6 +69,8 @@ object RetrofitClient {
     // ATTENDANCE API
     // ============================================================
 
+    val presenceEvidenceApi by lazy { retrofit.create(com.prodigit.bodhiattendance.data.remote.PresenceEvidenceApi::class.java) }
+
     val attendanceApi: AttendanceApiService by lazy {
         retrofit.create(AttendanceApiService::class.java)
     }
