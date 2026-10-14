@@ -5,6 +5,7 @@ import android.app.NotificationChannel
 import android.app.NotificationManager
 import android.app.PendingIntent
 import android.app.Service
+import android.location.Location
 import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
@@ -27,6 +28,7 @@ import com.prodigit.bodhiattendance.core.network.RetrofitClient
 import com.prodigit.bodhiattendance.core.session.AndroidTokenManager
 import com.prodigit.bodhiattendance.data.repository.AttendanceConfigRepositoryImpl
 import kotlinx.coroutines.*
+import kotlinx.coroutines.channels.Channel
 import kotlin.coroutines.resume
 import kotlin.coroutines.resumeWithException
 
@@ -116,15 +118,21 @@ class AttendancePresenceService : Service() {
                             .setMaxUpdateAgeMillis(0L).setDurationMillis(30_000L).build(), source.token).awaitResult()
                     }
                 } finally { source.cancel() }
+                // A one-shot fix may be inaccurate indoors. If so, briefly sample
+                // additional Fused Location fixes; CRM accuracy policy remains authoritative.
+                val refinedLocation = if (location != null && location.hasAccuracy() &&
+                    location.accuracy > REFINE_ABOVE_METERS) {
+                    improvePoorFix(location)
+                } else location
                 val calibrating = HomeLocationCalibration.requested
-                if (calibrating) HomeLocationCalibration.record(location, readBssid())
-                if (location != null) {
+                if (calibrating) HomeLocationCalibration.record(refinedLocation, readBssid())
+                if (refinedLocation != null) {
                     val bssid = readBssid()
-                    AttendanceMonitorStatus.observation(location.latitude, location.longitude, location.accuracy, bssid)
-                    if (!calibrating) evaluator.observe(location, bssid, wifiDisconnected = isWifiDisconnected())
+                    AttendanceMonitorStatus.observation(refinedLocation.latitude, refinedLocation.longitude, refinedLocation.accuracy, bssid)
+                    if (!calibrating) evaluator.observe(refinedLocation, bssid, wifiDisconnected = isWifiDisconnected())
                 } else Log.w(tag, "No fresh GPS fix; attendance remains unknown")
-                val gpsNeedsRetry = location == null || evaluator.needsBetterGps
-                val due = if (location != null) evaluator.nextVerificationElapsedMs else null
+                val gpsNeedsRetry = refinedLocation == null || evaluator.needsBetterGps
+                val due = if (refinedLocation != null) evaluator.nextVerificationElapsedMs else null
                 waitMs = if (evaluator.needsContinuityChecks) {
                     gpsRetries = 0
                     45_000L
@@ -155,6 +163,53 @@ class AttendancePresenceService : Service() {
             // Coalesce callbacks generated during a fix and bound rapid Wi-Fi flapping.
             delay(MIN_RETRY_MS)
         }
+    }
+
+    /**
+     * Only refine a poor one-shot fused fix. This does not lower office accuracy
+     * requirements or turn uncertainty into absence. The callback is always removed
+     * when the bounded observation finishes or is cancelled.
+     */
+    private suspend fun improvePoorFix(initial: Location): Location {
+        val fixes = Channel<Location>(Channel.CONFLATED)
+        val callback = object : LocationCallback() {
+            override fun onLocationResult(result: LocationResult) {
+                result.locations.forEach { fixes.trySend(it) }
+            }
+        }
+        val request = LocationRequest.Builder(Priority.PRIORITY_HIGH_ACCURACY, 1000L)
+            .setMinUpdateIntervalMillis(750L)
+            .setMaxUpdateDelayMillis(0L)
+            .build()
+        var subscribed = false
+        var best = initial
+        try {
+            fused.requestLocationUpdates(request, callback, mainLooper).awaitResult()
+            subscribed = true
+            withTimeoutOrNull(REFINE_WINDOW_MS) {
+                while (currentCoroutineContext().isActive) {
+                    val fix = fixes.receive()
+                    @Suppress("DEPRECATION")
+                    val mocked = fix.isFromMockProvider
+                    val age = SystemClock.elapsedRealtimeNanos() - fix.elapsedRealtimeNanos
+                    if (!mocked && fix.hasAccuracy() && fix.accuracy.isFinite() &&
+                        fix.accuracy >= 0f && age in 0L..15_000_000_000L &&
+                        (!best.hasAccuracy() || fix.accuracy < best.accuracy)) {
+                        best = fix
+                    }
+                    if (best.hasAccuracy() && best.accuracy <= REFINE_TARGET_METERS) break
+                }
+            }
+        } catch (e: CancellationException) {
+            throw e
+        } catch (e: Exception) {
+            Log.w(tag, "Short fused-location refinement unavailable; retaining original fix", e)
+        } finally {
+            if (subscribed) fused.removeLocationUpdates(callback)
+            fixes.close()
+        }
+        Log.i(tag, "Fused fix refinement: initial=${initial.accuracy}m, best=${best.accuracy}m")
+        return best
     }
 
     private suspend fun refreshGeofences() {
@@ -215,6 +270,9 @@ class AttendancePresenceService : Service() {
         private const val RECOVERY_MS = 5 * 60_000L
         private const val MIN_RETRY_MS = 15_000L
         private const val GPS_RETRY_MS = 30_000L
+        private const val REFINE_ABOVE_METERS = 20f
+        private const val REFINE_TARGET_METERS = 10f
+        private const val REFINE_WINDOW_MS = 12_000L
         private const val MAX_GPS_RETRIES = 3
         fun start(context: Context): Boolean {
             if (ContextCompat.checkSelfPermission(context, Manifest.permission.ACCESS_FINE_LOCATION) !=
