@@ -485,7 +485,8 @@ class OnboardingViewModel(
                             response.success &&
                             acceptedStatus &&
                             sameDevice &&
-                            activeDevice
+                            activeDevice &&
+                            registeredDevice?.userId == sessionManager.getUserId()
                         ) {
 
 
