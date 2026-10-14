@@ -413,6 +413,13 @@ class StartupViewModel(
                     }
 
 
+                    // Reject a valid UUID returned for a different account.
+                    if (device.userId != sessionManager.getUserId()) {
+                        Log.e("STARTUP_DEBUG", "Device registration user mismatch")
+                        _destination.value = StartupDestination.DEVICE_BLOCKED
+                        return@onSuccess
+                    }
+
                     // =============================================
                     // DEVICE ACTIVE
                     // =============================================
