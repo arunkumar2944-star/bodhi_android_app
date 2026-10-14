@@ -21,8 +21,11 @@ class AutomaticAttendanceEvaluator(context: Context) {
     private val configuration = AttendanceConfigRepositoryImpl(RetrofitClient.attendanceApi)
     private val mutex = Mutex()
     private var boundOfficeId: Long? = null
+    var nextVerificationElapsedMs: Long? = null
+        private set
 
     suspend fun observe(location: Location, bssid: String?) = mutex.withLock {
+        nextVerificationElapsedMs = null
         val tag = "ATTENDANCE_ENGINE"
         @Suppress("DEPRECATION")
         if (location.isFromMockProvider || !location.hasAccuracy() ||
@@ -76,7 +79,7 @@ class AutomaticAttendanceEvaluator(context: Context) {
         }
         val readableBssid = bssid?.takeIf { it.matches(Regex("(?i)([0-9a-f]{2}:){5}[0-9a-f]{2}")) &&
             it != "02:00:00:00:00:00" && it != "00:00:00:00:00:00" }
-        if (policy.wifiRequired == true && readableBssid == null) {
+        if (policy.wifiRequired == true && readableBssid == null && distance(office) <= office.geofenceRadiusMeters) {
             Log.i(tag, "Evaluation paused: Wi-Fi evidence unavailable; absence is not inferred")
             return@withLock
         }
@@ -95,6 +98,12 @@ class AutomaticAttendanceEvaluator(context: Context) {
         )
         val result = provider.runtimeSession.evaluate(token, session.getUserId(), session.getCompanyId(),
             deviceId, evidence, policy)
+        val phase = provider.runtimeSession.getSnapshot().phase
+        nextVerificationElapsedMs = when (phase) {
+            is AttendanceEnginePhase.AbsenceGrace -> phase.absenceStartedElapsedRealtimeMs + policy.gracePeriodMs
+            is AttendanceEnginePhase.BreakActive -> phase.absenceStartedElapsedRealtimeMs + policy.maximumAbsenceMs
+            else -> null
+        }
         Log.i(tag, "CRM officeId=${office.id}; evaluation=$result")
     }
 }

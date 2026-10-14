@@ -1,147 +1,202 @@
 package com.prodigit.bodhiattendance.core.monitoring
 
 import android.Manifest
-import android.app.Notification
 import android.app.NotificationChannel
 import android.app.NotificationManager
+import android.app.PendingIntent
 import android.app.Service
 import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.content.pm.ServiceInfo
-import android.location.Location
-import android.location.LocationListener
-import android.location.LocationManager
+import android.net.ConnectivityManager
+import android.net.Network
+import android.net.NetworkCapabilities
+import android.net.NetworkRequest
 import android.net.wifi.WifiManager
 import android.os.Build
 import android.os.IBinder
-import android.os.Looper
 import android.os.SystemClock
-import com.prodigit.bodhiattendance.core.session.AndroidTokenManager
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.SupervisorJob
-import kotlinx.coroutines.cancel
-import kotlinx.coroutines.launch
 import android.util.Log
 import androidx.core.app.NotificationCompat
 import androidx.core.content.ContextCompat
+import com.google.android.gms.location.*
+import com.google.android.gms.tasks.CancellationTokenSource
+import com.google.android.gms.tasks.Task
+import com.prodigit.bodhiattendance.core.network.RetrofitClient
+import com.prodigit.bodhiattendance.core.session.AndroidTokenManager
+import com.prodigit.bodhiattendance.data.repository.AttendanceConfigRepositoryImpl
+import kotlinx.coroutines.*
+import kotlin.coroutines.resume
+import kotlin.coroutines.resumeWithException
 
-/**
- * GPS / connected Wi-Fi observation and CRM-policy attendance evaluation.
- *
- * The validated runtime owns Room-first events and server submission.
- */
-class AttendancePresenceService : Service(), LocationListener {
+/** Wi-Fi/geofence triggers plus bounded fixes. No continuous GPS subscription. */
+class AttendancePresenceService : Service() {
     private val tag = "ATTENDANCE_MONITOR"
-    private lateinit var locationManager: LocationManager
-    private val automaticEvaluator by lazy { AutomaticAttendanceEvaluator(applicationContext) }
-    private var subscribed = false
-    private val tokenManager by lazy { AndroidTokenManager(applicationContext) }
-    private val monitorScope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
-    private var lastConfigCheckElapsedMs = -60000L
+    private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Main.immediate)
+    private val evaluator by lazy { AutomaticAttendanceEvaluator(applicationContext) }
+    private val tokens by lazy { AndroidTokenManager(applicationContext) }
+    private val fused by lazy { LocationServices.getFusedLocationProviderClient(this) }
+    private val fences by lazy { LocationServices.getGeofencingClient(this) }
+    private val connectivity by lazy { getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager }
+    private var worker: Job? = null
+    private var registered = false
+    private var lastWifiSignature: String? = null
+    private var fenceSignature: String? = null
+    private val fenceIntent by lazy {
+        val flags = PendingIntent.FLAG_UPDATE_CURRENT or
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) PendingIntent.FLAG_MUTABLE else 0
+        PendingIntent.getBroadcast(this, 2402, Intent(this, OfficeGeofenceReceiver::class.java), flags)
+    }
+    private val callback = object : ConnectivityManager.NetworkCallback() {
+        override fun onAvailable(network: Network) = signalWifi("Wi-Fi available")
+        override fun onLost(network: Network) = signalWifi("Wi-Fi lost")
+        override fun onCapabilitiesChanged(network: Network, caps: NetworkCapabilities) {
+            val signature = network.toString() + ":" + readBssid()
+            if (signature != lastWifiSignature) {
+                lastWifiSignature = signature
+                signalWifi("Wi-Fi capabilities/BSSID changed")
+            }
+        }
+    }
+    private fun signalWifi(reason: String) = AttendanceVerificationSignals.request(reason)
 
     override fun onCreate() {
         super.onCreate()
-        locationManager = getSystemService(Context.LOCATION_SERVICE) as LocationManager
-        val manager = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
-        manager.createNotificationChannel(
-            NotificationChannel(CHANNEL_ID, "Automatic attendance monitoring", NotificationManager.IMPORTANCE_LOW)
-        )
+        (getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager).createNotificationChannel(
+            NotificationChannel(CHANNEL_ID, "Automatic attendance monitoring", NotificationManager.IMPORTANCE_LOW))
     }
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
-        if (!hasLocationPermission()) {
-            Log.w(tag, "Location permission missing; monitoring not started")
-            stopSelf()
-            return START_NOT_STICKY
-        }
-        val notification: Notification = NotificationCompat.Builder(this, CHANNEL_ID)
-            .setSmallIcon(com.prodigit.bodhiattendance.R.mipmap.ic_launcher)
-            .setContentTitle("Bodhi attendance")
-            .setContentText("Monitoring office presence")
-            .setOngoing(true)
-            .build()
+        if (!hasFineLocation()) { stopSelf(); return START_NOT_STICKY }
         try {
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+            val notification = NotificationCompat.Builder(this, CHANNEL_ID)
+                .setSmallIcon(com.prodigit.bodhiattendance.R.mipmap.ic_launcher)
+                .setContentTitle("Bodhi attendance")
+                .setContentText("Monitoring office changes with battery-aware verification")
+                .setOngoing(true).build()
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q)
                 startForeground(NOTIFICATION_ID, notification, ServiceInfo.FOREGROUND_SERVICE_TYPE_LOCATION)
-            } else {
-                startForeground(NOTIFICATION_ID, notification)
+            else startForeground(NOTIFICATION_ID, notification)
+            if (!registered) {
+                connectivity.registerNetworkCallback(NetworkRequest.Builder()
+                    .addTransportType(NetworkCapabilities.TRANSPORT_WIFI).build(), callback)
+                registered = true
             }
-            if (!subscribed) {
-                locationManager.requestLocationUpdates(
-                    LocationManager.GPS_PROVIDER, 15000L, 3f, this, Looper.getMainLooper()
-                )
-                subscribed = true
+            if (worker?.isActive != true) {
                 AttendanceMonitorStatus.running()
-                Log.i(tag, "GPS observer registered; awaiting CRM-policy attendance evaluation")
+                worker = scope.launch { verificationLoop() }
+                signalWifi("startup")
+                Log.i(tag, "Wi-Fi callbacks enabled; GPS runs only for bounded verification")
             }
-        } catch (e: SecurityException) {
-            Log.e(tag, "Location foreground service permission denied", e)
-            stopSelf()
-            return START_NOT_STICKY
         } catch (e: RuntimeException) {
-            Log.e(tag, "Unable to start location foreground monitoring", e)
-            stopSelf()
-            return START_NOT_STICKY
+            Log.e(tag, "Monitoring start blocked", e)
+            stopSelf(); return START_NOT_STICKY
         }
         return START_STICKY
     }
 
-    override fun onLocationChanged(location: Location) {
-        @Suppress("DEPRECATION")
-        val wifiManager = applicationContext.getSystemService(Context.WIFI_SERVICE) as WifiManager
-        @Suppress("DEPRECATION")
-        val wifi = wifiManager.connectionInfo
-        AttendanceMonitorStatus.observation(location.latitude, location.longitude, location.accuracy, wifi?.bssid)
-        val elapsed = SystemClock.elapsedRealtime()
-        if (elapsed - lastConfigCheckElapsedMs >= 60000L) {
-            lastConfigCheckElapsedMs = elapsed
-            monitorScope.launch {
-                val token = tokenManager.usableAccessToken()
-                if (!token.isNullOrBlank()) {
-                    automaticEvaluator.observe(Location(location), wifi?.bssid)
-                } else {
-                    Log.w(tag, "Authenticated office preflight paused; refresh unavailable")
-                }
+    private suspend fun verificationLoop() {
+        var waitMs = RECOVERY_MS
+        while (currentCoroutineContext().isActive) {
+            val reason = withTimeoutOrNull(waitMs) { AttendanceVerificationSignals.triggers.receive() }
+                ?: "recovery/policy deadline"
+            try {
+                Log.i(tag, "Verification burst: " + reason)
+                // Register/update CRM geofences without selecting local attendance policy.
+                try { withTimeoutOrNull(10_000L) { refreshGeofences() } }
+                catch (e: CancellationException) { throw e }
+                catch (e: Exception) { Log.w(tag, "Geofencing unavailable; using bounded recovery verification", e) }
+                val source = CancellationTokenSource()
+                val location = try {
+                    withTimeoutOrNull(35_000L) {
+                        fused.getCurrentLocation(CurrentLocationRequest.Builder()
+                            .setPriority(Priority.PRIORITY_HIGH_ACCURACY)
+                            .setMaxUpdateAgeMillis(0L).setDurationMillis(30_000L).build(), source.token).awaitResult()
+                    }
+                } finally { source.cancel() }
+                if (location != null) {
+                    val bssid = readBssid()
+                    AttendanceMonitorStatus.observation(location.latitude, location.longitude, location.accuracy, bssid)
+                    evaluator.observe(location, bssid)
+                } else Log.w(tag, "No fresh GPS fix; attendance remains unknown")
+                val due = if (location != null) evaluator.nextVerificationElapsedMs else null
+                waitMs = due?.let { (it - SystemClock.elapsedRealtime()).coerceIn(MIN_RETRY_MS, RECOVERY_MS) }
+                    ?: RECOVERY_MS
+            } catch (e: CancellationException) { throw e }
+            catch (e: Exception) {
+                Log.w(tag, "Verification unavailable; no absence inferred", e)
+                waitMs = RECOVERY_MS
             }
+            // Coalesce callbacks generated during a fix and bound rapid Wi-Fi flapping.
+            delay(MIN_RETRY_MS)
         }
-        Log.d(tag, "GPS fix: lat=${location.latitude}, lon=${location.longitude}, accuracy=${location.accuracy}m; connectedBssid=${wifi?.bssid ?: "unavailable"}")
-        // AutomaticAttendanceEvaluator validates policy before runtime evaluation.
     }
 
-    private fun hasLocationPermission(): Boolean =
-        ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) ==
-            PackageManager.PERMISSION_GRANTED
+    private suspend fun refreshGeofences() {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q && ContextCompat.checkSelfPermission(this,
+                Manifest.permission.ACCESS_BACKGROUND_LOCATION) != PackageManager.PERMISSION_GRANTED) {
+            Log.w(tag, "Background location missing; geofence alerts unavailable, recovery checks remain")
+            return
+        }
+        val token = tokens.usableAccessToken() ?: return
+        val offices = AttendanceConfigRepositoryImpl(RetrofitClient.attendanceApi)
+            .getActiveAttendanceConfig(token).getOrThrow().filter {
+                it.latitude.isFinite() && it.latitude in -90.0..90.0 &&
+                it.longitude.isFinite() && it.longitude in -180.0..180.0 &&
+                it.geofenceRadiusMeters.isFinite() && it.geofenceRadiusMeters > 0
+            }.take(100)
+        val signature = offices.joinToString { "" + it.id + ":" + it.latitude + ":" + it.longitude + ":" + it.geofenceRadiusMeters }
+        if (signature == fenceSignature) return
+        fences.removeGeofences(fenceIntent).awaitResult()
+        if (offices.isNotEmpty()) {
+            val request = GeofencingRequest.Builder().setInitialTrigger(GeofencingRequest.INITIAL_TRIGGER_ENTER)
+                .addGeofences(offices.map { Geofence.Builder().setRequestId(it.id.toString())
+                    .setCircularRegion(it.latitude, it.longitude, it.geofenceRadiusMeters.toFloat())
+                    .setExpirationDuration(Geofence.NEVER_EXPIRE)
+                    .setTransitionTypes(Geofence.GEOFENCE_TRANSITION_ENTER or Geofence.GEOFENCE_TRANSITION_EXIT)
+                    .setNotificationResponsiveness(120_000).build() }).build()
+            fences.addGeofences(request, fenceIntent).awaitResult()
+        }
+        fenceSignature = signature
+        Log.i(tag, "Registered CRM geofences=" + offices.size)
+    }
+
+    @Suppress("DEPRECATION")
+    private fun readBssid(): String? = try {
+        (applicationContext.getSystemService(Context.WIFI_SERVICE) as WifiManager).connectionInfo?.bssid
+    } catch (_: SecurityException) { null }
+
+    private fun hasFineLocation() = ContextCompat.checkSelfPermission(this,
+        Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED
 
     override fun onDestroy() {
-        if (subscribed) locationManager.removeUpdates(this)
-        subscribed = false
+        if (registered) connectivity.unregisterNetworkCallback(callback)
+        scope.cancel()
+        fences.removeGeofences(fenceIntent).addOnFailureListener { Log.w(tag, "Geofence cleanup failed", it) }
         AttendanceMonitorStatus.stopped()
-        monitorScope.cancel()
         super.onDestroy()
     }
-
     override fun onBind(intent: Intent?): IBinder? = null
 
     companion object {
         private const val CHANNEL_ID = "attendance_presence"
         private const val NOTIFICATION_ID = 2401
+        private const val RECOVERY_MS = 5 * 60_000L
+        private const val MIN_RETRY_MS = 15_000L
         fun start(context: Context): Boolean {
             if (ContextCompat.checkSelfPermission(context, Manifest.permission.ACCESS_FINE_LOCATION) !=
-                PackageManager.PERMISSION_GRANTED) {
-                Log.w("ATTENDANCE_MONITOR", "Cannot start; fine location permission missing")
-                return false
-            }
-            try {
-                ContextCompat.startForegroundService(
-                    context, Intent(context, AttendancePresenceService::class.java)
-                )
-                return true
-            } catch (e: RuntimeException) {
-                Log.e("ATTENDANCE_MONITOR", "Foreground monitoring start blocked", e)
-                return false
-            }
+                PackageManager.PERMISSION_GRANTED) return false
+            return try {
+                ContextCompat.startForegroundService(context, Intent(context, AttendancePresenceService::class.java))
+                true
+            } catch (e: RuntimeException) { Log.e("ATTENDANCE_MONITOR", "Monitoring start blocked", e); false }
         }
     }
+}
+
+private suspend fun <T> Task<T>.awaitResult(): T = suspendCancellableCoroutine { continuation ->
+    addOnSuccessListener { if (continuation.isActive) continuation.resume(it) }
+    addOnFailureListener { if (continuation.isActive) continuation.resumeWithException(it) }
+    addOnCanceledListener { continuation.cancel() }
 }

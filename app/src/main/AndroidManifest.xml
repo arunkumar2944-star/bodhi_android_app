@@ -99,6 +99,7 @@
             android:exported="false"
             android:foregroundServiceType="location" />
 
+        <receiver android:name=".core.monitoring.OfficeGeofenceReceiver" android:exported="false" />
     </application>
 
 </manifest>
