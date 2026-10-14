@@ -14,6 +14,7 @@ import kotlinx.coroutines.sync.withLock
 
 /** Evaluates fresh evidence only; unknown sensors/configuration never mean absence. */
 class AutomaticAttendanceEvaluator(context: Context) {
+    private val journal = PresenceEvidenceJournal(context.applicationContext)
     private val session = SessionManager(context.applicationContext)
     private val tokens = com.prodigit.bodhiattendance.core.session.AndroidTokenManager(context)
     private val devices = DeviceIdManager(context.applicationContext)
@@ -89,6 +90,7 @@ class AutomaticAttendanceEvaluator(context: Context) {
                 accuracyMeters = location.accuracy.toDouble(), capturedAtElapsedRealtimeMs = location.elapsedRealtimeNanos / 1_000_000L,
                 observationUncertain = true)
             provider.runtimeSession.evaluate(token, session.getUserId(), session.getCompanyId(), deviceId, evidence, policy)
+            journal.record(location, office.id, false, "UNCERTAIN")
             Log.i(tag, "Evidence uncertain: $reason; no attendance event")
         }
         val accuracyLimit = office.maxAccuracyMeters
@@ -152,6 +154,7 @@ class AutomaticAttendanceEvaluator(context: Context) {
             wifiVerified = wifiVerified, wifiBssid = readableBssid,
             capturedAtElapsedRealtimeMs = location.elapsedRealtimeNanos / 1_000_000L
         )
+        journal.record(location, office.id, wifiVerified, if (inside) "PRESENT" else "ABSENT_CANDIDATE")
         val result = provider.runtimeSession.evaluate(token, session.getUserId(), session.getCompanyId(),
             deviceId, evidence, policy)
         val phase = provider.runtimeSession.getSnapshot().phase
