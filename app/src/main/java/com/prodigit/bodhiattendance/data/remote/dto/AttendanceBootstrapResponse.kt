@@ -67,6 +67,8 @@ data class AttendanceBootstrapData(
 
     val latestEventType: String?,
 
+    val lastEvent: AttendanceBootstrapLastEvent? = null,
+
 
     // --------------------------------------------------------
     // Current/most recent attendance summary ID
@@ -99,3 +101,5 @@ data class AttendanceBootstrapData(
 
     val serverTime: String? = null
 )
+
+data class AttendanceBootstrapLastEvent(val eventType: String? = null)

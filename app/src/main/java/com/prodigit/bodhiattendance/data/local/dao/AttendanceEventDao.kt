@@ -417,6 +417,7 @@ interface AttendanceEventDao {
     FROM attendance_events
     WHERE userId = :userId
       AND deviceId = :deviceId
+      AND syncStatus <> 'REJECTED'
     ORDER BY localId DESC
     LIMIT 1
     """

@@ -226,7 +226,7 @@ class AttendanceBootstrapRepositoryImpl(
             val latestEventType =
                 parseAttendanceEventType(
                     value =
-                        data.latestEventType
+                        data.latestEventType ?: data.lastEvent?.eventType
                 )
 
 
