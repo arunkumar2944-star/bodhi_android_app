@@ -26,6 +26,7 @@ class MainActivity : ComponentActivity() {
         installSplashScreen()
 
         super.onCreate(savedInstanceState)
+        handleCalibrationIntent(intent)
 
         // =====================================================
         // APP UI
@@ -40,6 +41,18 @@ class MainActivity : ComponentActivity() {
                     AppNavigation()
                 }
             }
+        }
+    }
+    override fun onNewIntent(intent: android.content.Intent) {
+        super.onNewIntent(intent)
+        setIntent(intent)
+        handleCalibrationIntent(intent)
+    }
+
+    private fun handleCalibrationIntent(intent: android.content.Intent?) {
+        if (BuildConfig.DEBUG && intent?.getBooleanExtra("home_calibration", false) == true) {
+            intent.removeExtra("home_calibration")
+            com.prodigit.bodhiattendance.core.monitoring.HomeLocationCalibration.start(applicationContext)
         }
     }
 }

@@ -116,10 +116,12 @@ class AttendancePresenceService : Service() {
                             .setMaxUpdateAgeMillis(0L).setDurationMillis(30_000L).build(), source.token).awaitResult()
                     }
                 } finally { source.cancel() }
+                val calibrating = HomeLocationCalibration.requested
+                if (calibrating) HomeLocationCalibration.record(location, readBssid())
                 if (location != null) {
                     val bssid = readBssid()
                     AttendanceMonitorStatus.observation(location.latitude, location.longitude, location.accuracy, bssid)
-                    evaluator.observe(location, bssid)
+                    if (!calibrating) evaluator.observe(location, bssid)
                 } else Log.w(tag, "No fresh GPS fix; attendance remains unknown")
                 val gpsNeedsRetry = location == null || evaluator.needsBetterGps
                 val due = if (location != null) evaluator.nextVerificationElapsedMs else null
@@ -137,6 +139,15 @@ class AttendancePresenceService : Service() {
             catch (e: Exception) {
                 Log.w(tag, "Verification unavailable; no absence inferred", e)
                 waitMs = RECOVERY_MS
+            }
+            if (HomeLocationCalibration.requested) {
+                if (HomeLocationCalibration.active) {
+                    // Roughly one minute between bounded survey fixes.
+                    waitMs = 45_000L
+                } else {
+                    HomeLocationCalibration.finish()
+                    waitMs = MIN_RETRY_MS
+                }
             }
             // Coalesce callbacks generated during a fix and bound rapid Wi-Fi flapping.
             delay(MIN_RETRY_MS)
