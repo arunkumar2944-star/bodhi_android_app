@@ -98,6 +98,7 @@ class AttendancePresenceService : Service() {
 
     private suspend fun verificationLoop() {
         var waitMs = RECOVERY_MS
+        var gpsRetries = 0
         while (currentCoroutineContext().isActive) {
             val reason = withTimeoutOrNull(waitMs) { AttendanceVerificationSignals.triggers.receive() }
                 ?: "recovery/policy deadline"
@@ -120,9 +121,18 @@ class AttendancePresenceService : Service() {
                     AttendanceMonitorStatus.observation(location.latitude, location.longitude, location.accuracy, bssid)
                     evaluator.observe(location, bssid)
                 } else Log.w(tag, "No fresh GPS fix; attendance remains unknown")
+                val gpsNeedsRetry = location == null || evaluator.needsBetterGps
                 val due = if (location != null) evaluator.nextVerificationElapsedMs else null
-                waitMs = due?.let { (it - SystemClock.elapsedRealtime()).coerceIn(MIN_RETRY_MS, RECOVERY_MS) }
-                    ?: RECOVERY_MS
+                waitMs = if (gpsNeedsRetry && gpsRetries < MAX_GPS_RETRIES) {
+                    gpsRetries++
+                    Log.i(tag, "Automatic GPS retry " + gpsRetries + "/" + MAX_GPS_RETRIES)
+                    GPS_RETRY_MS
+                } else {
+                    if (gpsNeedsRetry) Log.w(tag, "GPS retry budget reached; waiting for recovery or sensor trigger")
+                    gpsRetries = 0
+                    due?.let { (it - SystemClock.elapsedRealtime()).coerceIn(MIN_RETRY_MS, RECOVERY_MS) }
+                        ?: RECOVERY_MS
+                }
             } catch (e: CancellationException) { throw e }
             catch (e: Exception) {
                 Log.w(tag, "Verification unavailable; no absence inferred", e)
@@ -184,6 +194,8 @@ class AttendancePresenceService : Service() {
         private const val NOTIFICATION_ID = 2401
         private const val RECOVERY_MS = 5 * 60_000L
         private const val MIN_RETRY_MS = 15_000L
+        private const val GPS_RETRY_MS = 30_000L
+        private const val MAX_GPS_RETRIES = 3
         fun start(context: Context): Boolean {
             if (ContextCompat.checkSelfPermission(context, Manifest.permission.ACCESS_FINE_LOCATION) !=
                 PackageManager.PERMISSION_GRANTED) return false

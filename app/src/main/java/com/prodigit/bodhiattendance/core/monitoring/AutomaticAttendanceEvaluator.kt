@@ -21,10 +21,13 @@ class AutomaticAttendanceEvaluator(context: Context) {
     private val configuration = AttendanceConfigRepositoryImpl(RetrofitClient.attendanceApi)
     private val mutex = Mutex()
     private var boundOfficeId: Long? = null
+    var needsBetterGps: Boolean = false
+        private set
     var nextVerificationElapsedMs: Long? = null
         private set
 
     suspend fun observe(location: Location, bssid: String?) = mutex.withLock {
+        needsBetterGps = false
         nextVerificationElapsedMs = null
         val tag = "ATTENDANCE_ENGINE"
         @Suppress("DEPRECATION")
@@ -66,7 +69,10 @@ class AutomaticAttendanceEvaluator(context: Context) {
         val accuracyLimit = office.maxAccuracyMeters
         if (accuracyLimit == null || !accuracyLimit.isFinite() || accuracyLimit <= 0 ||
             location.accuracy > accuracyLimit || !office.geofenceRadiusMeters.isFinite() || office.geofenceRadiusMeters <= 0) {
-            Log.i(tag, "Evaluation paused: GPS accuracy does not satisfy CRM policy")
+            needsBetterGps = accuracyLimit != null && accuracyLimit.isFinite() && accuracyLimit > 0 &&
+                location.accuracy > accuracyLimit
+            Log.i(tag, "Evaluation paused: GPS accuracy=" + location.accuracy +
+                "m, CRM limit=" + accuracyLimit + "m; automatic retry=" + needsBetterGps)
             return@withLock
         }
         val policy = office.toEnginePolicy().getOrElse {
