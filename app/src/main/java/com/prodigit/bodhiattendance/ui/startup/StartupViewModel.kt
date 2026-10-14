@@ -15,6 +15,7 @@ import com.prodigit.bodhiattendance.core.network.RetrofitClient
 import com.prodigit.bodhiattendance.core.session.SessionManager
 import com.prodigit.bodhiattendance.core.session.AndroidTokenManager
 
+import com.prodigit.bodhiattendance.data.local.repository.RegisteredDeviceStore
 import com.prodigit.bodhiattendance.data.repository.DeviceRepositoryImpl
 
 import com.prodigit.bodhiattendance.domain.attendance.AttendanceEngineBootstrapResult
@@ -63,6 +64,8 @@ class StartupViewModel(
     // ============================================================
     // DEVICE REPOSITORY
     // ============================================================
+
+    private val registeredDeviceStore = RegisteredDeviceStore(appContext)
 
     private val deviceRepository =
         DeviceRepositoryImpl(
@@ -278,6 +281,7 @@ class StartupViewModel(
         // STEP 3 — INSTALLATION DEVICE ID
         // ========================================================
 
+        registeredDeviceStore.restoreForUser(sessionManager.getUserId())
         val deviceId =
             deviceIdManager
                 .getOrCreateDeviceId()
@@ -506,6 +510,15 @@ class StartupViewModel(
                         return@onSuccess
                     }
 
+
+                    // Cache only CRM-confirmed registration data.
+                    registeredDeviceStore.saveVerified(
+                        userId = userId,
+                        registrationId = device.id,
+                        deviceId = deviceId,
+                        companyId = device.companyId,
+                        onboarded = device.isOnboarded
+                    )
 
                     // Provision a rotating refresh credential after the
                     // backend has confirmed this registered device.
