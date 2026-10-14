@@ -1,4 +1,4 @@
-
+import java.net.URI
 plugins {
 
     alias(libs.plugins.android.application)
@@ -12,7 +12,7 @@ plugins {
 
 // Pass the hosted testing API explicitly; never silently test against live CRM.
 val hostedApiUrl = providers.gradleProperty("bodhiApiBaseUrl").orNull?.trim()?.let { value ->
-    val uri = java.net.URI(value)
+    val uri = URI(value)
     require(uri.scheme == "https" && !uri.host.isNullOrBlank() && uri.userInfo == null && uri.query == null && uri.fragment == null) {
         "bodhiApiBaseUrl must be an HTTPS backend URL without credentials, query or fragment"
     }
