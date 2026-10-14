@@ -72,6 +72,15 @@ class DeviceIdManager(
     // GET EXISTING DEVICE ID
     // ============================================================
 
+    fun saveExistingDeviceId(deviceId: String) {
+        require(deviceId.isNotBlank())
+        val oldId = getDeviceId()
+        check(oldId == null || oldId == deviceId) { "Installation UUID conflict" }
+        check(preferences.edit().putString(KEY_DEVICE_ID, deviceId).commit()) {
+            "Could not persist confirmed device UUID"
+        }
+    }
+
     fun getDeviceId(): String? {
 
         return preferences.getString(
