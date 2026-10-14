@@ -1,6 +1,7 @@
 package com.prodigit.bodhiattendance.core.monitoring
 
 import android.content.Context
+import android.database.Cursor
 import android.database.sqlite.SQLiteDatabase
 import android.database.sqlite.SQLiteOpenHelper
 import android.location.Location
@@ -16,6 +17,29 @@ import java.util.UUID
  */
 class PresenceEvidenceJournal(context: Context) {
     private val helper = Helper(context.applicationContext)
+
+    data class Pending(val id: String, val officeId: Long?, val elapsedMs: Long, val latitude: Double,
+                       val longitude: Double, val accuracyMeters: Double, val wifiMatched: Boolean,
+                       val classification: String)
+
+    fun pending(limit: Int = 30): List<Pending> {
+        val result = mutableListOf<Pending>()
+        helper.readableDatabase.rawQuery("SELECT id,office_id,observed_elapsed_ms,latitude,longitude,accuracy_m,wifi_matched,classification FROM presence_evidence WHERE uploaded=0 ORDER BY rowid LIMIT ?", arrayOf(limit.toString())).use { cursor ->
+            while (cursor.moveToNext()) result.add(Pending(cursor.getString(0), if (cursor.isNull(1)) null else cursor.getLong(1),
+                cursor.getLong(2), cursor.getDouble(3), cursor.getDouble(4), cursor.getDouble(5), cursor.getInt(6)==1,cursor.getString(7)))
+        }
+        return result
+    }
+
+    fun markUploaded(ids: List<String>) {
+        val db=helper.writableDatabase
+        db.beginTransaction()
+        try {
+            val statement=db.compileStatement("UPDATE presence_evidence SET uploaded=1 WHERE id=?")
+            ids.forEach { statement.clearBindings(); statement.bindString(1,it); statement.executeUpdateDelete() }
+            db.setTransactionSuccessful()
+        } finally { db.endTransaction() }
+    }
 
     fun record(location: Location, officeId: Long?, bssidMatched: Boolean, classification: String) {
         @Suppress("DEPRECATION")
@@ -38,20 +62,20 @@ class PresenceEvidenceJournal(context: Context) {
             )
         )
         // Bounded local retention; oldest observations are discarded after 2000 rows.
-        db.execSQL("""DELETE FROM presence_evidence WHERE id IN
-            (SELECT id FROM presence_evidence ORDER BY rowid DESC LIMIT -1 OFFSET 2000)""")
+        db.execSQL("""DELETE FROM presence_evidence WHERE uploaded=1 AND id IN
+            (SELECT id FROM presence_evidence WHERE uploaded=1 ORDER BY rowid DESC LIMIT -1 OFFSET 2000)""")
     }
 
-    private class Helper(context: Context) : SQLiteOpenHelper(context, "presence_evidence.db", null, 1) {
+    private class Helper(context: Context) : SQLiteOpenHelper(context, "presence_evidence.db", null, 2) {
         override fun onCreate(db: SQLiteDatabase) {
             db.execSQL("""CREATE TABLE presence_evidence (
               id TEXT PRIMARY KEY, office_id INTEGER, observed_elapsed_ms INTEGER NOT NULL,
               recorded_wall_ms INTEGER NOT NULL, latitude REAL NOT NULL, longitude REAL NOT NULL,
               accuracy_m REAL NOT NULL, wifi_matched INTEGER NOT NULL,
-              classification TEXT NOT NULL)""")
+              classification TEXT NOT NULL, uploaded INTEGER NOT NULL DEFAULT 0)""")
         }
         override fun onUpgrade(db: SQLiteDatabase, oldVersion: Int, newVersion: Int) {
-            throw IllegalStateException("Presence evidence migration required")
+            if (oldVersion < 2) db.execSQL("ALTER TABLE presence_evidence ADD COLUMN uploaded INTEGER NOT NULL DEFAULT 0")
         }
     }
 }
