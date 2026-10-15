@@ -533,7 +533,7 @@ private fun MainApplication(onSignedOut: () -> Unit) {
         // ====================================================
 
         notificationCount =
-            live.notifications?.size ?: 0,
+            live.notificationUnreadCount,
 
         onNotificationClick = {
             mainNavController.navigate(ROUTE_NOTIFICATIONS) {
@@ -743,8 +743,16 @@ private fun MainApplication(onSignedOut: () -> Unit) {
                 )
             }
 
+            composable("notification_details/{id}") { entry ->
+                com.prodigit.bodhiattendance.ui.notifications.NotificationDetailScreen(
+                    id = entry.arguments?.getString("id").orEmpty(),
+                    onBack = { mainNavController.popBackStack() }
+                )
+            }
+
             composable(ROUTE_NOTIFICATIONS) {
                 NotificationsScreen(
+                    onNotificationClick = { id -> mainNavController.navigate("notification_details/$id") { launchSingleTop = true } },
                     onBack = {
                         if (!mainNavController.popBackStack()) {
                             mainNavController.navigate(ROUTE_DASHBOARD) {

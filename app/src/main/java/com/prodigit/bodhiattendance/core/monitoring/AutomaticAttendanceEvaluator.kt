@@ -72,7 +72,15 @@ class AutomaticAttendanceEvaluator(context: Context) {
             Location.distanceBetween(location.latitude, location.longitude, office.latitude, office.longitude, result)
             return result[0]
         }
-        val office = if (boundOfficeId != null) offices.firstOrNull { it.id == boundOfficeId } else
+        // A return may be to another active office of the same company.
+        // Require unambiguous accurate presence plus that office's own Wi-Fi policy.
+        val returnOffice = if (snapshot.attendanceState == AttendanceState.ON_BREAK) offices.filter { candidate ->
+            candidate.geofenceRadiusMeters > 0 && distance(candidate) <= candidate.geofenceRadiusMeters &&
+                candidate.maxAccuracyMeters?.let { location.accuracy <= it } == true &&
+                (candidate.wifiRequired == false || (!wifiDisconnected && bssid != null &&
+                    candidate.wifiAccessPoints.any { it.bssid.equals(bssid, true) }))
+        }.singleOrNull() else null
+        val office = returnOffice ?: if (boundOfficeId != null) offices.firstOrNull { it.id == boundOfficeId } else
             offices.filter { it.geofenceRadiusMeters > 0 && distance(it) <= it.geofenceRadiusMeters }
                 .singleOrNull()
         if (office == null) {
@@ -155,7 +163,6 @@ class AutomaticAttendanceEvaluator(context: Context) {
             diagnostics.record("ENGINE", "Waiting for CRM office presence verification")
             return@withLock
         }
-        boundOfficeId = office.id
         val evidence = AttendanceEngineEvidence(
             latitude = location.latitude, longitude = location.longitude,
             accuracyMeters = location.accuracy.toDouble(), geofenceVerified = inside,
@@ -169,7 +176,9 @@ class AutomaticAttendanceEvaluator(context: Context) {
         journal.record(location, office.id, wifiVerified, if (inside) "PRESENT" else "ABSENT_CANDIDATE")
         val result = provider.runtimeSession.evaluate(token, session.getUserId(), session.getCompanyId(),
             deviceId, evidence, policy)
-        val phase = provider.runtimeSession.getSnapshot().phase
+        val after = provider.runtimeSession.getSnapshot()
+        if (inside && after.attendanceState == AttendanceState.WORKING) boundOfficeId = office.id
+        val phase = after.phase
         diagnostics.record("ENGINE_PHASE", "state=${snapshot.attendanceState}; before=${snapshot.phase}; after=$phase; officeId=${office.id}; graceMs=${policy.gracePeriodMs}")
         nextVerificationElapsedMs = when (phase) {
             is AttendanceEnginePhase.AbsenceGrace -> phase.absenceStartedElapsedRealtimeMs + policy.gracePeriodMs

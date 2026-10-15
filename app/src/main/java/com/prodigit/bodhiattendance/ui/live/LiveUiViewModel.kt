@@ -29,6 +29,7 @@ data class LiveUiState(
     val configuration: com.prodigit.bodhiattendance.data.remote.dto.attendance.AttendanceConfigDataDto? = null,
     val requests: List<MobileRequest>? = null,
     val notifications: List<MobileNotification>? = null,
+    val notificationUnreadCount: Int = 0,
     val onDuty: List<MobileDuty>? = null,
     val localEvents: List<AttendanceEventEntity>? = null,
     val errors: Map<String, String> = emptyMap(),
@@ -43,12 +44,15 @@ class LiveUiViewModel(application: Application) : AndroidViewModel(application) 
     private val tokens = AndroidTokenManager(application)
     private val lock = Mutex()
     @Volatile private var generation = 0
+    private var attendanceRefresh: Job? = null
     private val submissionIds = mutableMapOf<String, String>()
     init {
         viewModelScope.launch {
             AttendanceDatabase.getInstance(application).attendanceEventDao().observeAllEvents().collect { rows ->
                 val deviceId = DeviceIdManager(application).getDeviceId()
                 _state.update { it.copy(localEvents = rows.filter { row -> row.userId == session.getUserId() && row.deviceId == deviceId }) }
+                attendanceRefresh?.cancel()
+                attendanceRefresh = viewModelScope.launch { delay(300); refresh() }
             }
         }
     }
@@ -84,7 +88,18 @@ class LiveUiViewModel(application: Application) : AndroidViewModel(application) 
 
             launch { load("attendance", { api.attendance(authorization) }) { s, v -> s.copy(attendance = v) } }
             launch { load("requests", { api.requests(authorization) }) { s, v -> s.copy(requests = v) } }
-            launch { load("notifications", { api.notifications(authorization) }) { s, v -> s.copy(notifications = v) } }
+            launch {
+                try {
+                    val response = api.notifications(authorization)
+                    val body = response.body()
+                    check(response.isSuccessful && body?.success == true && body.data != null) { "Notifications unavailable (HTTP ${response.code()})" }
+                    val data = requireNotNull(body)
+                    val rows = requireNotNull(data.data)
+                    _state.update { if (generation != currentGeneration) it else it.copy(notifications = rows,
+                        notificationUnreadCount = data.unreadCount ?: rows.count { row -> row.readAt == null }, errors = it.errors - "notifications") }
+                } catch (cancelled: CancellationException) { throw cancelled }
+                catch (error: Exception) { _state.update { if (generation != currentGeneration) it else it.copy(errors = it.errors + ("notifications" to (error.message ?: "Notifications unavailable"))) } }
+            }
             launch { load("onDuty", { api.onDuty(authorization) }) { s, v -> s.copy(onDuty = v) } }
             launch {
                 try {
@@ -121,6 +136,24 @@ class LiveUiViewModel(application: Application) : AndroidViewModel(application) 
             finally { _state.update { it.copy(submitting = false) } }
         }
     }
+    suspend fun openNotification(id: String): MobileNotification = lock.withLock {
+        val currentGeneration = generation
+        val token = tokens.usableAccessToken() ?: error("Session unavailable")
+        val reply = api.notificationDetail("Bearer $token", id)
+        val detail = reply.body()?.data
+        check(reply.isSuccessful && reply.body()?.success == true && detail?.id == id) { "Notification details could not be loaded" }
+        val notification = requireNotNull(detail)
+        val receipt = api.readNotification("Bearer $token", id)
+        val read = receipt.body()?.data
+        check(receipt.isSuccessful && receipt.body()?.success == true && read?.id == id) { "Unable to mark notification read. Please retry." }
+        check(generation == currentGeneration) { "Session changed" }
+        val wasUnread = notification.readAt == null
+        val updated = notification.copy(readAt = requireNotNull(read).readAt)
+        _state.update { it.copy(notifications = it.notifications?.map { row -> if (row.id == id) updated else row },
+            notificationUnreadCount = (it.notificationUnreadCount - if (wasUnread) 1 else 0).coerceAtLeast(0)) }
+        updated
+    }
+
     fun clearAfterLogout() { generation++; _state.value = LiveUiState(loading = false); submissionIds.clear() }
 
     fun clearDisplayData() {
