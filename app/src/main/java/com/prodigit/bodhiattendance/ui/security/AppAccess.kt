@@ -122,15 +122,12 @@ fun AppAccessGate(content: @Composable () -> Unit) {
     val unlock = rememberAppAuthentication(biometric, { access.authenticated(); message = "" }, { message = it })
     val pinUnlock = rememberAppAuthentication(false, { access.authenticated(); message = "" }, { message = it })
     if (enabled && access.locked) {
-        Surface(Modifier.fillMaxSize()) {
-            Column(Modifier.padding(28.dp), verticalArrangement = Arrangement.Center) {
-                Text("Bodhi Attendance is locked", style = MaterialTheme.typography.headlineSmall)
-                Text("Automatic attendance monitoring continues in the background.")
-                Button(onClick = unlock) { Text(if (biometric) "Unlock" else "Unlock with phone PIN") }
-                if (biometric) TextButton(onClick = pinUnlock) { Text("Use phone PIN / pattern / password") }
-                if (message.isNotBlank()) Text(message)
-            }
-        }
+        AppLockedScreen(
+            biometricEnabled = biometric,
+            message = message,
+            onUnlock = unlock,
+            onPinUnlock = pinUnlock
+        )
     } else content()
 }
 
