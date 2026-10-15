@@ -4,6 +4,9 @@ import androidx.compose.runtime.*
 import androidx.compose.material3.*
 import com.prodigit.bodhiattendance.data.remote.MobileNotification
 import com.prodigit.bodhiattendance.ui.live.*
+import com.prodigit.bodhiattendance.ui.settings.PrototypePage
+import com.prodigit.bodhiattendance.ui.settings.PrototypePanel
+import com.prodigit.bodhiattendance.ui.settings.PrototypeDetail
 import kotlinx.coroutines.CancellationException
 
 @Composable
