@@ -2,6 +2,8 @@ package com.prodigit.bodhiattendance.ui.systemhealth
 
 import android.Manifest
 import android.app.Application
+import android.app.ActivityManager
+import android.net.wifi.WifiManager
 import android.bluetooth.BluetoothAdapter
 import android.bluetooth.BluetoothManager
 import android.content.Context
@@ -294,19 +296,8 @@ class SystemHealthViewModel(
                     checkLocationService()
 
 
-                val bluetoothPermission = HealthItemState(
-                        status = HealthStatus.NOT_REQUIRED,
-                        title = "Bluetooth Permission",
-                        message = "Optional; BLE attendance evidence is not required"
-                    )
-
-
-                val bluetoothService = HealthItemState(
-                        status = HealthStatus.NOT_REQUIRED,
-                        title = "Bluetooth",
-                        message = "Optional for the selected attendance policy"
-                    )
-
+                val bluetoothPermission = checkBluetoothPermission()
+                val bluetoothService = checkBluetoothService()
 
                 val network =
                     checkNetwork()
@@ -378,6 +369,8 @@ class SystemHealthViewModel(
                         batteryOptimization =
                             batteryOptimization,
 
+                        detectedBssid = readWifiBssid(),
+
 
                         // ============================================
                         // TRUSTED TIME
@@ -418,11 +411,11 @@ class SystemHealthViewModel(
                             ),
 
 
-                        // Optional BLE - no longer a blocker.
+                        // The screen resolves the current office requirement from CRM.
                         officeBeacon = HealthItemState(
-                            status = HealthStatus.NOT_REQUIRED,
+                            status = HealthStatus.NOT_CONFIGURED,
                             title = "Office Beacon",
-                            message = "Optional presence evidence; not required"
+                            message = "Current office policy not yet resolved"
                         ),
 
                         // Never infer assignment from the device's current Wi-Fi.
@@ -1346,13 +1339,8 @@ class SystemHealthViewModel(
                 Build.VERSION_CODES.S
             ) {
 
-                ContextCompat.checkSelfPermission(
-
-                    appContext,
-
-                    Manifest.permission.BLUETOOTH_SCAN
-
-                ) == PackageManager.PERMISSION_GRANTED
+                listOf(Manifest.permission.BLUETOOTH_SCAN, Manifest.permission.BLUETOOTH_CONNECT)
+                    .all { ContextCompat.checkSelfPermission(appContext, it) == PackageManager.PERMISSION_GRANTED }
 
             } else {
 
@@ -1404,6 +1392,11 @@ class SystemHealthViewModel(
     private fun checkBluetoothService():
             HealthItemState {
 
+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S &&
+            ContextCompat.checkSelfPermission(appContext, Manifest.permission.BLUETOOTH_CONNECT) != PackageManager.PERMISSION_GRANTED) {
+            return HealthItemState(HealthStatus.NOT_READY, "Bluetooth", "Nearby devices permission is required")
+        }
 
         val bluetoothManager =
             appContext.getSystemService(
@@ -1542,6 +1535,11 @@ class SystemHealthViewModel(
     }
 
 
+    @Suppress("DEPRECATION")
+    private fun readWifiBssid(): String? = try {
+        (appContext.getSystemService(Context.WIFI_SERVICE) as WifiManager).connectionInfo?.bssid
+    } catch (_: SecurityException) { null }
+
     // ============================================================
     // BATTERY OPTIMIZATION
     //
@@ -1569,6 +1567,12 @@ class SystemHealthViewModel(
             )
 
 
+        val backgroundRestricted = Build.VERSION.SDK_INT >= Build.VERSION_CODES.P &&
+            (appContext.getSystemService(Context.ACTIVITY_SERVICE) as ActivityManager).isBackgroundRestricted
+        if (backgroundRestricted || powerManager.isPowerSaveMode) {
+            return HealthItemState(HealthStatus.NOT_READY, "Battery Optimization",
+                if (backgroundRestricted) "Allow background battery usage for this app" else "Turn off Battery Saver for reliable background monitoring")
+        }
         return if (unrestricted) {
 
             HealthItemState(
@@ -1580,7 +1584,7 @@ class SystemHealthViewModel(
                     "Battery Optimization",
 
                 message =
-                    "Background activity unrestricted"
+                    "Doze exemption active; no detected Android power restrictions"
             )
 
         } else {

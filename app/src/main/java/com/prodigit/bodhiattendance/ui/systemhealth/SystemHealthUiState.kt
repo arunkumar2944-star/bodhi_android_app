@@ -138,13 +138,13 @@ data class SystemHealthUiState(
         HealthItemState(
 
             status =
-                HealthStatus.NOT_REQUIRED,
+                HealthStatus.NOT_CONFIGURED,
 
             title =
                 "Office Beacon",
 
             message =
-                "Optional BLE evidence; not required for attendance"
+                "Current office policy not available"
         ),
 
 
@@ -167,6 +167,8 @@ data class SystemHealthUiState(
     // true = verified Main Office-type Wi-Fi requirement.
     // false = verified GPS-only office policy.
     val officeWifiRequirement: Boolean? = null,
+
+    val officeBleRequirement: Boolean? = null,
 
     val officeWifi: HealthItemState =
         HealthItemState(

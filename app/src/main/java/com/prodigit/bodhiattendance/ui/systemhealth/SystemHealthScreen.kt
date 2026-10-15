@@ -8,6 +8,12 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.*
 import androidx.compose.material3.*
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.LifecycleEventObserver
+import androidx.lifecycle.compose.LocalLifecycleOwner
+import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.rememberCoroutineScope
+import kotlinx.coroutines.launch
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -39,20 +45,41 @@ fun SystemHealthScreen(
     onOfficeWifiClick: () -> Unit = {}
 ) {
     val diagnostics by viewModel.uiState.collectAsState()
+    val lifecycleOwner = LocalLifecycleOwner.current
+    val liveModel = com.prodigit.bodhiattendance.ui.live.liveUiViewModel()
+    val scope = rememberCoroutineScope()
+    DisposableEffect(lifecycleOwner, viewModel, liveModel) {
+        val observer = LifecycleEventObserver { _, event ->
+            if (event == Lifecycle.Event.ON_RESUME) {
+                viewModel.refreshHealth()
+                scope.launch { liveModel.refresh() }
+            }
+        }
+        lifecycleOwner.lifecycle.addObserver(observer)
+        viewModel.refreshHealth()
+        onDispose { lifecycleOwner.lifecycle.removeObserver(observer) }
+    }
     val live = com.prodigit.bodhiattendance.ui.live.liveUiState()
     val day = live.attendance?.let { read -> read.days.firstOrNull { it.date == read.today } }
     val office = live.configuration?.locations?.firstOrNull { it.id == day?.officeId }
-    fun requirement(required: Boolean?, title: String): HealthItemState = when (required) {
-        false -> HealthItemState(status = HealthStatus.NOT_REQUIRED, title = title, message = "Not required by CRM")
-        true -> HealthItemState(status = HealthStatus.NOT_CONFIGURED, title = title, message = "Required by CRM; live presence is checked by the attendance engine")
-        null -> HealthItemState(status = HealthStatus.NOT_CONFIGURED, title = title, message = "Current office policy not available")
-    }
     val uiState = diagnostics.copy(
-        attendanceConfiguration = HealthItemState(status = if (live.configuration == null) HealthStatus.NOT_CONFIGURED else HealthStatus.READY,
+        attendanceConfiguration = HealthItemState(
+            status = if (live.configuration == null || live.configuration.locations.isEmpty()) HealthStatus.NOT_CONFIGURED else HealthStatus.READY,
             title = "Attendance Configuration", message = live.configuration?.let { "${it.locations.size} CRM offices loaded" } ?: "Configuration unavailable"),
         officeWifiRequirement = office?.wifiRequired,
-        officeWifi = requirement(office?.wifiRequired, "Office Wi-Fi"),
-        officeBeacon = requirement(office?.bleRequired, "Office BLE")
+        officeBleRequirement = office?.bleRequired,
+        officeWifi = officeWifiHealth(office?.wifiRequired, office?.wifi.orEmpty().map { it.bssid }, diagnostics.detectedBssid),
+        officeBeacon = officeBeaconHealth(office?.bleRequired),
+        bluetoothPermission = when (office?.bleRequired) {
+            true -> diagnostics.bluetoothPermission
+            false -> HealthItemState(HealthStatus.NOT_REQUIRED, "Bluetooth Permission", "Not required by this CRM office policy")
+            null -> HealthItemState(HealthStatus.NOT_CONFIGURED, "Bluetooth Permission", "Current office policy unavailable")
+        },
+        bluetoothService = when (office?.bleRequired) {
+            true -> diagnostics.bluetoothService
+            false -> HealthItemState(HealthStatus.NOT_REQUIRED, "Bluetooth", "Not required by this CRM office policy")
+            null -> HealthItemState(HealthStatus.NOT_CONFIGURED, "Bluetooth", "Current office policy unavailable")
+        }
     )
     val blue = Color(0xFF1769E8)
 
@@ -176,7 +203,7 @@ fun SystemHealthScreen(
 
         item {
             Button(
-                onClick = { if (!uiState.isRefreshing) viewModel.refreshHealth() },
+                onClick = { if (!uiState.isRefreshing) { viewModel.refreshHealth(); scope.launch { liveModel.refresh() } } },
                 enabled = !uiState.isRefreshing,
                 modifier = Modifier.fillMaxWidth().height(54.dp),
                 shape = RoundedCornerShape(15.dp),
@@ -226,3 +253,4 @@ private fun HealthExplanation(title: String, message: String) {
         }
     }
 }
+

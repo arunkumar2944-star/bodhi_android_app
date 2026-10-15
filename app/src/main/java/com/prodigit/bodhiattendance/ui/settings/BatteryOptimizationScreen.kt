@@ -1,5 +1,9 @@
 package com.prodigit.bodhiattendance.ui.settings
 
+import android.app.ActivityManager
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.LifecycleEventObserver
+import androidx.lifecycle.compose.LocalLifecycleOwner
 import android.content.Context
 import android.content.Intent
 import android.net.Uri
@@ -40,6 +44,7 @@ private val BatteryGreen = Color(0xFF17804E)
 
 private data class BatteryDeviceStatus(
     val dozeExempt: Boolean?,
+    val backgroundRestricted: Boolean?,
     val powerSaverEnabled: Boolean?
 )
 
@@ -49,6 +54,9 @@ private fun readBatteryStatus(context: Context): BatteryDeviceStatus {
         dozeExempt = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
             powerManager?.isIgnoringBatteryOptimizations(context.packageName)
         } else null,
+        backgroundRestricted = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
+            (context.getSystemService(Context.ACTIVITY_SERVICE) as? ActivityManager)?.isBackgroundRestricted
+        } else false,
         powerSaverEnabled = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
             powerManager?.isPowerSaveMode
         } else null
@@ -68,6 +76,15 @@ fun BatteryOptimizationScreen(
     val context = LocalContext.current
     var status by remember { mutableStateOf(readBatteryStatus(context)) }
     var settingsError by remember { mutableStateOf<String?>(null) }
+
+    val lifecycleOwner = LocalLifecycleOwner.current
+    DisposableEffect(lifecycleOwner, context) {
+        val observer = LifecycleEventObserver { _, event ->
+            if (event == Lifecycle.Event.ON_RESUME) status = readBatteryStatus(context)
+        }
+        lifecycleOwner.lifecycle.addObserver(observer)
+        onDispose { lifecycleOwner.lifecycle.removeObserver(observer) }
+    }
 
     val settingsLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.StartActivityForResult()
@@ -130,6 +147,13 @@ fun BatteryOptimizationScreen(
                 )
                 HorizontalDivider(color = BatteryBorder)
                 BatteryStatusRow(
+                    title = "App background restriction",
+                    description = "Android reports whether background work is restricted for this app.",
+                    label = when (status.backgroundRestricted) { true -> "Restricted"; false -> "Not restricted"; null -> "Unknown" },
+                    tint = if (status.backgroundRestricted == false) BatteryGreen else BatteryAmber
+                )
+                HorizontalDivider(color = BatteryBorder)
+                BatteryStatusRow(
                     title = "System Battery Saver",
                     description = "Device-wide power saving can limit background activity.",
                     label = when (status.powerSaverEnabled) { true -> "On"; false -> "Off"; null -> "Unknown" },
@@ -143,7 +167,7 @@ fun BatteryOptimizationScreen(
                 Text("Why this matters", fontWeight = FontWeight.Bold, fontSize = 16.sp, color = BatteryInk)
                 Spacer(Modifier.height(8.dp))
                 Text(
-                    "Bodhi Attendance relies on background location and Bluetooth beacon signals. Android and phone manufacturers may delay scans or background execution to save battery. Battery settings alone cannot guarantee continuous detection.",
+                    "Bodhi Attendance relies on background location and office proximity checks configured in CRM. Android and phone manufacturers may delay scans or background execution to save battery. Battery settings alone cannot guarantee continuous detection.",
                     fontSize = 12.sp, lineHeight = 19.sp, color = BatteryMuted
                 )
             }
@@ -240,3 +264,4 @@ private fun BatteryStatusRow(title: String, description: String, label: String, 
         Text(description, color = BatteryMuted, fontSize = 11.sp, lineHeight = 16.sp, modifier = Modifier.padding(top = 4.dp))
     }
 }
+

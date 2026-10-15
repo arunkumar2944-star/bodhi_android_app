@@ -81,6 +81,11 @@ fun SystemHealthSummaryCard(
         if (uiState.officeWifiRequirement == true) {
             add(uiState.officeWifi)
         }
+        if (uiState.officeBleRequirement == true) {
+            add(uiState.officeBeacon)
+            add(uiState.bluetoothPermission)
+            add(uiState.bluetoothService)
+        }
     }.filter { it.status != HealthStatus.NOT_REQUIRED }
 
     val readyCount = healthItems.count { it.status == HealthStatus.READY }
@@ -90,7 +95,7 @@ fun SystemHealthSummaryCard(
             it.status == HealthStatus.CHECKING
     }
     val totalCount = healthItems.size
-    val policyPending = uiState.officeWifiRequirement == null
+    val policyPending = uiState.officeWifiRequirement == null || uiState.officeBleRequirement == null
     val readinessFraction = if (totalCount > 0) {
         readyCount.toFloat() / totalCount.toFloat()
     } else 0f
@@ -113,7 +118,7 @@ fun SystemHealthSummaryCard(
     val statusMessage = buildString {
         append("$attentionCount action required • $pendingCount pending")
         if (policyPending) append(" • Office assignment not verified")
-        append(" • BLE excluded")
+        append(if (uiState.officeBleRequirement == true) " • BLE required by CRM" else if (uiState.officeBleRequirement == false) " • BLE not required by CRM" else " • BLE policy pending")
     }
 
     // ========================================================
@@ -679,3 +684,4 @@ private fun ModernHealthCounter(
         }
     }
 }
+
