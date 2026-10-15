@@ -1207,68 +1207,11 @@ class SystemHealthViewModel(
     // BACKGROUND LOCATION PERMISSION
     // ============================================================
 
-    private fun checkBackgroundLocationPermission():
-            HealthItemState {
-
-
-        if (
-            Build.VERSION.SDK_INT <
-            Build.VERSION_CODES.Q
-        ) {
-
-            return HealthItemState(
-
-                status =
-                    HealthStatus.READY,
-
-                title =
-                    "Background Location",
-
-                message =
-                    "Supported by Android version"
-            )
-        }
-
-
-        val granted =
-            ContextCompat.checkSelfPermission(
-
-                appContext,
-
-                Manifest.permission.ACCESS_BACKGROUND_LOCATION
-
-            ) == PackageManager.PERMISSION_GRANTED
-
-
-        return if (granted) {
-
-            HealthItemState(
-
-                status =
-                    HealthStatus.READY,
-
-                title =
-                    "Background Location",
-
-                message =
-                    "Background location allowed"
-            )
-
-        } else {
-
-            HealthItemState(
-
-                status =
-                    HealthStatus.NOT_READY,
-
-                title =
-                    "Background Location",
-
-                message =
-                    "Allow all the time is required for automatic morning restart"
-            )
-        }
-    }
+    private fun checkBackgroundLocationPermission(): HealthItemState = HealthItemState(
+        status = HealthStatus.NOT_REQUIRED,
+        title = "Background Location",
+        message = "Open the app each workday; precise While using location is enough"
+    )
 
 
     // ============================================================

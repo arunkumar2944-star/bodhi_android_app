@@ -47,8 +47,6 @@ private fun hasPermission(context: Context, name: String): Boolean =
 
 private fun getPermissionChecks(context: Context): List<PermissionCheck> {
     val fine = hasPermission(context, Manifest.permission.ACCESS_FINE_LOCATION)
-    val background = Build.VERSION.SDK_INT < 29 ||
-            hasPermission(context, Manifest.permission.ACCESS_BACKGROUND_LOCATION)
     val nearbyRequired = Build.VERSION.SDK_INT >= 31
     val nearby = !nearbyRequired || (
             hasPermission(context, Manifest.permission.BLUETOOTH_SCAN) &&
@@ -70,9 +68,6 @@ private fun getPermissionChecks(context: Context): List<PermissionCheck> {
 
     return listOf(
         PermissionCheck("Precise Location", "Fine location permission for GPS-based presence", fine),
-        PermissionCheck("Background Location", "Allow all the time enables office-entry alerts on eligible workdays. Tracking stops after checkout.", background),
-        PermissionCheck("Morning restart alarm", "Alarms & reminders access schedules the network-only workday check at 8:00 AM IST.",
-            com.prodigit.bodhiattendance.core.monitoring.AttendancePrivacyPolicy.hasExactAlarmAccess(context)),
         PermissionCheck("Nearby Devices", "Bluetooth scan and connect permissions", nearby,
             notRequired = !nearbyRequired),
         PermissionCheck("Location Service", "Android device location is turned on", locationEnabled),
@@ -163,7 +158,7 @@ fun PermissionsScreen(
                             else if (monitoring.running) "Attendance monitoring is running for your work session."
                             else "Attendance monitoring is not running.", color = Muted)
                         Text("Daily eligibility: " + dailyStatus.replace('_', ' '), color = Muted)
-                        Text("At 8 AM IST a network-only CRM check excludes holidays, approved leave and manager-recorded absence. Eligible employees wait for an office-entry alert; routine GPS verification does not start from home. CRM changes apply on the next successful check. Saved events may still upload while tracking is paused.", color = Muted, fontSize = 12.sp)
+                        Text("Open the app each workday to start. CRM excludes holidays, approved leave and manager-recorded absence. Precise While using location is enough; monitoring then continues with a visible notification until checkout. There is no automatic morning restart. Saved events may still upload while tracking is paused.", color = Muted, fontSize = 12.sp)
                     }
                 }
             }
@@ -178,12 +173,6 @@ fun PermissionsScreen(
                     colors = ButtonDefaults.buttonColors(containerColor = Blue),
                     shape = RoundedCornerShape(14.dp)
                 ) { Text("Open App Settings", fontWeight = FontWeight.Bold) }
-                if (Build.VERSION.SDK_INT >= 31) {
-                    OutlinedButton(onClick = {
-                        context.startActivity(Intent(Settings.ACTION_REQUEST_SCHEDULE_EXACT_ALARM,
-                            android.net.Uri.parse("package:${context.packageName}")))
-                    }, modifier = Modifier.fillMaxWidth()) { Text("Allow 8 AM restart alarm") }
-                }
                 Spacer(Modifier.height(8.dp))
                 OutlinedButton(
                     onClick = { openSettings(Settings.ACTION_LOCATION_SOURCE_SETTINGS) },

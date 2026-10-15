@@ -65,7 +65,7 @@ data class OnboardingUiState(
     // Location is considered ready only when:
     //
     // 1. Precise location permission granted
-    // Background location is optional for geofence alerts.
+    // Background location is not required for a visibly started work session.
     // 2. Device location service switched ON
     // ============================================================
 

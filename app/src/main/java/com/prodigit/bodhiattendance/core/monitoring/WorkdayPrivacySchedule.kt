@@ -1,15 +1,12 @@
 package com.prodigit.bodhiattendance.core.monitoring
 
-import java.time.Instant
-import java.time.ZoneId
+import java.time.LocalDate
 
-/** Calendar scheduling only; authoritative server state controls attendance. */
+/** The authoritative server date, not a timer or phone clock, controls reopening after checkout. */
 object WorkdayPrivacySchedule {
-    private val zone = ZoneId.of("Asia/Kolkata")
-    fun nextReminder(now: Instant): Long = now.atZone(zone).toLocalDate().plusDays(1)
-        .atTime(8, 0).atZone(zone).toInstant().toEpochMilli()
-    fun canResume(checkoutDay: String?, scheduledAt: Long, now: Instant): Boolean =
-        scheduledAt > 0 && now.toEpochMilli() >= scheduledAt && requiresFreshState(checkoutDay, now)
-    fun requiresFreshState(checkoutDay: String?, now: Instant): Boolean =
-        checkoutDay != now.atZone(zone).toLocalDate().toString()
+    fun canResume(checkoutDay: String?, serverDay: String): Boolean {
+        val today = LocalDate.parse(serverDay)
+        val checkout = checkoutDay?.let(LocalDate::parse) ?: return false
+        return today.isAfter(checkout)
+    }
 }

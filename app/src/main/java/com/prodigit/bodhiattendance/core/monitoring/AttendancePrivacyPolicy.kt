@@ -1,44 +1,29 @@
 package com.prodigit.bodhiattendance.core.monitoring
 
-import android.Manifest
-import android.app.*
+import android.app.AlarmManager
+import android.app.NotificationManager
+import android.app.PendingIntent
 import android.content.*
-import android.content.pm.PackageManager
-import android.os.Build
-import androidx.core.app.NotificationCompat
-import androidx.core.content.ContextCompat
-import com.prodigit.bodhiattendance.MainActivity
-import com.prodigit.bodhiattendance.R
-import com.prodigit.bodhiattendance.core.session.SessionManager
-import java.time.*
+import java.time.LocalDate
+import java.time.ZoneId
 
-/** The alarm starts verification, never creates attendance or authorizes office presence. */
+/** Checkout pauses tracking until a visible app opening and fresh server validation. */
 object AttendancePrivacyPolicy {
     @Volatile private var checkoutShutdownRequested = false
-    private const val PREFS = "attendance_privacy"
-    private fun prefs(c: Context) = c.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
-    fun isPaused(c: Context): Boolean = prefs(c).getBoolean("paused", false)
-    fun needsMorningReconciliation(c: Context): Boolean = isPaused(c) &&
-        WorkdayPrivacySchedule.canResume(prefs(c).getString("checkout_day", ""),
-            prefs(c).getLong("resume_at", prefs(c).getLong("reminder_at", 0)), Instant.now())
-    fun hasBackgroundLocation(c: Context): Boolean = Build.VERSION.SDK_INT < 29 ||
-        ContextCompat.checkSelfPermission(c, Manifest.permission.ACCESS_BACKGROUND_LOCATION) == PackageManager.PERMISSION_GRANTED
-    fun hasExactAlarmAccess(c: Context): Boolean = Build.VERSION.SDK_INT < 31 ||
-        requireNotNull(c.getSystemService(AlarmManager::class.java)).canScheduleExactAlarms()
-    fun automaticRestartReady(c: Context): Boolean = hasBackgroundLocation(c) && hasExactAlarmAccess(c)
+    private fun prefs(c: Context) = c.getSharedPreferences("attendance_privacy", Context.MODE_PRIVATE)
     const val CLOSE_AFTER_CHECKOUT = "com.prodigit.bodhiattendance.CLOSE_AFTER_CHECKOUT"
-    fun pauseAfterCheckout(c: Context) {
+    fun isPaused(c: Context): Boolean = prefs(c).getBoolean("paused", false)
+    fun canResumeOn(c: Context, serverDay: String): Boolean = !isPaused(c) ||
+        WorkdayPrivacySchedule.canResume(prefs(c).getString("checkout_day", null), serverDay)
+    fun pauseAfterCheckout(c: Context, serverDay: String = LocalDate.now(ZoneId.of("Asia/Kolkata")).toString()) {
         if (!isPaused(c)) {
-            val next = WorkdayPrivacySchedule.nextReminder(Instant.now())
-            prefs(c).edit().putBoolean("paused", true).putString("checkout_day", LocalDate.now(ZoneId.of("Asia/Kolkata")).toString())
-                .putLong("reminder_at", next).putLong("resume_at", next).commit()
+            prefs(c).edit().putBoolean("paused", true).putString("checkout_day", serverDay).commit()
             checkoutShutdownRequested = true
             c.sendBroadcast(Intent(CLOSE_AFTER_CHECKOUT).setPackage(c.packageName))
         }
-        scheduleReminder(c)
-        AttendanceBackgroundSync.schedule(c)
+        removeLegacyAutomation(c)
+        AttendanceBackgroundSync.schedule(c) // Saved records only; no sensors or monitoring startup.
     }
-    /** Self-termination is not Android force-stop: the OS-owned alarm and saved jobs survive. */
     fun terminateAfterCheckoutCleanup(c: Context) {
         if (!checkoutShutdownRequested) return
         checkoutShutdownRequested = false
@@ -46,65 +31,31 @@ object AttendancePrivacyPolicy {
             if (isPaused(c)) android.os.Process.killProcess(android.os.Process.myPid())
         }, 500L)
     }
-    fun scheduleNextMorning(c: Context) {
-        val saved = prefs(c)
-        val editor = saved.edit()
-        // Upgrade older paused installations before advancing their alarm to tomorrow.
-        if (isPaused(c) && !saved.contains("resume_at")) editor.putLong("resume_at", saved.getLong("reminder_at", 0))
-        editor.putLong("reminder_at", WorkdayPrivacySchedule.nextReminder(Instant.now())).commit()
-        scheduleReminder(c)
-    }
     fun resumeAfterServerValidation(c: Context) {
-        prefs(c).edit().putBoolean("paused", false).remove("reminder_at").remove("resume_at").apply()
-        requireNotNull(c.getSystemService(AlarmManager::class.java)).cancel(reminderIntent(c))
+        prefs(c).edit().putBoolean("paused", false).apply()
+        removeLegacyAutomation(c)
+    }
+    /** Cancel persisted alarms/jobs/geofences from earlier automatic-start builds. Never start work. */
+    fun removeLegacyAutomation(c: Context) {
+        val oldAlarm = PendingIntent.getBroadcast(c, 25301, Intent(c, AttendanceMorningReceiver::class.java),
+            PendingIntent.FLAG_NO_CREATE or PendingIntent.FLAG_IMMUTABLE)
+        if (oldAlarm != null) {
+            requireNotNull(c.getSystemService(AlarmManager::class.java)).cancel(oldAlarm)
+            oldAlarm.cancel()
+        }
         requireNotNull(c.getSystemService(NotificationManager::class.java)).cancel(25301)
+        prefs(c).edit().remove("reminder_at").remove("resume_at").apply()
+        AttendanceDayGate.cancelLegacyAutomation(c)
     }
     fun cancel(c: Context) {
-        requireNotNull(c.getSystemService(AlarmManager::class.java)).cancel(reminderIntent(c))
-        requireNotNull(c.getSystemService(NotificationManager::class.java)).cancel(25301)
+        removeLegacyAutomation(c)
         prefs(c).edit().clear().apply()
         AttendanceBackgroundSync.cancel(c)
-        AttendanceDayGate.cancelScheduled(c)
-    }
-    private fun reminderIntent(c: Context) = PendingIntent.getBroadcast(c, 25301,
-        Intent(c, AttendanceMorningReceiver::class.java), PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE)
-    fun scheduleReminder(c: Context) {
-        val time = prefs(c).getLong("reminder_at", 0)
-        if (time <= 0) return
-        val manager = requireNotNull(c.getSystemService(AlarmManager::class.java))
-        val trigger = time.coerceAtLeast(System.currentTimeMillis() + 1000L)
-        try {
-            if (automaticRestartReady(c)) manager.setExactAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, trigger, reminderIntent(c))
-            else manager.setAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, trigger, reminderIntent(c))
-        } catch (_: SecurityException) {
-            manager.setAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, trigger, reminderIntent(c))
-        }
-    }
-    fun notifyMorning(c: Context) {
-        if (!isPaused(c) || SessionManager(c).getUserId() <= 0) return
-        if (Build.VERSION.SDK_INT >= 33 && ContextCompat.checkSelfPermission(c, Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED) return
-        val manager = requireNotNull(c.getSystemService(NotificationManager::class.java))
-        manager.createNotificationChannel(NotificationChannel("attendance_morning", "Workday reminder", NotificationManager.IMPORTANCE_DEFAULT))
-        val open = PendingIntent.getActivity(c, 25301, Intent(c, MainActivity::class.java)
-            .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_SINGLE_TOP), PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE)
-        manager.notify(25301, NotificationCompat.Builder(c, "attendance_morning").setSmallIcon(R.mipmap.ic_launcher)
-            .setContentTitle("Ready for your workday?")
-            .setContentText("Open Bodhi Attendance to resume monitoring. Location is currently paused.")
-            .setContentIntent(open).setOnlyAlertOnce(true).setAutoCancel(true).build())
+        AttendanceDayGate.clearStatus(c)
     }
 }
 
+/** Kept only to consume/cancel pending broadcasts from previous APKs. */
 class AttendanceMorningReceiver : BroadcastReceiver() {
-    override fun onReceive(context: Context, intent: Intent) {
-        if (intent.action == Intent.ACTION_BOOT_COMPLETED ||
-            intent.action == Intent.ACTION_MY_PACKAGE_REPLACED ||
-            intent.action == AlarmManager.ACTION_SCHEDULE_EXACT_ALARM_PERMISSION_STATE_CHANGED) {
-            AttendancePrivacyPolicy.scheduleReminder(context)
-            AttendanceDayGate.schedule(context)
-            return
-        }
-        if (SessionManager(context).getUserId() <= 0) return
-        if (AttendancePrivacyPolicy.isPaused(context) && !AttendancePrivacyPolicy.needsMorningReconciliation(context)) return
-        AttendanceDayGate.schedule(context)
-    }
+    override fun onReceive(context: Context, intent: Intent) { AttendancePrivacyPolicy.removeLegacyAutomation(context) }
 }

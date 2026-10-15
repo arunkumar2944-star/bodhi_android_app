@@ -38,6 +38,7 @@ class MainActivity : FragmentActivity() {
         installSplashScreen()
 
         super.onCreate(savedInstanceState)
+        com.prodigit.bodhiattendance.core.monitoring.AttendancePrivacyPolicy.removeLegacyAutomation(applicationContext)
         androidx.core.content.ContextCompat.registerReceiver(this, checkoutReceiver,
             android.content.IntentFilter(com.prodigit.bodhiattendance.core.monitoring.AttendancePrivacyPolicy.CLOSE_AFTER_CHECKOUT),
             androidx.core.content.ContextCompat.RECEIVER_NOT_EXPORTED)

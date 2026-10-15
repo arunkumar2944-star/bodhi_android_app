@@ -119,20 +119,6 @@ fun OnboardingScreen(
 
 
     // =========================================================================
-    // BACKGROUND LOCATION PERMISSION
-    // =========================================================================
-
-    val backgroundLocationLauncher =
-        rememberLauncherForActivityResult(
-            contract =
-                ActivityResultContracts.RequestPermission()
-        ) {
-
-            viewModel.refreshSystemStatus()
-        }
-
-
-    // =========================================================================
     // BLUETOOTH PERMISSIONS
     // =========================================================================
 
@@ -621,19 +607,8 @@ fun OnboardingScreen(
             )
 
 
-            Text("Choose Precise location and While using the app first. For automatic 8 AM restart without opening the app, separately allow background location and Alarms & reminders. Tracking stops after checkout even with background permission.", style = MaterialTheme.typography.bodySmall)
-            Text("After checkout, the screen closes and location monitoring stops. At 8:00 AM IST next day, a network-only CRM check handles holidays, approved leave and manager exceptions. Eligible days wait for an office-entry alert before GPS/Wi-Fi verification.", style = MaterialTheme.typography.bodySmall)
-
-            androidx.compose.material3.TextButton(onClick = {
-                context.startActivity(Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS,
-                    android.net.Uri.parse("package:${context.packageName}")))
-            }) { Text("Enable automatic restart: Allow all the time") }
-            if (Build.VERSION.SDK_INT >= 31) {
-                androidx.compose.material3.TextButton(onClick = {
-                    context.startActivity(Intent(Settings.ACTION_REQUEST_SCHEDULE_EXACT_ALARM,
-                        android.net.Uri.parse("package:${context.packageName}")))
-                }) { Text("Enable automatic restart: Alarms & reminders") }
-            }
+            Text("Choose Precise location and While using the app. Open the app at the start of each workday; monitoring continues with a visible notification during work. Background location and alarm access are not required.", style = MaterialTheme.typography.bodySmall)
+            Text("CRM holidays, approved leave and manager-recorded absence keep tracking paused. After checkout the screen closes and monitoring stops. The app does not restart automatically the next morning.", style = MaterialTheme.typography.bodySmall)
 
             // =================================================================
             // BLUETOOTH
@@ -1357,13 +1332,7 @@ fun OnboardingScreen(
 // ============================================================================
 // OPEN APP SETTINGS
 //
-// Android 11+ background location:
-//
-// Permissions
-//      ↓
-// Location
-//      ↓
-// Allow all the time
+// Open Android settings to review app permissions.
 // ============================================================================
 
 private fun openApplicationSettings(
