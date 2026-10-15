@@ -1,6 +1,8 @@
 package com.prodigit.bodhiattendance.core.session
 
 import android.content.Context
+import android.util.Log
+import kotlinx.coroutines.CancellationException
 import com.prodigit.bodhiattendance.core.device.DeviceIdManager
 import com.prodigit.bodhiattendance.core.network.RetrofitClient
 import com.prodigit.bodhiattendance.data.remote.AndroidDeviceSessionRequest
@@ -16,6 +18,9 @@ class AndroidTokenManager(context: Context) {
     private val sessions = SessionManager(context.applicationContext)
     private val credentials = SecureAndroidRefreshStore(context.applicationContext)
     private val deviceIds = DeviceIdManager(context.applicationContext)
+
+    var lastHttpStatus: Int? = null
+        private set
 
     fun hasRefreshCredential(): Boolean = credentials.get() != null
 
@@ -34,20 +39,26 @@ class AndroidTokenManager(context: Context) {
                 sessions.updateAccessToken(payload.token)
                 return@withLock payload.token
             }
+            Log.w("BODHI_SESSION", "Refresh failed: HTTP ${reply.code()}")
             // Only authoritative invalidation clears the refresh credential.
             if (reply.code() == 401 || reply.code() == 403) credentials.clear()
-        } catch (_: Exception) {
+        } catch (error: CancellationException) {
+            throw error
+        } catch (error: Exception) {
+            Log.w("BODHI_SESSION", "Refresh failed: ${error.javaClass.simpleName}")
             // Offline / temporary failure: keep identity + refresh credential.
         }
         null
     }
 
     suspend fun activateOnApprovedDevice(): Boolean = rotationLock.withLock {
+        lastHttpStatus = null
         if (credentials.get() != null) return@withLock true
         val token = sessions.getToken()?.takeUnless(JwtUtils::isTokenExpired) ?: return@withLock false
         val id = deviceIds.getDeviceId() ?: return@withLock false
         try {
             val response = RetrofitClient.androidSessionApi.activate("Bearer $token", AndroidDeviceSessionRequest(id))
+            lastHttpStatus = response.code()
             val body = response.body()
             if (response.isSuccessful && body?.success == true && !body.refreshToken.isNullOrBlank()
                 && !body.token.isNullOrBlank()) {
@@ -55,7 +66,12 @@ class AndroidTokenManager(context: Context) {
                 sessions.updateAccessToken(body.token)
                 return@withLock true
             }
-        } catch (_: Exception) { }
+            Log.w("BODHI_SESSION", "Activation failed: HTTP ${response.code()}")
+        } catch (error: CancellationException) {
+            throw error
+        } catch (error: Exception) {
+            Log.w("BODHI_SESSION", "Activation failed: ${error.javaClass.simpleName}")
+        }
         false
     }
 
@@ -81,3 +97,4 @@ class AndroidTokenManager(context: Context) {
 
     companion object { private val rotationLock = Mutex() }
 }
+

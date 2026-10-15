@@ -1087,10 +1087,11 @@ private fun StartupRoute(
     // Normal production startup remains unchanged.
     // ========================================================
 
-    BodhiLaunchScreen(
+    val startupError by startupViewModel.startupError.collectAsState()
 
-        networkError =
-            networkError
+    BodhiLaunchScreen(
+        networkError = networkError,
+        startupError = startupError
     )
 
 
@@ -1283,3 +1284,4 @@ private fun DeviceBlockedScreen() {
         )
     }
 }
+

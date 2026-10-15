@@ -153,6 +153,17 @@ class StartupViewModel(
         _networkError.asStateFlow()
 
 
+    private val _startupError = MutableStateFlow<String?>(null)
+    val startupError: StateFlow<String?> = _startupError.asStateFlow()
+    private var startupStage = "Connecting to server"
+
+    private fun reportStartupFailure(error: Throwable? = null) {
+        val httpCode = (error as? retrofit2.HttpException)?.code()
+        _startupError.value = startupStage + (httpCode?.let { " (HTTP $it)" } ?: "")
+        Log.e("STARTUP_DEBUG", "Startup failed at: $startupStage", error)
+        _networkError.value = true
+    }
+
     // ============================================================
     // INITIALIZATION
     // ============================================================
@@ -229,14 +240,10 @@ class StartupViewModel(
             )
 
 
-            _networkError.value =
-                true
+            _startupError.value = "No internet connection"
+            _networkError.value = true
 
-
-            _destination.value =
-                StartupDestination.LOADING
-
-
+            _destination.value = StartupDestination.LOADING
             delay(3000)
         }
 
@@ -263,11 +270,12 @@ class StartupViewModel(
         // STEP 1 — LOCAL SESSION
         // ========================================================
 
+        startupStage = "Restoring login session"
         val token = tokenManager.usableAccessToken()
         if (token.isNullOrBlank()) {
             if (tokenManager.hasRefreshCredential()) {
                 Log.w("STARTUP_DEBUG", "Token temporarily unavailable; retrying without clearing saved identity")
-                _networkError.value = true
+                reportStartupFailure()
                 _destination.value = StartupDestination.LOADING
                 retryDeviceValidation()
             } else {
@@ -281,6 +289,7 @@ class StartupViewModel(
         // STEP 3 — INSTALLATION DEVICE ID
         // ========================================================
 
+        startupStage = "Checking registered device"
         registeredDeviceStore.restoreForUser(sessionManager.getUserId())
         val deviceId =
             deviceIdManager
@@ -322,8 +331,7 @@ class StartupViewModel(
             )
 
 
-            _networkError.value =
-                true
+            reportStartupFailure(error)
 
 
             _destination.value =
@@ -377,8 +385,7 @@ class StartupViewModel(
                         )
 
 
-                        _networkError.value =
-                            true
+                        reportStartupFailure()
 
 
                         _destination.value =
@@ -529,13 +536,22 @@ class StartupViewModel(
 
                     // Provision a rotating refresh credential after the
                     // backend has confirmed this registered device.
+                    startupStage = "Activating device session"
                     if (!tokenManager.activateOnApprovedDevice()) {
                         Log.w("STARTUP_DEBUG", "Android refresh session unavailable; retrying before runtime activation")
-                        _networkError.value = true
+                        reportStartupFailure()
+                        tokenManager.lastHttpStatus?.let {
+                            _startupError.value = "Device session unavailable (HTTP $it)"
+                        }
                         _destination.value = StartupDestination.LOADING
                         retryDeviceValidation()
                         return@onSuccess
                     }
+
+                    // Activation rotates the access token; use the new one for
+                    // all subsequent trusted-time and bootstrap calls.
+                    val runtimeToken = sessionManager.getToken() ?: token
+                    startupStage = "Restoring attendance state"
 
                     // =================================================
                     // RESTORE LOCAL RUNTIME BEFORE SELECTING ANCHOR OWNER
@@ -586,12 +602,13 @@ class StartupViewModel(
                             )
 
 
+                            startupStage = "Synchronizing trusted time"
                             val anchorResult =
                                 timeAnchorManager
                                     .ensureCurrentAnchor(
 
                                         token =
-                                            token,
+                                            runtimeToken,
 
                                         deviceId =
                                             deviceId
@@ -618,8 +635,7 @@ class StartupViewModel(
                                 )
 
 
-                                _networkError.value =
-                                    true
+                                reportStartupFailure(error)
 
 
                                 _destination.value =
@@ -707,7 +723,7 @@ class StartupViewModel(
                             reconcileAttendanceRuntime(
 
                                 token =
-                                    token,
+                                    runtimeToken,
 
                                 userId =
                                     userId,
@@ -738,7 +754,7 @@ class StartupViewModel(
                             reconcileAttendanceRuntime(
 
                                 token =
-                                    token,
+                                    runtimeToken,
 
                                 userId =
                                     userId,
@@ -769,7 +785,7 @@ class StartupViewModel(
                             reconcileAttendanceRuntime(
 
                                 token =
-                                    token,
+                                    runtimeToken,
 
                                 userId =
                                     userId,
@@ -797,8 +813,7 @@ class StartupViewModel(
                             )
 
 
-                            _networkError.value =
-                                true
+                            reportStartupFailure()
 
 
                             _destination.value =
@@ -868,8 +883,7 @@ class StartupViewModel(
                     )
 
 
-                    _networkError.value =
-                        true
+                    reportStartupFailure()
 
 
                     _destination.value =
@@ -906,6 +920,7 @@ class StartupViewModel(
         )
 
 
+        startupStage = "Synchronizing attendance state"
         val reconciliationResult =
             attendanceReconciliationManager
                 .reconcile(
@@ -985,8 +1000,7 @@ class StartupViewModel(
         )
 
 
-        _networkError.value =
-            true
+        reportStartupFailure()
 
 
         _destination.value =

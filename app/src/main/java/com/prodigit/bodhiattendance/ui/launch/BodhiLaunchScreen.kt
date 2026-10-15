@@ -49,7 +49,8 @@ import kotlinx.coroutines.delay
 
 @Composable
 fun BodhiLaunchScreen(
-    networkError: Boolean = false
+    networkError: Boolean = false,
+    startupError: String? = null
 ) {
 
     // =========================================================
@@ -522,7 +523,7 @@ fun BodhiLaunchScreen(
                             verticalArrangement = Arrangement.Center
                         ) {
                             Text(
-                                text = "Network Error",
+                                text = if (startupError == "No internet connection") "Network Error" else "Connection / setup error",
                                 fontSize = 15.sp,
                                 fontWeight = FontWeight.ExtraBold,
                                 letterSpacing = 0.5.sp,
@@ -531,7 +532,7 @@ fun BodhiLaunchScreen(
                             )
                             Spacer(modifier = Modifier.height(4.dp))
                             Text(
-                                text = "Please check your internet connection",
+                                text = startupError ?: "Please check your internet connection",
                                 fontSize = 12.sp,
                                 fontWeight = FontWeight.Medium,
                                 letterSpacing = 0.2.sp,
@@ -540,7 +541,7 @@ fun BodhiLaunchScreen(
                             )
                             Spacer(modifier = Modifier.height(3.dp))
                             Text(
-                                text = "Waiting for network...",
+                                text = "Retrying automatically...",
                                 fontSize = 11.sp,
                                 fontWeight = FontWeight.Medium,
                                 letterSpacing = 0.2.sp,

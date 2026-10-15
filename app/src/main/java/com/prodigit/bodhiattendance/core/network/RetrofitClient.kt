@@ -5,6 +5,10 @@ import com.prodigit.bodhiattendance.data.remote.AndroidSessionApi
 import com.prodigit.bodhiattendance.data.remote.AuthApiService
 import com.prodigit.bodhiattendance.data.remote.DeviceApiService
 import com.prodigit.bodhiattendance.data.remote.AttendanceApiService
+import android.util.Log
+import okhttp3.OkHttpClient
+import java.util.UUID
+import java.util.concurrent.TimeUnit
 import retrofit2.Retrofit
 import retrofit2.converter.gson.GsonConverterFactory
 
@@ -22,9 +26,33 @@ object RetrofitClient {
     // BuildConfig.BASE_URL -> Hosted production server
     // ============================================================
 
+    // Log metadata only: never tokens, credentials, bodies, or query strings.
+    private val httpClient = OkHttpClient.Builder()
+        .connectTimeout(20, TimeUnit.SECONDS)
+        .readTimeout(30, TimeUnit.SECONDS)
+        .callTimeout(45, TimeUnit.SECONDS)
+        .addInterceptor { chain ->
+            val requestId = UUID.randomUUID().toString()
+            val request = chain.request().newBuilder()
+                .header("X-Request-ID", requestId).build()
+            val route = "${request.method} ${request.url.host}${request.url.encodedPath}"
+            val started = System.nanoTime()
+            try {
+                val response = chain.proceed(request)
+                val elapsed = (System.nanoTime() - started) / 1_000_000
+                Log.i("BODHI_API", "$route HTTP ${response.code} ${elapsed}ms requestId=$requestId")
+                response
+            } catch (error: java.io.IOException) {
+                Log.e("BODHI_API", "$route ${error.javaClass.simpleName} requestId=$requestId")
+                throw error
+            }
+        }
+        .build()
+
     private val retrofit: Retrofit by lazy {
 
         Retrofit.Builder()
+            .client(httpClient)
 
             .baseUrl(
                 BuildConfig.BASE_URL
