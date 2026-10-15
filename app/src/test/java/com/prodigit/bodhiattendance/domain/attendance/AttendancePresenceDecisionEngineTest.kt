@@ -626,7 +626,7 @@ class AttendancePresenceDecisionEngineTest {
 
         assertEquals(
             false,
-            snapshot.isValidOfficePresence
+            snapshot.isValidOfficePresence(policy)
         )
     }
 
@@ -653,7 +653,7 @@ class AttendancePresenceDecisionEngineTest {
 
         assertEquals(
             false,
-            snapshot.isValidOfficePresence
+            snapshot.isValidOfficePresence(policy)
         )
     }
 
@@ -677,7 +677,7 @@ class AttendancePresenceDecisionEngineTest {
 
         assertEquals(
             true,
-            snapshot.isValidOfficePresence
+            snapshot.isValidOfficePresence(policy)
         )
     }
 
