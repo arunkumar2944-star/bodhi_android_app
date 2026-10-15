@@ -10,6 +10,18 @@ import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 import com.prodigit.bodhiattendance.ui.navigation.AppNavigation
 import com.prodigit.bodhiattendance.ui.theme.CRMAttendanceTheme
 class MainActivity : FragmentActivity() {
+    private val checkoutReceiver = object : android.content.BroadcastReceiver() {
+        override fun onReceive(context: android.content.Context, intent: android.content.Intent) {
+            if (intent.action == com.prodigit.bodhiattendance.core.monitoring.AttendancePrivacyPolicy.CLOSE_AFTER_CHECKOUT) {
+                finishAndRemoveTask()
+            }
+        }
+    }
+    override fun onDestroy() {
+        unregisterReceiver(checkoutReceiver)
+        super.onDestroy()
+    }
+
 
     override fun onResume() {
         super.onResume()
@@ -26,6 +38,9 @@ class MainActivity : FragmentActivity() {
         installSplashScreen()
 
         super.onCreate(savedInstanceState)
+        androidx.core.content.ContextCompat.registerReceiver(this, checkoutReceiver,
+            android.content.IntentFilter(com.prodigit.bodhiattendance.core.monitoring.AttendancePrivacyPolicy.CLOSE_AFTER_CHECKOUT),
+            androidx.core.content.ContextCompat.RECEIVER_NOT_EXPORTED)
         handleCalibrationIntent(intent)
         handleUiResetIntent(intent)
 

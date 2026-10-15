@@ -621,8 +621,19 @@ fun OnboardingScreen(
             )
 
 
-            Text("Precise location with While using the app is enough to start monitoring. Keep the monitoring notification enabled during work. Always allow is optional for background geofence alerts; it does not override the checkout privacy pause.", style = MaterialTheme.typography.bodySmall)
-            Text("After checkout, location monitoring stops. Open the app next workday to resume; a reminder is scheduled around 8:00 AM IST.", style = MaterialTheme.typography.bodySmall)
+            Text("Choose Precise location and While using the app first. For automatic 8 AM restart without opening the app, separately allow background location and Alarms & reminders. Tracking stops after checkout even with background permission.", style = MaterialTheme.typography.bodySmall)
+            Text("After checkout, the screen closes and location monitoring stops. Next day at 8:00 AM IST, the app verifies the new workday and resumes monitoring in the background. A monitoring notification remains visible.", style = MaterialTheme.typography.bodySmall)
+
+            androidx.compose.material3.TextButton(onClick = {
+                context.startActivity(Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS,
+                    android.net.Uri.parse("package:${context.packageName}")))
+            }) { Text("Enable automatic restart: Allow all the time") }
+            if (Build.VERSION.SDK_INT >= 31) {
+                androidx.compose.material3.TextButton(onClick = {
+                    context.startActivity(Intent(Settings.ACTION_REQUEST_SCHEDULE_EXACT_ALARM,
+                        android.net.Uri.parse("package:${context.packageName}")))
+                }) { Text("Enable automatic restart: Alarms & reminders") }
+            }
 
             // =================================================================
             // BLUETOOTH

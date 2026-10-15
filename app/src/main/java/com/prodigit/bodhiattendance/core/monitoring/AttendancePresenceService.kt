@@ -93,32 +93,89 @@ class AttendancePresenceService : Service() {
     }
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
-        if (intent == null || AttendancePrivacyPolicy.isPaused(this) || !hasFineLocation()) { stopSelf(); return START_NOT_STICKY }
+        if (worker?.isActive == true) return START_NOT_STICKY
+        val morning = intent?.action == ACTION_MORNING
+        if (intent == null || !hasFineLocation() ||
+            (morning && (!AttendancePrivacyPolicy.needsMorningReconciliation(this) || !AttendancePrivacyPolicy.hasBackgroundLocation(this))) ||
+            (!morning && AttendancePrivacyPolicy.isPaused(this))) { stopSelf(); return START_NOT_STICKY }
         try {
             val notification = NotificationCompat.Builder(this, CHANNEL_ID)
                 .setSmallIcon(com.prodigit.bodhiattendance.R.mipmap.ic_launcher)
                 .setContentTitle("Bodhi attendance")
-                .setContentText("Monitoring office changes with battery-aware verification")
+                .setContentText(if (morning) "Preparing attendance; location stays paused until verification" else "Monitoring office changes with battery-aware verification")
                 .setOngoing(true).build()
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q)
                 startForeground(NOTIFICATION_ID, notification, ServiceInfo.FOREGROUND_SERVICE_TYPE_LOCATION)
             else startForeground(NOTIFICATION_ID, notification)
-            if (!registered) {
-                connectivity.registerNetworkCallback(NetworkRequest.Builder()
-                    .addTransportType(NetworkCapabilities.TRANSPORT_WIFI).build(), callback)
-                registered = true
-            }
             if (worker?.isActive != true) {
-                AttendanceMonitorStatus.running()
-                worker = scope.launch { arrivals.resetContinuity(); verificationLoop() }
-                signalWifi("startup")
-                Log.i(tag, "Wi-Fi callbacks enabled; GPS runs only for bounded verification")
+                worker = scope.launch {
+                    try {
+                    if (morning && !prepareMorning()) { stopSelf(); return@launch }
+                    if (AttendancePrivacyPolicy.isPaused(this@AttendancePresenceService)) { stopSelf(); return@launch }
+                    if (!registered) {
+                        connectivity.registerNetworkCallback(NetworkRequest.Builder()
+                            .addTransportType(NetworkCapabilities.TRANSPORT_WIFI).build(), callback)
+                        registered = true
+                    }
+                    if (morning) {
+                        requireNotNull(getSystemService(NotificationManager::class.java)).notify(NOTIFICATION_ID,
+                            NotificationCompat.Builder(this@AttendancePresenceService, CHANNEL_ID)
+                                .setSmallIcon(com.prodigit.bodhiattendance.R.mipmap.ic_launcher)
+                                .setContentTitle("Bodhi attendance")
+                                .setContentText("Attendance monitoring is active")
+                                .setOngoing(true).build())
+                    }
+                    AttendanceMonitorStatus.running()
+                    arrivals.resetContinuity()
+                    signalWifi("startup")
+                    verificationLoop()
+                    } catch (e: CancellationException) { throw e }
+                    catch (e: Exception) {
+                        Log.e(tag, "Monitoring worker stopped", e)
+                        if (morning) AttendancePrivacyPolicy.notifyMorning(this@AttendancePresenceService)
+                        stopSelf()
+                    }
+                }
             }
         } catch (e: RuntimeException) {
             Log.e(tag, "Monitoring start blocked", e)
             stopSelf(); return START_NOT_STICKY
         }
         return START_NOT_STICKY
+    }
+
+    /** No location/Wi-Fi callbacks until pending uploads and authoritative day reconciliation succeed. */
+    private suspend fun prepareMorning(): Boolean {
+        val context = this@AttendancePresenceService
+        val session = com.prodigit.bodhiattendance.core.session.SessionManager(context)
+        val device = com.prodigit.bodhiattendance.core.device.DeviceIdManager(context).getDeviceId() ?: return false
+        if (session.getUserId() <= 0) return false
+        while (currentCoroutineContext().isActive && AttendancePrivacyPolicy.needsMorningReconciliation(context)) {
+            try {
+                if (AttendanceBackgroundSync.run(context, diagnostics = false)) {
+                    val token = com.prodigit.bodhiattendance.core.session.AndroidTokenManager(context).usableAccessToken()
+                    if (token != null) {
+                        val provider = com.prodigit.bodhiattendance.domain.attendance.AttendanceEngineRuntimeProvider.getInstance(context)
+                        provider.runtimeSession.initialize(session.getUserId(), device)
+                        val result = provider.reconciliationManager.reconcile(token, session.getUserId(), session.getCompanyId(), device)
+                        if (result is com.prodigit.bodhiattendance.domain.attendance.AttendanceEngineBootstrapResult.Ready) {
+                            val state = provider.runtimeSession.applyReconciledState(session.getUserId(), device, result)
+                            if (state.attendanceState == com.prodigit.bodhiattendance.domain.attendance.AttendanceState.CHECKED_OUT) {
+                                AttendancePrivacyPolicy.scheduleNextMorning(context)
+                                return false
+                            }
+                            if (state.mode == com.prodigit.bodhiattendance.domain.attendance.AttendanceEngineRuntimeMode.READY) {
+                                AttendancePrivacyPolicy.resumeAfterServerValidation(context)
+                                return true
+                            }
+                        }
+                    }
+                }
+            } catch (e: CancellationException) { throw e }
+            catch (e: Exception) { Log.w(tag, "Morning reconciliation deferred; location remains paused", e) }
+            delay(60_000L)
+        }
+        return false
     }
 
     private suspend fun verificationLoop() {
@@ -384,7 +441,9 @@ class AttendancePresenceService : Service() {
     override fun onDestroy() {
         if (registered) connectivity.unregisterNetworkCallback(callback)
         scope.cancel()
-        fences.removeGeofences(fenceIntent).addOnFailureListener { Log.w(tag, "Geofence cleanup failed", it) }
+        fences.removeGeofences(fenceIntent)
+            .addOnFailureListener { Log.w(tag, "Geofence cleanup failed", it) }
+            .addOnCompleteListener { AttendancePrivacyPolicy.terminateAfterCheckoutCleanup(applicationContext) }
         stopForeground(STOP_FOREGROUND_REMOVE)
         AttendanceMonitorStatus.stopped()
         AttendanceMonitorStartGate.onServiceStopped()
@@ -393,6 +452,14 @@ class AttendancePresenceService : Service() {
     override fun onBind(intent: Intent?): IBinder? = null
 
     companion object {
+        private const val ACTION_MORNING = "com.prodigit.bodhiattendance.RESUME_MORNING"
+        fun startMorning(context: Context): Boolean {
+            if (!AttendancePrivacyPolicy.automaticRestartReady(context) || !AttendancePrivacyPolicy.needsMorningReconciliation(context)) return false
+            return try {
+                ContextCompat.startForegroundService(context, Intent(context, AttendancePresenceService::class.java).setAction(ACTION_MORNING))
+                true
+            } catch (e: RuntimeException) { Log.w("ATTENDANCE_MONITOR", "Automatic restart blocked", e); false }
+        }
         private const val CHANNEL_ID = "attendance_presence"
         private const val NOTIFICATION_ID = 2401
         private const val RECOVERY_MS = 5 * 60_000L

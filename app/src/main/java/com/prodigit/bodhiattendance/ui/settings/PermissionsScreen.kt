@@ -70,8 +70,9 @@ private fun getPermissionChecks(context: Context): List<PermissionCheck> {
 
     return listOf(
         PermissionCheck("Precise Location", "Fine location permission for GPS-based presence", fine),
-        PermissionCheck("Background Location", "Optional geofence alerts. Monitoring stops after checkout; open the app next day to resume.", background,
-            notRequired = !background),
+        PermissionCheck("Background Location", "Allow all the time enables automatic 8 AM restart. Tracking still stops after checkout.", background),
+        PermissionCheck("Morning restart alarm", "Alarms & reminders access starts attendance monitoring at 8:00 AM IST.",
+            com.prodigit.bodhiattendance.core.monitoring.AttendancePrivacyPolicy.hasExactAlarmAccess(context)),
         PermissionCheck("Nearby Devices", "Bluetooth scan and connect permissions", nearby,
             notRequired = !nearbyRequired),
         PermissionCheck("Location Service", "Android device location is turned on", locationEnabled),
@@ -160,7 +161,7 @@ fun PermissionsScreen(
                             "Location monitoring is paused after checkout."
                             else if (monitoring.running) "Attendance monitoring is running for your work session."
                             else "Attendance monitoring is not running.", color = Muted)
-                        Text("Monitoring stops after checkout. A reminder around 8:00 AM IST next day asks you to open the app; the reminder collects no location. Saved attendance can still upload while location is paused.", color = Muted, fontSize = 12.sp)
+                        Text("Monitoring stops and the app screen closes after checkout. With background location and alarm access, monitoring restarts at 8:00 AM IST next day without opening the screen. Saved attendance may upload while tracking is paused. If access is missing, a reminder asks you to open the app.", color = Muted, fontSize = 12.sp)
                     }
                 }
             }
@@ -175,7 +176,12 @@ fun PermissionsScreen(
                     colors = ButtonDefaults.buttonColors(containerColor = Blue),
                     shape = RoundedCornerShape(14.dp)
                 ) { Text("Open App Settings", fontWeight = FontWeight.Bold) }
-                // Open App Settings with explicit package URI via helper below.
+                if (Build.VERSION.SDK_INT >= 31) {
+                    OutlinedButton(onClick = {
+                        context.startActivity(Intent(Settings.ACTION_REQUEST_SCHEDULE_EXACT_ALARM,
+                            android.net.Uri.parse("package:${context.packageName}")))
+                    }, modifier = Modifier.fillMaxWidth()) { Text("Allow 8 AM restart alarm") }
+                }
                 Spacer(Modifier.height(8.dp))
                 OutlinedButton(
                     onClick = { openSettings(Settings.ACTION_LOCATION_SOURCE_SETTINGS) },
