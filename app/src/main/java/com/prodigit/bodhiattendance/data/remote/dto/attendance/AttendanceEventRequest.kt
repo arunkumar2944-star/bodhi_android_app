@@ -72,6 +72,7 @@ data class AttendanceEventRequest(
     val wifiVerified: Boolean = false,
 
     val wifiBssid: String? = null,
+    val offlinePermit: String? = null,
     val arrivalProof: WifiArrivalProof? = null
 )
 

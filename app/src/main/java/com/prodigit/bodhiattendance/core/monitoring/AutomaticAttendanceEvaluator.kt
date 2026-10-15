@@ -25,6 +25,8 @@ class AutomaticAttendanceEvaluator(context: Context, private val workDate: Strin
     private val mutex = Mutex()
     private var boundOfficeId: Long? = null
     private val departureEvidence = DepartureEvidenceTracker()
+    private val contextForOffline = context.applicationContext
+    private val offlineSession = OfflineWorkSessionStore(context.applicationContext)
     private val officeContext = AttendanceOfficeContext(context.applicationContext)
     private val boot = com.prodigit.bodhiattendance.data.local.security.BootSessionManager(context.applicationContext)
     var needsContinuityChecks: Boolean = false
@@ -49,7 +51,12 @@ class AutomaticAttendanceEvaluator(context: Context, private val workDate: Strin
             diagnostics.record("ENGINE", "Ignoring mock, stale or invalid GPS evidence")
             return@withLock
         }
-        val token = tokens.usableAccessToken()
+        val offline = if (OfflineWorkSessionStore.isOffline()) offlineSession.current() else null
+        if (OfflineWorkSessionStore.isOffline() && offline == null) {
+            diagnostics.record("OFFLINE_EXPIRED", "No valid offline authorization; attendance evaluation paused")
+            return@withLock
+        }
+        val token = if (offline != null) session.getToken() else tokens.usableAccessToken()
         if (token.isNullOrBlank()) {
             diagnostics.record("ENGINE", "Evaluation paused: valid authentication required")
             return@withLock
@@ -64,11 +71,19 @@ class AutomaticAttendanceEvaluator(context: Context, private val workDate: Strin
         if (boundOfficeId == null && snapshot.attendanceState in setOf(AttendanceState.WORKING, AttendanceState.ON_BREAK)) {
             boundOfficeId = officeContext.read(session.getUserId(), session.getCompanyId(), deviceId, workDate, boot.getBootId())
         }
-        val offices = configuration.getActiveAttendanceConfig(token).getOrElse {
-            departureEvidence.reset()
-            needsBetterGps = true
-            diagnostics.record("ENGINE", "Evaluation paused: CRM configuration unavailable")
-            return@withLock
+        val offices = offline?.offices ?: configuration.getActiveAttendanceConfig(token).getOrElse { error ->
+            if (error is retrofit2.HttpException && error.code() in setOf(401, 403)) {
+                OfflineWorkSessionStore.clear(contextForOffline, "CRM denied office configuration access")
+            }
+            val transient = error is java.io.IOException || (error is retrofit2.HttpException && error.code() >= 500)
+            val fallback = if (transient) offlineSession.useOffline() else null
+            if (fallback == null) {
+                departureEvidence.reset()
+                needsBetterGps = true
+                diagnostics.record("ENGINE", "Evaluation paused: CRM configuration unavailable")
+                return@withLock
+            }
+            fallback.offices
         }
         fun distance(office: com.prodigit.bodhiattendance.domain.model.AttendanceLocationConfig): Float {
             val result = FloatArray(1)
@@ -157,7 +172,7 @@ class AutomaticAttendanceEvaluator(context: Context, private val workDate: Strin
             accuracyMeters = location.accuracy.toDouble(), geofenceVerified = inside,
             wifiVerified = wifiVerified, wifiBssid = readableBssid,
             capturedAtElapsedRealtimeMs = location.elapsedRealtimeNanos / 1_000_000L,
-            arrivalProof = if (snapshot.attendanceState == AttendanceState.NOT_CHECKED_IN && inside && wifiVerified)
+            arrivalProof = if (!OfflineWorkSessionStore.isOffline() && snapshot.attendanceState == AttendanceState.NOT_CHECKED_IN && inside && wifiVerified)
                 arrivals.confirmation(office.id, readableBssid, location.elapsedRealtimeNanos / 1_000_000L) else null
         )
         evidence.arrivalProof?.let { proof -> diagnostics.record("ARRIVAL_CONFIRMED",

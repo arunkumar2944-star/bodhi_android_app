@@ -30,6 +30,11 @@ object AttendanceBackgroundSync {
         val device = DeviceIdManager(context).getDeviceId() ?: return@withLock true
         if (user <= 0) return@withLock true
         val token = AndroidTokenManager(context).usableAccessToken() ?: return@withLock false
+        // Reconnection validates current employee/device eligibility before attempting saved writes.
+        // A PAUSED policy revokes the local lease; queued events still reach server review.
+        try { AttendanceDayGate.fetch(context) }
+        catch (e: CancellationException) { throw e }
+        catch (_: Exception) { return@withLock false }
         val db = AttendanceDatabase.getInstance(context)
         val offline = OfflineAttendanceRepository(db.attendanceEventDao(), AttendanceDiagnostics(context))
         AttendanceSyncManager(AttendanceRepositoryImpl(RetrofitClient.attendanceApi), offline,

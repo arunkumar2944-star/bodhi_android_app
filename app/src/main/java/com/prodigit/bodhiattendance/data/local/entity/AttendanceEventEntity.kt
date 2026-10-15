@@ -235,6 +235,7 @@ data class AttendanceEventEntity(
     // ============================================================
 
     val arrivalProofJson: String? = null,
+    val offlinePermit: String? = null,
     val effectiveTimeEpochMs: Long? = null,
     val reason: String? = null,
 

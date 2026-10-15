@@ -328,7 +328,8 @@ class AttendanceEngineRuntimeProvider(
                 bootSessionManager,
 
             timeAnchorManager =
-                timeAnchorManager
+                timeAnchorManager,
+            offlineSession = com.prodigit.bodhiattendance.core.monitoring.OfflineWorkSessionStore(appContext)
         )
 
     // ========================================================

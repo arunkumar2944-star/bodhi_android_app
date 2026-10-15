@@ -32,4 +32,5 @@ data class MobileDuty(val date: String, val dutyType: String, val startTime: Str
 
 data class DailyEligibility(val userId: Int, val date: String, val serverTimeMs: Long,
     val status: String, val monitoringMode: String, val hasCheckIn: Boolean,
-    val attendanceState: String, val validUntilMs: Long)
+    val attendanceState: String, val validUntilMs: Long,
+    val offlinePermit: String? = null, val offlineValidUntilMs: Long? = null, val companyId: Int? = null)

@@ -15,6 +15,7 @@ import kotlinx.coroutines.sync.withLock
  * already-consumed refresh token, which the server treats as a replay.
  */
 class AndroidTokenManager(context: Context) {
+    private val contextForOffline = context.applicationContext
     private val sessions = SessionManager(context.applicationContext)
     private val credentials = SecureAndroidRefreshStore(context.applicationContext)
     private val deviceIds = DeviceIdManager(context.applicationContext)
@@ -25,12 +26,14 @@ class AndroidTokenManager(context: Context) {
     fun hasRefreshCredential(): Boolean = credentials.get() != null
 
     suspend fun usableAccessToken(): String? = rotationLock.withLock {
+        lastHttpStatus = null
         val current = sessions.getToken() ?: return@withLock null
         if (!JwtUtils.expiresWithin(current)) return@withLock current
         val refresh = credentials.get() ?: return@withLock null
         val deviceId = deviceIds.getDeviceId() ?: return@withLock null
         try {
             val reply = RetrofitClient.androidSessionApi.refresh(AndroidRefreshRequest(deviceId, refresh))
+            lastHttpStatus = reply.code()
             val payload = reply.body()
             if (reply.isSuccessful && payload?.success == true && !payload.token.isNullOrBlank() &&
                 !payload.refreshToken.isNullOrBlank()) {
@@ -41,7 +44,10 @@ class AndroidTokenManager(context: Context) {
             }
             Log.w("BODHI_SESSION", "Refresh failed: HTTP ${reply.code()}")
             // Only authoritative invalidation clears the refresh credential.
-            if (reply.code() == 401 || reply.code() == 403) credentials.clear()
+            if (reply.code() == 401 || reply.code() == 403) {
+                credentials.clear()
+                com.prodigit.bodhiattendance.core.monitoring.OfflineWorkSessionStore.clear(contextForOffline, "CRM denied access — offline monitoring stopped")
+            }
         } catch (error: CancellationException) {
             throw error
         } catch (error: Exception) {

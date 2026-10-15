@@ -28,6 +28,7 @@ class SessionManager(
         role: String,
         companyId: Int
     ) {
+        com.prodigit.bodhiattendance.core.monitoring.OfflineWorkSessionStore.clear(preferencesContext)
 
         // A new interactive login must never inherit another device session.
         SecureAndroidRefreshStore(preferencesContext).clear()
@@ -164,6 +165,8 @@ class SessionManager(
     // ============================================================
 
     fun clearSession() {
+        com.prodigit.bodhiattendance.core.monitoring.OfflineWorkSessionStore.clear(preferencesContext, "Signed out — offline authorization removed")
+        preferencesContext.stopService(android.content.Intent(preferencesContext, com.prodigit.bodhiattendance.core.monitoring.AttendancePresenceService::class.java))
 
         SecureAndroidRefreshStore(preferencesContext).clear()
         preferences

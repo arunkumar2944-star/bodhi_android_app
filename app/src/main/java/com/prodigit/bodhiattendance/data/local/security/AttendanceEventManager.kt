@@ -138,7 +138,9 @@ class AttendanceEventManager(
     BootSessionManager,
 
     private val timeAnchorManager:
-    TimeAnchorManager
+    TimeAnchorManager,
+
+    private val offlineSession: com.prodigit.bodhiattendance.core.monitoring.OfflineWorkSessionStore? = null
 
 ) {
 
@@ -671,9 +673,16 @@ class AttendanceEventManager(
         val arrivalAnchor = arrivalProof?.let { timeAnchorManager.getAnchorByUuid(it.anchorUuid) }
         val effectiveArrivalTime = if (arrivalProof != null && arrivalAnchor != null)
             java.time.Instant.parse(arrivalAnchor.serverTime).plusMillis(arrivalProof.observedElapsedMs - arrivalAnchor.elapsedRealtimeMs).toEpochMilli() else null
+        val deferred = com.prodigit.bodhiattendance.core.monitoring.OfflineWorkSessionStore.isOffline()
+        val offlinePermit = if (deferred && (effectiveArrivalTime ?: trustedEventTime) != null)
+            offlineSession?.permitForEvent(userId, companyId, deviceId, currentBootId,
+                requireNotNull(effectiveArrivalTime ?: trustedEventTime)) else null
+        if (deferred && offlinePermit == null) return AttendanceEventRecordResult.NotStored(
+            IllegalStateException("Offline authorization expired or does not cover this event"))
         val localEvent =
             AttendanceEventEntity(
 
+                offlinePermit = offlinePermit,
                 arrivalProofJson = arrivalProof?.let { com.google.gson.Gson().toJson(it) },
                 effectiveTimeEpochMs = effectiveArrivalTime ?: trustedEventTime,
                 reason = if (effectiveArrivalTime != null) "Office Wi-Fi arrival confirmed by GPS" else attendanceReason,
@@ -844,6 +853,11 @@ class AttendanceEventManager(
         // ====================================================
 
 
+        if (deferred) {
+            offlineSession?.scheduleSync()
+            return AttendanceEventRecordResult.StoredForRetry(eventUuid, "Saved offline; pending CRM validation")
+        }
+
         // ====================================================
         // MARK SYNCING
         // ====================================================
@@ -903,6 +917,7 @@ class AttendanceEventManager(
         val request =
             AttendanceEventRequest(
 
+                offlinePermit = offlinePermit,
                 arrivalProof = arrivalProof,
                 eventUuid =
                     eventUuid,

@@ -83,6 +83,7 @@ fun PermissionsScreen(
     val context = LocalContext.current
     val lifecycleOwner = LocalLifecycleOwner.current
     val dailyStatus by com.prodigit.bodhiattendance.core.monitoring.AttendanceDayGate.state.collectAsState()
+    val offline by com.prodigit.bodhiattendance.core.monitoring.OfflineWorkSessionStore.state.collectAsState()
     val monitoring by com.prodigit.bodhiattendance.core.monitoring.AttendanceMonitorStatus.state.collectAsState()
     var checks by remember { mutableStateOf(getPermissionChecks(context)) }
 
@@ -155,6 +156,7 @@ fun PermissionsScreen(
                         Text("Location privacy", fontWeight = FontWeight.Bold, color = Ink)
                         Text(if (com.prodigit.bodhiattendance.core.monitoring.AttendancePrivacyPolicy.isPaused(context))
                             "Location monitoring is paused after checkout."
+                            else if (offline.offline) "Offline monitoring: events saved on phone, pending CRM validation."
                             else if (monitoring.verificationPending) "Verification pending: retrying CRM; GPS is paused."
                             else if (monitoring.running) "Attendance monitoring is running for your work session."
                             else "Attendance monitoring is not running.", color = Muted)

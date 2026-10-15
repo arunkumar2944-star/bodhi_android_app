@@ -19,16 +19,28 @@ object AttendanceDayGate {
     suspend fun fetch(c: Context): DailyEligibility {
         val expectedUser = SessionManager(c).getUserId()
         val device = DeviceIdManager(c).getDeviceId() ?: error("Registered device missing")
-        val token = AndroidTokenManager(c).usableAccessToken() ?: error("Session unavailable")
+        val tokens = AndroidTokenManager(c)
+        val token = tokens.usableAccessToken() ?: run {
+            if (tokens.lastHttpStatus in setOf(401, 403)) throw EligibilityHttpFailure(requireNotNull(tokens.lastHttpStatus))
+            throw java.io.IOException("Session refresh unavailable")
+        }
         val started = android.os.SystemClock.elapsedRealtime()
         val response = RetrofitClient.mobileUiApi.dayEligibility("Bearer $token", device)
-        if (!response.isSuccessful) throw EligibilityHttpFailure(response.code())
+        if (!response.isSuccessful) {
+            if (response.code() in setOf(401, 403)) OfflineWorkSessionStore.clear(c, "CRM denied attendance access")
+            throw EligibilityHttpFailure(response.code())
+        }
         val body = response.body()
         val result = body?.data
         check(response.isSuccessful && body?.success == true && result != null) { "Daily eligibility unavailable" }
         check(expectedUser > 0 && result.userId == expectedUser && result.userId == SessionManager(c).getUserId() && result.monitoringMode in setOf("PAUSED", "AWAITING_ARRIVAL", "ACTIVE"))
         check(android.os.SystemClock.elapsedRealtime() - started < 300_000L) { "Daily eligibility response expired" }
         check(result.validUntilMs > result.serverTimeMs && result.validUntilMs - result.serverTimeMs <= 300_000L)
+        if (result.companyId != null && result.companyId != SessionManager(c).getCompanyId()) {
+            OfflineWorkSessionStore.clear(c, "Company changed — refresh your signed-in session")
+            throw EligibilityHttpFailure(403)
+        }
+        if (result.monitoringMode == "PAUSED") OfflineWorkSessionStore.clear(c, "CRM paused attendance monitoring")
         statusFlow.value = result.status
         prefs(c).edit().putString("status", result.status).putString("date", result.date)
             .putString("mode", result.monitoringMode).apply()

@@ -37,6 +37,7 @@ class AttendancePresenceService : Service() {
     private val tag = "ATTENDANCE_MONITOR"
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Main.immediate)
     private val diagnostics by lazy { AttendanceDiagnostics(applicationContext) }
+    private val offlineSession by lazy { OfflineWorkSessionStore(applicationContext) }
     private val evaluator by lazy { AutomaticAttendanceEvaluator(applicationContext, requireNotNull(workDate)) }
     private val arrivals by lazy { ArrivalCandidateRecorder(applicationContext) }
     @Volatile private var arrivalOffices = emptyList<com.prodigit.bodhiattendance.domain.model.AttendanceLocationConfig>()
@@ -52,7 +53,11 @@ class AttendancePresenceService : Service() {
     private var recoveryNetworkRegistered = false
     private val recoveryWakeups = Channel<Unit>(Channel.CONFLATED)
     private val recoveryCallback = object : ConnectivityManager.NetworkCallback() {
-        override fun onAvailable(network: Network) { recoveryWakeups.trySend(Unit) }
+        override fun onAvailable(network: Network) {
+            recoveryWakeups.trySend(Unit)
+            AttendanceVerificationSignals.request("Network available — revalidate offline work session")
+            AttendanceBackgroundSync.schedule(applicationContext)
+        }
     }
     private var workDate: String? = null
     private var lastWifiSignature: String? = null
@@ -158,7 +163,7 @@ class AttendancePresenceService : Service() {
                 .setContentText(message).setOngoing(true).setOnlyAlertOnce(true).build())
     }
 
-    /** Preserve the visible work-session service during outages, without collecting GPS on stale permission. */
+    /** Retry online policy or use a bounded, previously server-authorized offline session. */
     private suspend fun awaitDailyEligibility(): com.prodigit.bodhiattendance.data.remote.DailyEligibility? {
         var attempt = 0
         while (currentCoroutineContext().isActive) {
@@ -170,8 +175,22 @@ class AttendancePresenceService : Service() {
             // Only network changes during this attempt should accelerate its next retry.
             while (recoveryWakeups.tryReceive().isSuccess) { /* Drain earlier connectivity signals. */ }
             try {
+                val activeNetwork = connectivity.activeNetwork
+                val networkReady = activeNetwork?.let { connectivity.getNetworkCapabilities(it) }
+                    ?.hasCapability(NetworkCapabilities.NET_CAPABILITY_VALIDATED) == true
+                if (!networkReady) {
+                    val wasOffline = OfflineWorkSessionStore.isOffline()
+                    val cached = offlineSession.useOffline()
+                    if (cached != null && cached.lease.workDate == workDate) {
+                        AttendanceMonitorStatus.running()
+                        if (!wasOffline) diagnostics.record("OFFLINE_AUTHORIZED", "Connectivity unavailable; using bounded cached work session")
+                        return cached.eligibility
+                    }
+                }
+                val wasOffline = OfflineWorkSessionStore.isOffline()
                 val day = AttendanceDayGate.fetch(this)
-                if (attempt > 0) {
+                offlineSession.online()
+                if (attempt > 0 || wasOffline) {
                     diagnostics.record("API_RECOVERED", "Daily eligibility recovered after $attempt failed attempts; checking current CRM status")
                     AttendanceBackgroundSync.schedule(this)
                 }
@@ -179,10 +198,25 @@ class AttendancePresenceService : Service() {
             } catch (e: CancellationException) { throw e }
             catch (e: Exception) {
                 if (e is EligibilityHttpFailure && !EligibilityRecoveryPolicy.shouldRetryHttp(e.status)) {
+                    OfflineWorkSessionStore.clear(this, "CRM denied access — monitoring stopped")
                     diagnostics.record("API_BLOCKED", "Daily eligibility denied HTTP ${e.status}; monitoring stopped")
                     AttendanceBackgroundSync.schedule(this)
                     stopSelf()
                     return null
+                }
+                val temporary = e is java.io.IOException ||
+                    (e is EligibilityHttpFailure && (e.status >= 500 || e.status in setOf(408, 429)))
+                if (temporary) {
+                    val previouslyOffline = OfflineWorkSessionStore.isOffline()
+                    val cached = offlineSession.useOffline()
+                    if (cached != null && cached.lease.workDate == workDate) {
+                        AttendanceMonitorStatus.running()
+                        showVerificationNotification("Offline attendance — saved on phone, pending CRM validation")
+                        if (!previouslyOffline) diagnostics.record("OFFLINE_AUTHORIZED", "Using bounded work-session authorization; validUntilMs=${cached.lease.validUntilMs}")
+                        return cached.eligibility
+                    }
+                } else {
+                    OfflineWorkSessionStore.clear(this, "CRM policy could not be validated — connect to CRM")
                 }
                 attempt = (attempt + 1).coerceAtMost(1000)
                 val delayMs = EligibilityRecoveryPolicy.retryDelayMillis(attempt)
@@ -228,13 +262,16 @@ class AttendancePresenceService : Service() {
                     stopSelf(); return
                 }
                 AttendanceMonitorStatus.running()
-                showVerificationNotification("Monitoring attendance for the work session you started")
+                showVerificationNotification(if (OfflineWorkSessionStore.isOffline()) "Offline attendance — saved on phone, pending CRM validation"
+                    else "Monitoring attendance for the work session you started")
                 Log.i(tag, "Verification burst: " + reason)
                 diagnostics.record("VERIFICATION", "Verification burst: " + reason)
                 // Refresh office evidence policy; no background geofences are registered.
-                try { withTimeoutOrNull(10_000L) { refreshOfficeConfiguration() } }
-                catch (e: CancellationException) { throw e }
-                catch (e: Exception) { Log.w(tag, "Office configuration refresh deferred", e) }
+                val freshConfiguration = if (OfflineWorkSessionStore.isOffline()) false else try {
+                    withTimeoutOrNull(10_000L) { refreshOfficeConfiguration() } == true
+                } catch (e: CancellationException) { throw e }
+                catch (e: Exception) { Log.w(tag, "Office configuration refresh deferred", e); false }
+                if (freshConfiguration) offlineSession.authorize(day, arrivalOffices)
                 if (AttendancePrivacyPolicy.isPaused(this@AttendancePresenceService)) { stopSelf(); return }
                 // Persist approved Wi-Fi arrival before waiting for any GPS fix.
                 try {
@@ -247,19 +284,22 @@ class AttendancePresenceService : Service() {
                 } catch (e: CancellationException) { throw e }
                 catch (e: Exception) { Log.w("ARRIVAL_EVIDENCE", "Arrival evidence retained for retry", e) }
                 if (AttendancePrivacyPolicy.isPaused(this@AttendancePresenceService)) { stopSelf(); return }
+                val sensorBudget = if (OfflineWorkSessionStore.isOffline()) offlineSession.sensorBudgetMs() else 35_000L
+                if (sensorBudget <= 0L) { waitMs = MIN_RETRY_MS; continue }
                 val source = CancellationTokenSource()
                 val location = try {
-                    withTimeoutOrNull(35_000L) {
+                    withTimeoutOrNull(sensorBudget.coerceAtMost(35_000L)) {
                         fused.getCurrentLocation(CurrentLocationRequest.Builder()
                             .setPriority(Priority.PRIORITY_HIGH_ACCURACY)
-                            .setMaxUpdateAgeMillis(0L).setDurationMillis(30_000L).build(), source.token).awaitResult()
+                            .setMaxUpdateAgeMillis(0L).setDurationMillis(sensorBudget.coerceIn(1L, 30_000L)).build(), source.token).awaitResult()
                     }
                 } finally { source.cancel() }
                 // A one-shot fix may be inaccurate indoors. If so, briefly sample
                 // additional Fused Location fixes; CRM accuracy policy remains authoritative.
                 val refinedLocation = if (location != null && location.hasAccuracy() &&
                     location.accuracy > REFINE_ABOVE_METERS) {
-                    improvePoorFix(location)
+                    val remaining = if (OfflineWorkSessionStore.isOffline()) offlineSession.sensorBudgetMs() else REFINE_WINDOW_MS
+                    if (remaining > 0L) withTimeoutOrNull(remaining) { improvePoorFix(location) } ?: location else location
                 } else location
                 val calibrating = HomeLocationCalibration.requested
                 if (calibrating) HomeLocationCalibration.record(refinedLocation, readBssid())
@@ -280,7 +320,7 @@ class AttendancePresenceService : Service() {
                     stopSelf()
                     return
                 }
-                if (!calibrating) {
+                if (!calibrating && !OfflineWorkSessionStore.isOffline()) {
                     try { diagnostics.upload() }
                     catch (e: CancellationException) { throw e }
                     catch (_: Exception) { Log.w(tag, "Diagnostics retained for retry") }
@@ -405,8 +445,8 @@ class AttendancePresenceService : Service() {
         catch (e: Exception) { Log.w(tag, "Evidence upload deferred; retained for next verification", e) }
     }
 
-    private suspend fun refreshOfficeConfiguration() {
-        val token = tokens.usableAccessToken() ?: return
+    private suspend fun refreshOfficeConfiguration(): Boolean {
+        val token = tokens.usableAccessToken() ?: return false
         if (arrivalOffices.isEmpty()) {
             arrivalOffices = com.prodigit.bodhiattendance.data.local.repository.AttendanceConfigCacheRepository(
                 com.prodigit.bodhiattendance.data.local.database.AttendanceDatabase.getInstance(applicationContext).attendanceConfigDao()
@@ -418,11 +458,13 @@ class AttendancePresenceService : Service() {
             com.prodigit.bodhiattendance.data.local.repository.AttendanceConfigCacheRepository(
                 com.prodigit.bodhiattendance.data.local.database.AttendanceDatabase.getInstance(applicationContext).attendanceConfigDao()
             ).replaceConfiguration(arrivalOffices)
+            return true
         } else if (arrivalOffices.isEmpty()) {
             arrivalOffices = com.prodigit.bodhiattendance.data.local.repository.AttendanceConfigCacheRepository(
                 com.prodigit.bodhiattendance.data.local.database.AttendanceDatabase.getInstance(applicationContext).attendanceConfigDao()
             ).getCachedConfiguration()
         }
+        return false
     }
 
     @Suppress("DEPRECATION")

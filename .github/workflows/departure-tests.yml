@@ -42,12 +42,15 @@ jobs:
             "$SOURCE/domain/attendance/AttendancePresenceDecisionEngine.kt" \
             "$SOURCE/domain/attendance/DeparturePhaseRecovery.kt" \
             "$SOURCE/core/monitoring/DepartureEvidenceTracker.kt" \
+            "$SOURCE/core/monitoring/OfflineWorkSessionPolicy.kt" \
             "$TEST_SOURCE/domain/attendance/AttendancePresenceDecisionEngineTest.kt" \
             "$TEST_SOURCE/domain/attendance/DeparturePhaseRecoveryTest.kt" \
             "$TEST_SOURCE/core/monitoring/DepartureEvidenceTrackerTest.kt" \
+            "$TEST_SOURCE/core/monitoring/OfflineWorkSessionPolicyTest.kt" \
             -cp "$TEST_TOOLS/junit.jar:$TEST_TOOLS/hamcrest.jar" \
             -include-runtime -d "$TEST_TOOLS/tests.jar"
           java -cp "$TEST_TOOLS/tests.jar:$TEST_TOOLS/junit.jar:$TEST_TOOLS/hamcrest.jar" org.junit.runner.JUnitCore \
             com.prodigit.bodhiattendance.domain.attendance.AttendancePresenceDecisionEngineTest \
             com.prodigit.bodhiattendance.domain.attendance.DeparturePhaseRecoveryTest \
-            com.prodigit.bodhiattendance.core.monitoring.DepartureEvidenceTrackerTest
+            com.prodigit.bodhiattendance.core.monitoring.DepartureEvidenceTrackerTest \
+            com.prodigit.bodhiattendance.core.monitoring.OfflineWorkSessionPolicyTest

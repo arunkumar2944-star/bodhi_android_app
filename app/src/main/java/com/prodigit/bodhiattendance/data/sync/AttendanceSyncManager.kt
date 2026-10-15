@@ -451,6 +451,7 @@ class AttendanceSyncManager(
                 // ORIGINAL EVENT UUID
                 // --------------------------------------------
 
+                offlinePermit = event.offlinePermit,
                 arrivalProof = event.arrivalProofJson?.let { com.google.gson.Gson().fromJson(it,
                     com.prodigit.bodhiattendance.data.remote.dto.attendance.WifiArrivalProof::class.java) },
                 eventUuid =
