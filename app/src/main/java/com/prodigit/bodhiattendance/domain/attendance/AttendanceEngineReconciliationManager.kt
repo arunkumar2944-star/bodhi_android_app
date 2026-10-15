@@ -83,7 +83,9 @@ class AttendanceEngineReconciliationManager(
 
         companyId: Int,
 
-        deviceId: String
+        deviceId: String,
+
+        resumePhase: AttendanceEnginePhase? = null
 
     ): AttendanceEngineBootstrapResult {
 
@@ -311,10 +313,8 @@ class AttendanceEngineReconciliationManager(
         // BUILD SAFE CURRENT-BOOT ENGINE PHASE
         // ====================================================
 
-        val phaseResult =
-            buildSafePhase(
-                serverState = serverState
-            )
+        val resumed = DeparturePhaseRecovery.compatible(serverState.attendanceState, resumePhase)
+        val phaseResult = resumed?.let { SafePhaseResult.Ready(it) } ?: buildSafePhase(serverState = serverState)
 
 
         if (phaseResult is SafePhaseResult.Blocked) {
@@ -327,9 +327,9 @@ class AttendanceEngineReconciliationManager(
         }
 
 
-        val phase =
-            (phaseResult as SafePhaseResult.Ready)
-                .phase
+        // The caller may supply only same-day, same-boot Room-restored timing.
+        // Server state still wins; fresh sensors must revalidate before any event.
+        val phase = (phaseResult as SafePhaseResult.Ready).phase
 
 
         // ====================================================
@@ -396,7 +396,9 @@ class AttendanceEngineReconciliationManager(
                         .attendanceState,
 
                 phase =
-                    phase
+                    phase,
+
+                officeId = serverState.officeId
             )
     }
 

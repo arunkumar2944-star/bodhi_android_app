@@ -38,8 +38,13 @@ object AttendanceMonitorStartGate {
                 val device = DeviceIdManager(context).getDeviceId() ?: return@launch
                 val token = AndroidTokenManager(context).usableAccessToken() ?: return@launch
                 val provider = AttendanceEngineRuntimeProvider.getInstance(context)
-                provider.runtimeSession.initialize(session.getUserId(), device)
-                val result = provider.reconciliationManager.reconcile(token, session.getUserId(), session.getCompanyId(), device)
+                val initialized = provider.runtimeSession.initialize(session.getUserId(), device)
+                val officeContext = AttendanceOfficeContext(context)
+                val boot = com.prodigit.bodhiattendance.data.local.security.BootSessionManager(context).getBootId()
+                val oldOffice = officeContext.read(session.getUserId(), session.getCompanyId(), device, day.date, boot)
+                val restored = (initialized as? AttendanceEngineRuntimeStartResult.Ready)?.snapshot
+                val resumePhase = restored?.phase?.takeIf { oldOffice != null }
+                val result = provider.reconciliationManager.reconcile(token, session.getUserId(), session.getCompanyId(), device, resumePhase)
                 if (result !is AttendanceEngineBootstrapResult.Ready) return@launch
                 val state = provider.runtimeSession.applyReconciledState(session.getUserId(), device, result)
                 if (state.attendanceState == AttendanceState.CHECKED_OUT) {
@@ -48,6 +53,11 @@ object AttendanceMonitorStartGate {
                     return@launch
                 }
                 if (state.mode != AttendanceEngineRuntimeMode.READY) return@launch
+                if (state.attendanceState in setOf(AttendanceState.WORKING, AttendanceState.ON_BREAK)) {
+                    result.officeId?.takeIf { it > 0 }?.let { office ->
+                        officeContext.save(session.getUserId(), session.getCompanyId(), device, day.date, boot, office)
+                    }
+                }
                 currentCoroutineContext().ensureActive()
                 synchronized(this@AttendanceMonitorStartGate) {
                     if (isVisible()) {

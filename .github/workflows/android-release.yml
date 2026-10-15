@@ -41,6 +41,13 @@ jobs:
       - name: Prepare Gradle wrapper
         run: chmod +x ./gradlew
 
+      - name: Test departure timing and recovery
+        run: |
+          ./gradlew --no-daemon --stacktrace :app:testDebugUnitTest \
+            --tests 'com.prodigit.bodhiattendance.domain.attendance.AttendancePresenceDecisionEngineTest' \
+            --tests 'com.prodigit.bodhiattendance.domain.attendance.DeparturePhaseRecoveryTest' \
+            --tests 'com.prodigit.bodhiattendance.core.monitoring.DepartureEvidenceTrackerTest'
+
       - name: Build hosted-backend debug APK and unsigned release APK
         run: |
           ./gradlew --no-daemon --stacktrace \

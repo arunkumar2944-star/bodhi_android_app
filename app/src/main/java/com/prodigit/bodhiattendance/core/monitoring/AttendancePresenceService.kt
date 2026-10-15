@@ -37,7 +37,7 @@ class AttendancePresenceService : Service() {
     private val tag = "ATTENDANCE_MONITOR"
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Main.immediate)
     private val diagnostics by lazy { AttendanceDiagnostics(applicationContext) }
-    private val evaluator by lazy { AutomaticAttendanceEvaluator(applicationContext) }
+    private val evaluator by lazy { AutomaticAttendanceEvaluator(applicationContext, requireNotNull(workDate)) }
     private val arrivals by lazy { ArrivalCandidateRecorder(applicationContext) }
     @Volatile private var arrivalOffices = emptyList<com.prodigit.bodhiattendance.domain.model.AttendanceLocationConfig>()
     @Volatile private var wifiSignal: Pair<String, Long>? = null
@@ -291,7 +291,8 @@ class AttendancePresenceService : Service() {
                 val due = if (refinedLocation != null) evaluator.nextVerificationElapsedMs else null
                 waitMs = if (evaluator.needsContinuityChecks || arrivals.hasPending()) {
                     gpsRetries = 0
-                    45_000L
+                    // Reconfirm departure promptly; do not let the normal recovery delay invalidate the pair.
+                    15_000L
                 } else if (gpsNeedsRetry && gpsRetries < MAX_GPS_RETRIES) {
                     gpsRetries++
                     Log.i(tag, "Automatic GPS retry " + gpsRetries + "/" + MAX_GPS_RETRIES)
@@ -486,4 +487,3 @@ private suspend fun <T> Task<T>.awaitResult(): T = suspendCancellableCoroutine {
     addOnFailureListener { if (continuation.isActive) continuation.resumeWithException(it) }
     addOnCanceledListener { continuation.cancel() }
 }
-

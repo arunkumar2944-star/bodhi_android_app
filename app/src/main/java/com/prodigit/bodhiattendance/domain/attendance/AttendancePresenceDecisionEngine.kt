@@ -244,9 +244,8 @@ object AttendancePresenceDecisionEngine {
 
         if (presence.observationUncertain) {
             return AttendanceEngineDecision.NoAttendanceEvent(
-                nextPhase = if (attendanceState == AttendanceState.WORKING && currentPhase is AttendanceEnginePhase.AbsenceGrace)
-                    AttendanceEnginePhase.Present else currentPhase,
-                reason = "Evidence uncertain; no event; unconfirmed absence grace cancelled"
+                nextPhase = currentPhase,
+                reason = "Evidence uncertain; no event; departure timing retained pending fresh confirmation"
             )
         }
 

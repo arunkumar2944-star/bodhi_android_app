@@ -248,7 +248,9 @@ class AttendanceBootstrapRepositoryImpl(
                         data.attendanceId,
 
                     onDutyActive =
-                        data.onDutyActive
+                        data.onDutyActive,
+
+                    officeId = data.officeId
                 )
             )
 

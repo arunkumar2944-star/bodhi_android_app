@@ -55,5 +55,7 @@ data class AttendanceBootstrapState(
     // ========================================================
 
     val onDutyActive:
-    Boolean = false
+    Boolean = false,
+
+    val officeId: Long? = null
 )

@@ -21,7 +21,9 @@ sealed class AttendanceEngineBootstrapResult {
         AttendanceState,
 
         val phase:
-        AttendanceEnginePhase
+        AttendanceEnginePhase,
+
+        val officeId: Long? = null
 
     ) : AttendanceEngineBootstrapResult()
 

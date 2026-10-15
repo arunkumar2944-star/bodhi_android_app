@@ -13,7 +13,7 @@ import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 
 /** Evaluates fresh evidence only; unknown sensors/configuration never mean absence. */
-class AutomaticAttendanceEvaluator(context: Context) {
+class AutomaticAttendanceEvaluator(context: Context, private val workDate: String) {
     private val arrivals = ArrivalCandidateRecorder(context.applicationContext)
     private val diagnostics = AttendanceDiagnostics(context.applicationContext)
     private val journal = PresenceEvidenceJournal(context.applicationContext)
@@ -24,9 +24,9 @@ class AutomaticAttendanceEvaluator(context: Context) {
     private val configuration = AttendanceConfigRepositoryImpl(RetrofitClient.attendanceApi)
     private val mutex = Mutex()
     private var boundOfficeId: Long? = null
-    private var previousOutsideFixMs: Long? = null
-    private var outsideFixCount = 0
-    private var continuousOutsideSinceMs: Long? = null
+    private val departureEvidence = DepartureEvidenceTracker()
+    private val officeContext = AttendanceOfficeContext(context.applicationContext)
+    private val boot = com.prodigit.bodhiattendance.data.local.security.BootSessionManager(context.applicationContext)
     var needsContinuityChecks: Boolean = false
         private set
     var needsBetterGps: Boolean = false
@@ -44,8 +44,8 @@ class AutomaticAttendanceEvaluator(context: Context) {
             !location.accuracy.isFinite() || location.accuracy < 0f ||
             location.elapsedRealtimeNanos <= 0L ||
             SystemClock.elapsedRealtimeNanos() - location.elapsedRealtimeNanos !in 0..60_000_000_000L) {
-            previousOutsideFixMs = null
-            continuousOutsideSinceMs = null
+            departureEvidence.reset()
+            needsBetterGps = true
             diagnostics.record("ENGINE", "Ignoring mock, stale or invalid GPS evidence")
             return@withLock
         }
@@ -61,9 +61,12 @@ class AutomaticAttendanceEvaluator(context: Context) {
             diagnostics.record("ENGINE", "Evaluation paused: startup runtime validation required")
             return@withLock
         }
+        if (boundOfficeId == null && snapshot.attendanceState in setOf(AttendanceState.WORKING, AttendanceState.ON_BREAK)) {
+            boundOfficeId = officeContext.read(session.getUserId(), session.getCompanyId(), deviceId, workDate, boot.getBootId())
+        }
         val offices = configuration.getActiveAttendanceConfig(token).getOrElse {
-            previousOutsideFixMs = null
-            continuousOutsideSinceMs = null
+            departureEvidence.reset()
+            needsBetterGps = true
             diagnostics.record("ENGINE", "Evaluation paused: CRM configuration unavailable")
             return@withLock
         }
@@ -94,9 +97,7 @@ class AutomaticAttendanceEvaluator(context: Context) {
             return@withLock
         }
         suspend fun uncertain(reason: String) {
-            outsideFixCount = 0
-            previousOutsideFixMs = null
-            continuousOutsideSinceMs = null
+            departureEvidence.reset()
             needsBetterGps = true
             val evidence = AttendanceEngineEvidence(latitude = location.latitude, longitude = location.longitude,
                 accuracyMeters = location.accuracy.toDouble(), capturedAtElapsedRealtimeMs = location.elapsedRealtimeNanos / 1_000_000L,
@@ -137,27 +138,15 @@ class AutomaticAttendanceEvaluator(context: Context) {
             }
             val now = location.elapsedRealtimeNanos / 1_000_000L
             // Evidence freshness guard, not a CRM attendance/grace setting.
-            if (previousOutsideFixMs == null || now - previousOutsideFixMs!! !in 1..90_000L) {
-                uncertain("Departure needs another fresh outside observation")
-                previousOutsideFixMs = now
-                outsideFixCount = 1
-                continuousOutsideSinceMs = now
-                return@withLock
-            }
-            previousOutsideFixMs = now
-            outsideFixCount++
             needsContinuityChecks = snapshot.attendanceState in setOf(AttendanceState.WORKING, AttendanceState.ON_BREAK)
-            val breakPhase = snapshot.phase as? AttendanceEnginePhase.BreakActive
-            if (snapshot.attendanceState == AttendanceState.ON_BREAK && breakPhase != null &&
-                now - breakPhase.absenceStartedElapsedRealtimeMs >= policy.maximumAbsenceMs &&
-                now - (continuousOutsideSinceMs ?: now) < policy.maximumAbsenceMs) {
-                diagnostics.record("ENGINE", "Checkout paused: continuous reliable absence not yet established after evidence gap/restart")
+            if (!departureEvidence.confirmOutside(now)) {
+                uncertain("Departure needs another fresh outside observation")
+                // Uncertainty reset the evidence pair; retain this new first fix for the next burst.
+                departureEvidence.confirmOutside(now)
                 return@withLock
             }
         } else {
-            outsideFixCount = 0
-            previousOutsideFixMs = null
-            continuousOutsideSinceMs = null
+            departureEvidence.reset()
         }
         if (boundOfficeId == null && (!inside || (policy.wifiRequired == true && !wifiVerified))) {
             diagnostics.record("ENGINE", "Waiting for CRM office presence verification")
@@ -177,7 +166,10 @@ class AutomaticAttendanceEvaluator(context: Context) {
         val result = provider.runtimeSession.evaluate(token, session.getUserId(), session.getCompanyId(),
             deviceId, evidence, policy)
         val after = provider.runtimeSession.getSnapshot()
-        if (inside && after.attendanceState == AttendanceState.WORKING) boundOfficeId = office.id
+        if (inside && after.attendanceState == AttendanceState.WORKING) {
+            boundOfficeId = office.id
+            officeContext.save(session.getUserId(), session.getCompanyId(), deviceId, workDate, boot.getBootId(), office.id)
+        }
         val phase = after.phase
         diagnostics.record("ENGINE_PHASE", "state=${snapshot.attendanceState}; before=${snapshot.phase}; after=$phase; officeId=${office.id}; graceMs=${policy.gracePeriodMs}")
         nextVerificationElapsedMs = when (phase) {

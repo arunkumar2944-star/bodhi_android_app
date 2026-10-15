@@ -8,13 +8,13 @@ class AttendancePresenceDecisionEngineTest {
 
 
     @Test
-    fun uncertainEvidence_cancelsUnconfirmedGrace_withoutEvent() {
+    fun uncertainEvidence_preservesUnconfirmedGrace_withoutEvent() {
         val result = AttendancePresenceDecisionEngine.evaluate(
             AttendanceState.WORKING, AttendanceEnginePhase.AbsenceGrace(1000L),
             OfficePresenceSnapshot(false, true, capturedAtElapsedRealtimeMs = 500000L, observationUncertain = true),
             AttendanceEnginePolicy(180000L, 5400000L, wifiRequired = true, bleRequired = false))
         assertTrue(result is AttendanceEngineDecision.NoAttendanceEvent)
-        assertEquals(AttendanceEnginePhase.Present, (result as AttendanceEngineDecision.NoAttendanceEvent).nextPhase)
+        assertEquals(AttendanceEnginePhase.AbsenceGrace(1000L), (result as AttendanceEngineDecision.NoAttendanceEvent).nextPhase)
     }
     @Test
     fun uncertainEvidence_doesNotCheckInOrEndBreak() {
@@ -24,6 +24,44 @@ class AttendancePresenceDecisionEngineTest {
         val endBreak = AttendancePresenceDecisionEngine.evaluate(AttendanceState.ON_BREAK, AttendanceEnginePhase.BreakActive(1000L, 181000L), evidence, policy)
         assertTrue(checkIn is AttendanceEngineDecision.NoAttendanceEvent)
         assertTrue(endBreak is AttendanceEngineDecision.NoAttendanceEvent)
+    }
+
+    @Test
+    fun outsideAfterObservationGap_confirmsBreakUsingOriginalDeparture() {
+        val original = AttendanceEnginePhase.AbsenceGrace(1000L)
+        val uncertain = AttendancePresenceDecisionEngine.evaluate(
+            AttendanceState.WORKING, original,
+            OfficePresenceSnapshot(false, false, capturedAtElapsedRealtimeMs = 250000L, observationUncertain = true),
+            AttendanceEnginePolicy(180000L, 5400000L, true, false)) as AttendanceEngineDecision.NoAttendanceEvent
+        assertEquals(original, uncertain.nextPhase)
+        val confirmed = AttendancePresenceDecisionEngine.evaluate(
+            AttendanceState.WORKING, uncertain.nextPhase,
+            OfficePresenceSnapshot(false, false, capturedAtElapsedRealtimeMs = 280000L),
+            AttendanceEnginePolicy(180000L, 5400000L, true, false)) as AttendanceEngineDecision.CreateAttendanceEvent
+        assertEquals(AttendanceEventType.BREAK_START, confirmed.eventType)
+        assertEquals(1000L, confirmed.eventElapsedRealtimeMs)
+    }
+
+    @Test
+    fun uncertainAtCheckoutDeadline_doesNotCheckout_untilFreshOutsideEvidence() {
+        val original = AttendanceEnginePhase.BreakActive(1000L, 181000L)
+        val policy = AttendanceEnginePolicy(180000L, 5400000L, true, false)
+        val unknown = AttendancePresenceDecisionEngine.evaluate(AttendanceState.ON_BREAK, original,
+            OfficePresenceSnapshot(false, false, capturedAtElapsedRealtimeMs = 5500000L, observationUncertain = true), policy)
+        assertTrue(unknown is AttendanceEngineDecision.NoAttendanceEvent)
+        val confirmed = AttendancePresenceDecisionEngine.evaluate(AttendanceState.ON_BREAK, original,
+            OfficePresenceSnapshot(false, false, capturedAtElapsedRealtimeMs = 5530000L), policy)
+        assertTrue(confirmed is AttendanceEngineDecision.ClassifyCheckout)
+        assertEquals(1000L, (confirmed as AttendanceEngineDecision.ClassifyCheckout).effectiveCheckoutElapsedRealtimeMs)
+    }
+
+    @Test
+    fun verifiedReturnCancelsRetainedGrace() {
+        val result = AttendancePresenceDecisionEngine.evaluate(AttendanceState.WORKING,
+            AttendanceEnginePhase.AbsenceGrace(1000L),
+            OfficePresenceSnapshot(true, true, capturedAtElapsedRealtimeMs = 280000L),
+            AttendanceEnginePolicy(180000L, 5400000L, true, false)) as AttendanceEngineDecision.NoAttendanceEvent
+        assertEquals(AttendanceEnginePhase.Present, result.nextPhase)
     }
 
     // ========================================================
