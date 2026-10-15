@@ -730,6 +730,8 @@ class AttendanceEngineCoordinator(
                             .eventType
                             .name,
 
+                    arrivalProof = if (decision.eventType == AttendanceEventType.CHECK_IN) evidence.arrivalProof else null,
+                    attendanceReason = decision.reason,
                     eventElapsedRealtimeMsOverride =
                         decision
                             .eventElapsedRealtimeMs,
@@ -1054,6 +1056,7 @@ class AttendanceEngineCoordinator(
                             .CHECK_OUT
                             .name,
 
+                    attendanceReason = decision.reason,
                     eventElapsedRealtimeMsOverride =
                         decision
                             .effectiveCheckoutElapsedRealtimeMs,

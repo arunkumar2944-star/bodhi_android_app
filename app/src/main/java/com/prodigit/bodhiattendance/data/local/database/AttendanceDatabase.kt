@@ -120,7 +120,7 @@ import com.prodigit.bodhiattendance.data.local.entity.TimeAnchorEntity
 
     ],
 
-    version = 10,
+    version = 11,
 
     exportSchema = false
 )
@@ -554,6 +554,16 @@ abstract class AttendanceDatabase :
         // trusted time anchors are preserved.
         // ====================================================
 
+        private val MIGRATION_10_11 = object : Migration(10, 11) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL("ALTER TABLE arrival_candidates ADD COLUMN active INTEGER NOT NULL DEFAULT 0")
+                db.execSQL("ALTER TABLE arrival_candidates ADD COLUMN lastSeenElapsedMs INTEGER NOT NULL DEFAULT 0")
+                db.execSQL("ALTER TABLE attendance_events ADD COLUMN arrivalProofJson TEXT")
+                db.execSQL("ALTER TABLE attendance_events ADD COLUMN effectiveTimeEpochMs INTEGER")
+                db.execSQL("ALTER TABLE attendance_events ADD COLUMN reason TEXT")
+            }
+        }
+
         private val MIGRATION_9_10 = object : Migration(9, 10) {
             override fun migrate(db: SupportSQLiteDatabase) {
                 db.execSQL("CREATE TABLE IF NOT EXISTS attendance_diagnostics (id TEXT NOT NULL PRIMARY KEY, userId INTEGER NOT NULL, deviceId TEXT NOT NULL, bootId TEXT NOT NULL, observedElapsedMs INTEGER NOT NULL, deviceTime TEXT NOT NULL, category TEXT NOT NULL, message TEXT NOT NULL, uploaded INTEGER NOT NULL)")
@@ -724,7 +734,8 @@ abstract class AttendanceDatabase :
                                 MIGRATION_6_7,
                                 MIGRATION_7_8,
                                 MIGRATION_8_9,
-                                MIGRATION_9_10
+                                MIGRATION_9_10,
+                                MIGRATION_10_11
                             )
 
                             .build()

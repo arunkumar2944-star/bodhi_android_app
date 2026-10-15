@@ -25,3 +25,6 @@ Upload is retried on monitoring verification cycles, including five-minute recov
 Verification: `node --test tests/diagnosticValidation.test.js tests/attendanceDiagnosticController.test.js`.
 
 Phone test: note exit time, leave office normally, check WIFI_TRIGGER → VERIFICATION → ENGINE/ENGINE_PHASE → EVENT_SAVED → EVENT_SYNCED. Repeat offline, confirm Pending upload, restore internet, wait for a verification cycle and confirm Uploaded. Restart app to verify logs survive; repeat on an installed version-9 database to exercise migration. Logging starts with the updated APK and cannot reconstruct old missing diagnostics.
+
+
+Update: see `verified-wifi-arrival.md` for the current arrival policy, employee-only timeline and Admin/Manager diagnostic panel. Its access/UI rules supersede the earlier self-service diagnostic display described above.

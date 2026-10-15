@@ -45,7 +45,7 @@ class OfflineAttendanceRepository(
     ): Long {
 
         val inserted = attendanceEventDao.insertEvent(event)
-        if (inserted != -1L) diagnostics?.record("EVENT_SAVED", "uuid=${event.eventUuid}; type=${event.eventType}; eventTime=${event.eventTime}; elapsedMs=${event.eventElapsedRealtimeMs}; anchor=${event.timeAnchorId}")
+        if (inserted != -1L) diagnostics?.record("EVENT_SAVED", "uuid=${event.eventUuid}; type=${event.eventType}; phoneTime=${event.eventTime}; effectiveTime=${event.effectiveTimeEpochMs}; reason=${event.reason}; elapsedMs=${event.eventElapsedRealtimeMs}; anchor=${event.timeAnchorId}")
         return inserted
     }
 

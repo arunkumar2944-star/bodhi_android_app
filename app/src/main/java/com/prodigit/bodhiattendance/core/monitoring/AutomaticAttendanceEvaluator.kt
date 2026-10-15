@@ -14,6 +14,7 @@ import kotlinx.coroutines.sync.withLock
 
 /** Evaluates fresh evidence only; unknown sensors/configuration never mean absence. */
 class AutomaticAttendanceEvaluator(context: Context) {
+    private val arrivals = ArrivalCandidateRecorder(context.applicationContext)
     private val diagnostics = AttendanceDiagnostics(context.applicationContext)
     private val journal = PresenceEvidenceJournal(context.applicationContext)
     private val session = SessionManager(context.applicationContext)
@@ -114,7 +115,7 @@ class AutomaticAttendanceEvaluator(context: Context) {
             it != "02:00:00:00:00:00" && it != "00:00:00:00:00:00" }
         val distanceMeters = distance(office).toDouble()
         val inside = distanceMeters <= office.geofenceRadiusMeters
-        val wifiVerified = readableBssid != null && office.wifiAccessPoints.any { it.bssid.equals(readableBssid, true) }
+        val wifiVerified = !wifiDisconnected && readableBssid != null && office.wifiAccessPoints.any { it.bssid.equals(readableBssid, true) }
         val definitelyOutside = distanceMeters - location.accuracy > office.geofenceRadiusMeters
         diagnostics.record("ENGINE", "Evidence officeId=${office.id}; distance=${distanceMeters}m; accuracy=${location.accuracy}m; radius=${office.geofenceRadiusMeters}m; wifiMatched=$wifiVerified; wifiDisconnected=$wifiDisconnected")
         if (inside && policy.wifiRequired == true && !wifiVerified) {
@@ -159,8 +160,12 @@ class AutomaticAttendanceEvaluator(context: Context) {
             latitude = location.latitude, longitude = location.longitude,
             accuracyMeters = location.accuracy.toDouble(), geofenceVerified = inside,
             wifiVerified = wifiVerified, wifiBssid = readableBssid,
-            capturedAtElapsedRealtimeMs = location.elapsedRealtimeNanos / 1_000_000L
+            capturedAtElapsedRealtimeMs = location.elapsedRealtimeNanos / 1_000_000L,
+            arrivalProof = if (snapshot.attendanceState == AttendanceState.NOT_CHECKED_IN && inside && wifiVerified)
+                arrivals.confirmation(office.id, readableBssid, location.elapsedRealtimeNanos / 1_000_000L) else null
         )
+        evidence.arrivalProof?.let { proof -> diagnostics.record("ARRIVAL_CONFIRMED",
+            "officeId=${office.id}; candidate=${proof.id}; arrivalElapsedMs=${proof.observedElapsedMs}; confirmedElapsedMs=${proof.confirmedElapsedMs}") }
         journal.record(location, office.id, wifiVerified, if (inside) "PRESENT" else "ABSENT_CANDIDATE")
         val result = provider.runtimeSession.evaluate(token, session.getUserId(), session.getCompanyId(),
             deviceId, evidence, policy)

@@ -14,11 +14,12 @@ import com.prodigit.bodhiattendance.data.remote.ArrivalCandidateItem
 import com.prodigit.bodhiattendance.domain.attendance.AttendanceEngineRuntimeProvider
 import com.prodigit.bodhiattendance.domain.attendance.AttendanceState
 import com.prodigit.bodhiattendance.domain.model.AttendanceLocationConfig
+import kotlinx.coroutines.sync.withLock
 import java.time.Instant
 import java.time.ZoneId
 import java.util.UUID
 
-/** Approved Wi-Fi is arrival evidence only, never permission to backdate CHECK_IN. */
+/** Continuous approved Wi-Fi timestamps arrival; GPS confirmation is still required. */
 class ArrivalCandidateRecorder(context: Context) {
     private val app = context.applicationContext
     private val session = SessionManager(app)
@@ -26,24 +27,59 @@ class ArrivalCandidateRecorder(context: Context) {
     private val dao = AttendanceDatabase.getInstance(app).arrivalCandidateDao()
     private val provider = AttendanceEngineRuntimeProvider.getInstance(app)
 
-    suspend fun record(bssid: String?, observedElapsedMs: Long, offices: List<AttendanceLocationConfig>) {
-        val id = devices.getDeviceId() ?: return
-        val state = provider.runtimeSession.getSnapshot()
-        if (state.userId != session.getUserId() || state.deviceId != id || state.attendanceState != AttendanceState.NOT_CHECKED_IN) return
-        val detected = bssid?.takeIf { it.matches(Regex("(?i)([0-9a-f]{2}:){5}[0-9a-f]{2}")) &&
-            it != "02:00:00:00:00:00" && it != "00:00:00:00:00:00" } ?: return
-        val office = offices.filter { candidate -> candidate.wifiAccessPoints.any { it.bssid.equals(detected, true) } }.singleOrNull() ?: return
-        val anchor = provider.trustedTimeManager.getCurrentAnchor() ?: return
-        if (observedElapsedMs < anchor.elapsedRealtimeMs || SystemClock.elapsedRealtime() - observedElapsedMs !in 0..60_000L) return
-        val trustedInstant = Instant.parse(anchor.serverTime).plusMillis(observedElapsedMs - anchor.elapsedRealtimeMs)
-        // A day key deduplicates observations, never determines attendance timing.
-        val day = trustedInstant.atZone(ZoneId.of("Asia/Kolkata")).toLocalDate()
-        val key = "${session.getUserId()}|$id|${anchor.bootId}|${office.id}|$day"
-        val candidateId = UUID.nameUUIDFromBytes(key.toByteArray(Charsets.UTF_8)).toString()
-        val inserted = dao.recordFirst(ArrivalCandidateEntity(candidateId, session.getUserId(), session.getCompanyId(),
-            id, office.id, anchor.bootId, anchor.anchorUuid, observedElapsedMs, detected.lowercase()))
-        if (inserted != -1L) Log.i("ARRIVAL_EVIDENCE", "First approved Wi-Fi arrival saved for CRM review; officeId=${office.id}")
+    suspend fun resetContinuity() = continuityMutex.withLock {
+        val device = devices.getDeviceId() ?: return@withLock
+        dao.invalidate(session.getUserId(), device)
     }
+
+    suspend fun record(bssid: String?, observedElapsedMs: Long, offices: List<AttendanceLocationConfig>) = continuityMutex.withLock {
+        val id = devices.getDeviceId() ?: return@withLock
+        val user = session.getUserId()
+        val now = SystemClock.elapsedRealtime()
+        val state = provider.runtimeSession.getSnapshot()
+        val office = offices.filter { candidate -> candidate.wifiRequired == true &&
+            bssid != null && candidate.wifiAccessPoints.any { it.bssid.equals(bssid, true) } }.singleOrNull()
+        val boot = com.prodigit.bodhiattendance.data.local.security.BootSessionManager(app).getBootId()
+        val old = dao.active(user, id)
+        if (state.userId != user || state.deviceId != id || state.attendanceState != AttendanceState.NOT_CHECKED_IN || office == null) {
+            dao.invalidate(user, id)
+            return@withLock
+        }
+        if (old != null && old.officeId == office.id && old.wifiBssid.equals(bssid, true) &&
+            old.bootId == boot && now - old.lastSeenElapsedMs in 0..180_000L) {
+            dao.seen(old.id, now)
+            return@withLock
+        }
+        dao.invalidate(user, id)
+        val anchor = provider.trustedTimeManager.getCurrentAnchor() ?: return@withLock
+        val observed = observedElapsedMs.takeIf { now - it in 0..60_000L } ?: now
+        if (anchor.bootId != boot || observed < anchor.elapsedRealtimeMs) return@withLock
+        dao.recordFirst(ArrivalCandidateEntity(UUID.randomUUID().toString(), user, session.getCompanyId(),
+            id, office.id, boot, anchor.anchorUuid, observed, bssid!!.lowercase(), active = true, lastSeenElapsedMs = now))
+        AttendanceDiagnostics(app).record("ARRIVAL_PENDING", "Approved office Wi-Fi arrival saved; officeId=${office.id}; elapsedMs=$observed; awaiting GPS")
+    }
+
+    suspend fun confirmation(officeId: Long, bssid: String?, confirmedMs: Long): com.prodigit.bodhiattendance.data.remote.dto.attendance.WifiArrivalProof? = continuityMutex.withLock {
+        val device = devices.getDeviceId() ?: return@withLock null
+        val row = dao.active(session.getUserId(), device) ?: return@withLock null
+        val boot = com.prodigit.bodhiattendance.data.local.security.BootSessionManager(app).getBootId()
+        if (row.officeId != officeId || row.bootId != boot || !row.wifiBssid.equals(bssid, true) ||
+            confirmedMs < row.observedElapsedMs || confirmedMs - row.lastSeenElapsedMs !in -60_000L..180_000L) return@withLock null
+        val anchor = provider.trustedTimeManager.getAnchorByUuid(row.anchorUuid) ?: return@withLock null
+        if (anchor.bootId != boot || anchor.deviceId != device || row.observedElapsedMs < anchor.elapsedRealtimeMs) return@withLock null
+        val start = Instant.parse(anchor.serverTime).plusMillis(row.observedElapsedMs - anchor.elapsedRealtimeMs)
+        val confirmed = Instant.parse(anchor.serverTime).plusMillis(confirmedMs - anchor.elapsedRealtimeMs)
+        if (start.atZone(ZoneId.of("Asia/Kolkata")).toLocalDate() != confirmed.atZone(ZoneId.of("Asia/Kolkata")).toLocalDate()) return@withLock null
+        com.prodigit.bodhiattendance.data.remote.dto.attendance.WifiArrivalProof(row.id, row.officeId, row.anchorUuid,
+            row.bootId, row.observedElapsedMs, confirmedMs, row.wifiBssid)
+    }
+
+    suspend fun hasPending(): Boolean {
+        val device = devices.getDeviceId() ?: return false
+        return dao.active(session.getUserId(), device) != null
+    }
+
+    companion object { private val continuityMutex = kotlinx.coroutines.sync.Mutex() }
 
     suspend fun upload() {
         val deviceId = devices.getDeviceId() ?: return

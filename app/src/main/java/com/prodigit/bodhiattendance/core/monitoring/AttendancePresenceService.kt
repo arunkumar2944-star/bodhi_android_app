@@ -76,8 +76,9 @@ class AttendancePresenceService : Service() {
         val observed = wifiSignal
         scope.launch {
             diagnostics.record("WIFI_TRIGGER", reason)
+            if (reason == "Wi-Fi lost") arrivals.resetContinuity()
             try {
-                if (!HomeLocationCalibration.requested && observed != null) arrivals.record(observed.first, observed.second, arrivalOffices)
+                if (!HomeLocationCalibration.requested && observed != null) arrivals.record(observed.first.takeUnless { isWifiDisconnected() }, observed.second, arrivalOffices)
             } catch (e: CancellationException) { throw e }
             catch (e: Exception) { Log.w("ARRIVAL_EVIDENCE", "Arrival observation deferred", e) }
         }
@@ -108,7 +109,7 @@ class AttendancePresenceService : Service() {
             }
             if (worker?.isActive != true) {
                 AttendanceMonitorStatus.running()
-                worker = scope.launch { verificationLoop() }
+                worker = scope.launch { arrivals.resetContinuity(); verificationLoop() }
                 signalWifi("startup")
                 Log.i(tag, "Wi-Fi callbacks enabled; GPS runs only for bounded verification")
             }
@@ -138,7 +139,7 @@ class AttendancePresenceService : Service() {
                         val bssid = readBssid()
                         val signal = wifiSignal?.takeIf { it.first.equals(bssid, true) &&
                             SystemClock.elapsedRealtime() - it.second in 0..60_000L }
-                        arrivals.record(bssid, signal?.second ?: SystemClock.elapsedRealtime(), arrivalOffices)
+                        arrivals.record(bssid.takeUnless { isWifiDisconnected() }, signal?.second ?: SystemClock.elapsedRealtime(), arrivalOffices)
                     }
                 } catch (e: CancellationException) { throw e }
                 catch (e: Exception) { Log.w("ARRIVAL_EVIDENCE", "Arrival evidence retained for retry", e) }
@@ -177,7 +178,7 @@ class AttendancePresenceService : Service() {
                 }
                 val gpsNeedsRetry = refinedLocation == null || evaluator.needsBetterGps
                 val due = if (refinedLocation != null) evaluator.nextVerificationElapsedMs else null
-                waitMs = if (evaluator.needsContinuityChecks) {
+                waitMs = if (evaluator.needsContinuityChecks || arrivals.hasPending()) {
                     gpsRetries = 0
                     45_000L
                 } else if (gpsNeedsRetry && gpsRetries < MAX_GPS_RETRIES) {

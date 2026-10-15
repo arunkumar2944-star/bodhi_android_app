@@ -60,7 +60,8 @@ data class AttendanceEngineEvidence(
 
     val capturedAtElapsedRealtimeMs: Long,
 
-    val observationUncertain: Boolean = false
+    val observationUncertain: Boolean = false,
+    val arrivalProof: com.prodigit.bodhiattendance.data.remote.dto.attendance.WifiArrivalProof? = null
 
 ) {
 

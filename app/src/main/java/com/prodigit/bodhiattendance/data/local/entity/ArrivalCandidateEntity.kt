@@ -16,5 +16,7 @@ data class ArrivalCandidateEntity(
     val anchorUuid: String,
     val observedElapsedMs: Long,
     val wifiBssid: String,
-    val uploaded: Boolean = false
+    val uploaded: Boolean = false,
+    @androidx.room.ColumnInfo(defaultValue = "0") val active: Boolean = false,
+    @androidx.room.ColumnInfo(defaultValue = "0") val lastSeenElapsedMs: Long = 0
 )

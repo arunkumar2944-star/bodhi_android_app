@@ -175,6 +175,8 @@ class AttendanceEventManager(
         // ====================================================
 
         eventElapsedRealtimeMsOverride: Long? = null,
+        arrivalProof: com.prodigit.bodhiattendance.data.remote.dto.attendance.WifiArrivalProof? = null,
+        attendanceReason: String? = null,
 
 
         // ====================================================
@@ -663,9 +665,18 @@ class AttendanceEventManager(
         // enter Room.
         // ====================================================
 
+        val storedAnchor = timeAnchorManager.getAnchorByUuid(selectedAnchorUuid)
+        val trustedEventTime = storedAnchor?.let { java.time.Instant.parse(it.serverTime)
+            .plusMillis(eventElapsedRealtimeMs - it.elapsedRealtimeMs).toEpochMilli() }
+        val arrivalAnchor = arrivalProof?.let { timeAnchorManager.getAnchorByUuid(it.anchorUuid) }
+        val effectiveArrivalTime = if (arrivalProof != null && arrivalAnchor != null)
+            java.time.Instant.parse(arrivalAnchor.serverTime).plusMillis(arrivalProof.observedElapsedMs - arrivalAnchor.elapsedRealtimeMs).toEpochMilli() else null
         val localEvent =
             AttendanceEventEntity(
 
+                arrivalProofJson = arrivalProof?.let { com.google.gson.Gson().toJson(it) },
+                effectiveTimeEpochMs = effectiveArrivalTime ?: trustedEventTime,
+                reason = if (effectiveArrivalTime != null) "Office Wi-Fi arrival confirmed by GPS" else attendanceReason,
                 eventUuid =
                     eventUuid,
 
@@ -892,6 +903,7 @@ class AttendanceEventManager(
         val request =
             AttendanceEventRequest(
 
+                arrivalProof = arrivalProof,
                 eventUuid =
                     eventUuid,
 

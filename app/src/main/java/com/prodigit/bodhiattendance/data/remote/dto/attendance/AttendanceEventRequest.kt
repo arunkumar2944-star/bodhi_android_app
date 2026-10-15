@@ -71,5 +71,18 @@ data class AttendanceEventRequest(
 
     val wifiVerified: Boolean = false,
 
-    val wifiBssid: String? = null
+    val wifiBssid: String? = null,
+    val arrivalProof: WifiArrivalProof? = null
+)
+
+/** Connection continuity is observed by the registered client, not independent router attestation. */
+data class WifiArrivalProof(
+    val id: String,
+    val officeId: Long,
+    val anchorUuid: String,
+    val bootId: String,
+    val observedElapsedMs: Long,
+    val confirmedElapsedMs: Long,
+    val wifiBssid: String,
+    val continuityConfirmed: Boolean = true
 )

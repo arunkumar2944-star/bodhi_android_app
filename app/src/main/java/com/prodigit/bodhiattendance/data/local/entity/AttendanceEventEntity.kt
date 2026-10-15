@@ -234,5 +234,9 @@ data class AttendanceEventEntity(
     // Local Room record creation timestamp.
     // ============================================================
 
+    val arrivalProofJson: String? = null,
+    val effectiveTimeEpochMs: Long? = null,
+    val reason: String? = null,
+
     val createdAt: Long
 )
