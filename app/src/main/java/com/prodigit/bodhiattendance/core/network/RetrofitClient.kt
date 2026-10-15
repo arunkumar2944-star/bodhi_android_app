@@ -35,12 +35,12 @@ object RetrofitClient {
             val requestId = UUID.randomUUID().toString()
             val request = chain.request().newBuilder()
                 .header("X-Request-ID", requestId).build()
-            val route = "${request.method} ${request.url.host}${request.url.encodedPath}"
+            val route = "${request.method()} ${request.url().host()}${request.url().encodedPath()}"
             val started = System.nanoTime()
             try {
                 val response = chain.proceed(request)
                 val elapsed = (System.nanoTime() - started) / 1_000_000
-                Log.i("BODHI_API", "$route HTTP ${response.code} ${elapsed}ms requestId=$requestId")
+                Log.i("BODHI_API", "$route HTTP ${response.code()} ${elapsed}ms requestId=$requestId")
                 response
             } catch (error: java.io.IOException) {
                 Log.e("BODHI_API", "$route ${error.javaClass.simpleName} requestId=$requestId")
