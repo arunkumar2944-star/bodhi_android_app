@@ -25,7 +25,8 @@ import kotlinx.coroutines.flow.Flow
 
 class OfflineAttendanceRepository(
 
-    private val attendanceEventDao: AttendanceEventDao
+    private val attendanceEventDao: AttendanceEventDao,
+    private val diagnostics: com.prodigit.bodhiattendance.core.monitoring.AttendanceDiagnostics? = null
 
 ) {
 
@@ -43,9 +44,9 @@ class OfflineAttendanceRepository(
         event: AttendanceEventEntity
     ): Long {
 
-        return attendanceEventDao.insertEvent(
-            event
-        )
+        val inserted = attendanceEventDao.insertEvent(event)
+        if (inserted != -1L) diagnostics?.record("EVENT_SAVED", "uuid=${event.eventUuid}; type=${event.eventType}; eventTime=${event.eventTime}; elapsedMs=${event.eventElapsedRealtimeMs}; anchor=${event.timeAnchorId}")
+        return inserted
     }
 
 
@@ -141,6 +142,7 @@ class OfflineAttendanceRepository(
             eventUuid = eventUuid,
             attemptTime = attemptTime
         )
+        diagnostics?.record("EVENT_SYNCING", "uuid=$eventUuid")
     }
 
 
@@ -164,6 +166,7 @@ class OfflineAttendanceRepository(
             serverAttendanceId = serverAttendanceId,
             syncedAt = syncedAt
         )
+        diagnostics?.record("EVENT_SYNCED", "uuid=$eventUuid")
     }
 
 
@@ -193,6 +196,7 @@ class OfflineAttendanceRepository(
             eventUuid = eventUuid,
             error = error
         )
+        diagnostics?.record("EVENT_RETRY", "uuid=$eventUuid")
     }
 
 
@@ -222,6 +226,7 @@ class OfflineAttendanceRepository(
             eventUuid = eventUuid,
             error = error
         )
+        diagnostics?.record("EVENT_REJECTED", "uuid=$eventUuid")
     }
 
 

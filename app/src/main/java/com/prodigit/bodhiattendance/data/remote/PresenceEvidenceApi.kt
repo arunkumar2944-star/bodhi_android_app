@@ -35,7 +35,21 @@ data class ArrivalCandidateBatch(
     val candidates: List<ArrivalCandidateItem>
 )
 
+data class DiagnosticItem(
+    val id: String,
+    @SerializedName("boot_id") val bootId: String,
+    @SerializedName("observed_elapsed_ms") val observedElapsedMs: Long,
+    @SerializedName("device_time") val deviceTime: String,
+    val category: String,
+    val message: String
+)
+data class DiagnosticBatch(@SerializedName("device_id") val deviceId: String, val logs: List<DiagnosticItem>)
+
 interface PresenceEvidenceApi {
+    @POST("api/v1/attendance/diagnostics")
+    suspend fun uploadDiagnostics(@Header("Authorization") token: String,
+                                  @Body batch: DiagnosticBatch): Response<PresenceEvidenceUploadResponse>
+
     @POST("api/v1/attendance/presence-evidence/arrivals")
     suspend fun uploadArrivals(@Header("Authorization") token: String,
                               @Body batch: ArrivalCandidateBatch): Response<PresenceEvidenceUploadResponse>

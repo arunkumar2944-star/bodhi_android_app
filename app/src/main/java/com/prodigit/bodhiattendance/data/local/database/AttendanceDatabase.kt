@@ -115,11 +115,12 @@ import com.prodigit.bodhiattendance.data.local.entity.TimeAnchorEntity
 
         AttendanceEngineStateEntity::class,
         RegisteredDeviceEntity::class,
-        ArrivalCandidateEntity::class
+        ArrivalCandidateEntity::class,
+        com.prodigit.bodhiattendance.data.local.entity.AttendanceDiagnosticEntity::class
 
     ],
 
-    version = 9,
+    version = 10,
 
     exportSchema = false
 )
@@ -130,6 +131,8 @@ abstract class AttendanceDatabase :
     // ========================================================
     // ATTENDANCE EVENT DAO
     // ========================================================
+
+    abstract fun attendanceDiagnosticDao(): com.prodigit.bodhiattendance.data.local.dao.AttendanceDiagnosticDao
 
     abstract fun arrivalCandidateDao(): ArrivalCandidateDao
 
@@ -551,6 +554,13 @@ abstract class AttendanceDatabase :
         // trusted time anchors are preserved.
         // ====================================================
 
+        private val MIGRATION_9_10 = object : Migration(9, 10) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL("CREATE TABLE IF NOT EXISTS attendance_diagnostics (id TEXT NOT NULL PRIMARY KEY, userId INTEGER NOT NULL, deviceId TEXT NOT NULL, bootId TEXT NOT NULL, observedElapsedMs INTEGER NOT NULL, deviceTime TEXT NOT NULL, category TEXT NOT NULL, message TEXT NOT NULL, uploaded INTEGER NOT NULL)")
+                db.execSQL("CREATE INDEX IF NOT EXISTS index_attendance_diagnostics_userId_deviceId_uploaded ON attendance_diagnostics(userId, deviceId, uploaded)")
+            }
+        }
+
         private val MIGRATION_8_9 = object : Migration(8, 9) {
             override fun migrate(db: SupportSQLiteDatabase) {
                 db.execSQL("""CREATE TABLE IF NOT EXISTS arrival_candidates (
@@ -713,7 +723,8 @@ abstract class AttendanceDatabase :
                                 MIGRATION_5_6,
                                 MIGRATION_6_7,
                                 MIGRATION_7_8,
-                                MIGRATION_8_9
+                                MIGRATION_8_9,
+                                MIGRATION_9_10
                             )
 
                             .build()

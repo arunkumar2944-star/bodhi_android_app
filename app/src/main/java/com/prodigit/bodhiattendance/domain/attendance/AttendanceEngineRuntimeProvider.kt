@@ -248,7 +248,8 @@ class AttendanceEngineRuntimeProvider(
         OfflineAttendanceRepository(
 
             attendanceEventDao =
-                database.attendanceEventDao()
+                database.attendanceEventDao(),
+            diagnostics = com.prodigit.bodhiattendance.core.monitoring.AttendanceDiagnostics(appContext)
         )
 
 

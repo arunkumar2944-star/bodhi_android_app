@@ -14,6 +14,7 @@ import kotlinx.coroutines.sync.withLock
 
 /** Evaluates fresh evidence only; unknown sensors/configuration never mean absence. */
 class AutomaticAttendanceEvaluator(context: Context) {
+    private val diagnostics = AttendanceDiagnostics(context.applicationContext)
     private val journal = PresenceEvidenceJournal(context.applicationContext)
     private val session = SessionManager(context.applicationContext)
     private val tokens = com.prodigit.bodhiattendance.core.session.AndroidTokenManager(context)
@@ -44,25 +45,25 @@ class AutomaticAttendanceEvaluator(context: Context) {
             SystemClock.elapsedRealtimeNanos() - location.elapsedRealtimeNanos !in 0..60_000_000_000L) {
             previousOutsideFixMs = null
             continuousOutsideSinceMs = null
-            Log.w(tag, "Ignoring mock, stale or invalid GPS evidence")
+            diagnostics.record("ENGINE", "Ignoring mock, stale or invalid GPS evidence")
             return@withLock
         }
         val token = tokens.usableAccessToken()
         if (token.isNullOrBlank()) {
-            Log.w(tag, "Evaluation paused: valid authentication required")
+            diagnostics.record("ENGINE", "Evaluation paused: valid authentication required")
             return@withLock
         }
         val deviceId = devices.getDeviceId() ?: return@withLock
         val snapshot = provider.runtimeSession.getSnapshot()
         if (snapshot.mode != AttendanceEngineRuntimeMode.READY || snapshot.userId != session.getUserId() ||
             snapshot.deviceId != deviceId) {
-            Log.w(tag, "Evaluation paused: startup runtime validation required")
+            diagnostics.record("ENGINE", "Evaluation paused: startup runtime validation required")
             return@withLock
         }
         val offices = configuration.getActiveAttendanceConfig(token).getOrElse {
             previousOutsideFixMs = null
             continuousOutsideSinceMs = null
-            Log.w(tag, "Evaluation paused: CRM configuration unavailable", it)
+            diagnostics.record("ENGINE", "Evaluation paused: CRM configuration unavailable")
             return@withLock
         }
         fun distance(office: com.prodigit.bodhiattendance.domain.model.AttendanceLocationConfig): Float {
@@ -76,11 +77,11 @@ class AutomaticAttendanceEvaluator(context: Context) {
         if (office == null) {
             // Retain uncertainty for review, never invent office presence.
             journal.record(location, null, false, "UNCERTAIN")
-            Log.i(tag, "Evaluation paused: no unambiguous CRM office; absence is not inferred")
+            diagnostics.record("ENGINE", "Evaluation paused: no unambiguous CRM office; absence is not inferred")
             return@withLock
         }
         val policy = office.toEnginePolicy().getOrElse {
-            Log.w(tag, "Evaluation paused: ${it.message}")
+            diagnostics.record("ENGINE", "Evaluation paused: ${it.message}")
             return@withLock
         }
         suspend fun uncertain(reason: String) {
@@ -97,7 +98,7 @@ class AutomaticAttendanceEvaluator(context: Context) {
                     it != "02:00:00:00:00:00" && it != "00:00:00:00:00:00"
             }?.let { found -> office.wifiAccessPoints.any { it.bssid.equals(found, true) } } ?: false
             journal.record(location, office.id, reportedWifiMatch, "UNCERTAIN")
-            Log.i(tag, "Evidence uncertain: $reason; no attendance event")
+            diagnostics.record("ENGINE", "Evidence uncertain: $reason; no attendance event")
         }
         val accuracyLimit = office.maxAccuracyMeters
         if (accuracyLimit == null || !accuracyLimit.isFinite() || accuracyLimit <= 0 ||
@@ -115,7 +116,7 @@ class AutomaticAttendanceEvaluator(context: Context) {
         val inside = distanceMeters <= office.geofenceRadiusMeters
         val wifiVerified = readableBssid != null && office.wifiAccessPoints.any { it.bssid.equals(readableBssid, true) }
         val definitelyOutside = distanceMeters - location.accuracy > office.geofenceRadiusMeters
-        Log.i(tag, "Evidence officeId=${office.id}; distance=${distanceMeters}m; accuracy=${location.accuracy}m; radius=${office.geofenceRadiusMeters}m; wifiMatched=$wifiVerified; wifiDisconnected=$wifiDisconnected")
+        diagnostics.record("ENGINE", "Evidence officeId=${office.id}; distance=${distanceMeters}m; accuracy=${location.accuracy}m; radius=${office.geofenceRadiusMeters}m; wifiMatched=$wifiVerified; wifiDisconnected=$wifiDisconnected")
         if (inside && policy.wifiRequired == true && !wifiVerified) {
             uncertain("Inside GPS with missing or nonmatching office Wi-Fi")
             return@withLock
@@ -141,7 +142,7 @@ class AutomaticAttendanceEvaluator(context: Context) {
             if (snapshot.attendanceState == AttendanceState.ON_BREAK && breakPhase != null &&
                 now - breakPhase.absenceStartedElapsedRealtimeMs >= policy.maximumAbsenceMs &&
                 now - (continuousOutsideSinceMs ?: now) < policy.maximumAbsenceMs) {
-                Log.i(tag, "Checkout paused: continuous reliable absence not yet established after evidence gap/restart")
+                diagnostics.record("ENGINE", "Checkout paused: continuous reliable absence not yet established after evidence gap/restart")
                 return@withLock
             }
         } else {
@@ -150,7 +151,7 @@ class AutomaticAttendanceEvaluator(context: Context) {
             continuousOutsideSinceMs = null
         }
         if (boundOfficeId == null && (!inside || (policy.wifiRequired == true && !wifiVerified))) {
-            Log.i(tag, "Waiting for CRM office presence verification")
+            diagnostics.record("ENGINE", "Waiting for CRM office presence verification")
             return@withLock
         }
         boundOfficeId = office.id
@@ -164,11 +165,12 @@ class AutomaticAttendanceEvaluator(context: Context) {
         val result = provider.runtimeSession.evaluate(token, session.getUserId(), session.getCompanyId(),
             deviceId, evidence, policy)
         val phase = provider.runtimeSession.getSnapshot().phase
+        diagnostics.record("ENGINE_PHASE", "state=${snapshot.attendanceState}; before=${snapshot.phase}; after=$phase; officeId=${office.id}; graceMs=${policy.gracePeriodMs}")
         nextVerificationElapsedMs = when (phase) {
             is AttendanceEnginePhase.AbsenceGrace -> phase.absenceStartedElapsedRealtimeMs + policy.gracePeriodMs
             is AttendanceEnginePhase.BreakActive -> phase.absenceStartedElapsedRealtimeMs + policy.maximumAbsenceMs
             else -> null
         }
-        Log.i(tag, "CRM officeId=${office.id}; evaluation=$result")
+        diagnostics.record("ENGINE", "CRM officeId=${office.id}; evaluation=$result")
     }
 }
