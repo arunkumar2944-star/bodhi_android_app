@@ -43,7 +43,23 @@ object RetrofitClient {
                 Log.i("BODHI_API", "$route HTTP ${response.code()} ${elapsed}ms requestId=$requestId")
                 response
             } catch (error: java.io.IOException) {
-                Log.e("BODHI_API", "$route ${error.javaClass.simpleName} requestId=$requestId")
+                val elapsed = (System.nanoTime() - started) / 1_000_000
+                // A call timeout also cancels OkHttp's call. Check it before
+                // treating isCanceled() as an ordinary lifecycle cancellation.
+                val timedOut = error is java.net.SocketTimeoutException ||
+                    (error is java.io.InterruptedIOException && error.message?.contains("timeout", ignoreCase = true) == true)
+                val category = when {
+                    timedOut -> "TIMEOUT"
+                    chain.call().isCanceled() -> "CANCELLED"
+                    error is java.net.UnknownHostException -> "DNS_FAILURE"
+                    error is javax.net.ssl.SSLException -> "TLS_FAILURE"
+                    error is java.net.ConnectException -> "CONNECTION_FAILURE"
+                    error is java.net.SocketException -> "SOCKET_FAILURE"
+                    else -> "IO_FAILURE"
+                }
+                val summary = "$route $category ${error.javaClass.simpleName} ${elapsed}ms requestId=$requestId"
+                if (category == "CANCELLED") Log.d("BODHI_API", summary)
+                else Log.e("BODHI_API", summary)
                 throw error
             }
         }

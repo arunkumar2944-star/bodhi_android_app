@@ -24,7 +24,12 @@ fun RefreshLiveUi(model: LiveUiViewModel) {
     val lifecycle = LocalLifecycleOwner.current.lifecycle
     LaunchedEffect(model, lifecycle) {
         lifecycle.repeatOnLifecycle(Lifecycle.State.STARTED) {
-            while (true) { model.refresh(); delay(30_000) }
+            android.util.Log.d("BODHI_UI_SYNC", "Foreground data refresh started")
+            try {
+                while (true) { model.refresh(); delay(30_000) }
+            } finally {
+                android.util.Log.d("BODHI_UI_SYNC", "Foreground data refresh stopped; in-flight reads may be cancelled")
+            }
         }
     }
 }
