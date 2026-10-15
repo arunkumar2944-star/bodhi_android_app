@@ -6,6 +6,7 @@ import kotlinx.coroutines.flow.asStateFlow
 /** In-process sensor status for the UI. Not authoritative attendance evidence. */
 data class AttendanceMonitorSnapshot(
     val running: Boolean = false,
+    val verificationPending: Boolean = false,
     val latitude: Double? = null,
     val longitude: Double? = null,
     val accuracyMeters: Float? = null,
@@ -16,7 +17,8 @@ object AttendanceMonitorStatus {
     private val mutable = MutableStateFlow(AttendanceMonitorSnapshot())
     val state = mutable.asStateFlow()
 
-    fun running() { mutable.value = mutable.value.copy(running = true) }
+    fun running() { mutable.value = mutable.value.copy(running = true, verificationPending = false) }
+    fun waitingForEligibility() { mutable.value = AttendanceMonitorSnapshot(running = true, verificationPending = true) }
     fun stopped() { mutable.value = AttendanceMonitorSnapshot() }
 
     fun observation(latitude: Double, longitude: Double, accuracyMeters: Float, bssid: String?) {

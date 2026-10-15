@@ -22,6 +22,7 @@ object AttendanceDayGate {
         val token = AndroidTokenManager(c).usableAccessToken() ?: error("Session unavailable")
         val started = android.os.SystemClock.elapsedRealtime()
         val response = RetrofitClient.mobileUiApi.dayEligibility("Bearer $token", device)
+        if (!response.isSuccessful) throw EligibilityHttpFailure(response.code())
         val body = response.body()
         val result = body?.data
         check(response.isSuccessful && body?.success == true && result != null) { "Daily eligibility unavailable" }

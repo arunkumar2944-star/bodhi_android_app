@@ -49,6 +49,11 @@ class AttendancePresenceService : Service() {
     private var worker: Job? = null
     private var arrivalUploadJob: Job? = null
     private var registered = false
+    private var recoveryNetworkRegistered = false
+    private val recoveryWakeups = Channel<Unit>(Channel.CONFLATED)
+    private val recoveryCallback = object : ConnectivityManager.NetworkCallback() {
+        override fun onAvailable(network: Network) { recoveryWakeups.trySend(Unit) }
+    }
     private var workDate: String? = null
     private var lastWifiSignature: String? = null
     private val fenceIntent by lazy {
@@ -108,11 +113,18 @@ class AttendancePresenceService : Service() {
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q)
                 startForeground(NOTIFICATION_ID, notification, ServiceInfo.FOREGROUND_SERVICE_TYPE_LOCATION)
             else startForeground(NOTIFICATION_ID, notification)
+            if (!recoveryNetworkRegistered) {
+                connectivity.registerDefaultNetworkCallback(recoveryCallback)
+                recoveryNetworkRegistered = true
+            }
             if (worker?.isActive != true) {
                 worker = scope.launch {
                     try {
-                    val day = AttendanceDayGate.fetch(this@AttendancePresenceService)
-                    if (day.date != workDate || day.monitoringMode == "PAUSED") { stopSelf(); return@launch }
+                    val day = awaitDailyEligibility() ?: return@launch
+                    if (day.date != workDate || day.monitoringMode == "PAUSED") {
+                        diagnostics.record("POLICY_PAUSED", "CRM daily status=${day.status}; monitoring stopped")
+                        stopSelf(); return@launch
+                    }
                     if (AttendancePrivacyPolicy.isPaused(this@AttendancePresenceService)) { stopSelf(); return@launch }
                     if (!registered) {
                         connectivity.registerNetworkCallback(NetworkRequest.Builder()
@@ -120,6 +132,7 @@ class AttendancePresenceService : Service() {
                         registered = true
                     }
                     AttendanceMonitorStatus.running()
+                    showVerificationNotification("Monitoring attendance for the work session you started")
                     arrivals.resetContinuity()
                     signalWifi("startup")
                     verificationLoop()
@@ -135,6 +148,53 @@ class AttendancePresenceService : Service() {
             stopSelf(); return START_NOT_STICKY
         }
         return START_NOT_STICKY
+    }
+
+    private fun showVerificationNotification(message: String) {
+        requireNotNull(getSystemService(NotificationManager::class.java)).notify(NOTIFICATION_ID,
+            NotificationCompat.Builder(this, CHANNEL_ID)
+                .setSmallIcon(com.prodigit.bodhiattendance.R.mipmap.ic_launcher)
+                .setContentTitle("Bodhi attendance")
+                .setContentText(message).setOngoing(true).setOnlyAlertOnce(true).build())
+    }
+
+    /** Preserve the visible work-session service during outages, without collecting GPS on stale permission. */
+    private suspend fun awaitDailyEligibility(): com.prodigit.bodhiattendance.data.remote.DailyEligibility? {
+        var attempt = 0
+        while (currentCoroutineContext().isActive) {
+            if (AttendancePrivacyPolicy.isPaused(this) ||
+                com.prodigit.bodhiattendance.core.session.SessionManager(this).getUserId() <= 0) {
+                stopSelf()
+                return null
+            }
+            // Only network changes during this attempt should accelerate its next retry.
+            while (recoveryWakeups.tryReceive().isSuccess) { /* Drain earlier connectivity signals. */ }
+            try {
+                val day = AttendanceDayGate.fetch(this)
+                if (attempt > 0) {
+                    diagnostics.record("API_RECOVERED", "Daily eligibility recovered after $attempt failed attempts; checking current CRM status")
+                    AttendanceBackgroundSync.schedule(this)
+                }
+                return day
+            } catch (e: CancellationException) { throw e }
+            catch (e: Exception) {
+                if (e is EligibilityHttpFailure && !EligibilityRecoveryPolicy.shouldRetryHttp(e.status)) {
+                    diagnostics.record("API_BLOCKED", "Daily eligibility denied HTTP ${e.status}; monitoring stopped")
+                    AttendanceBackgroundSync.schedule(this)
+                    stopSelf()
+                    return null
+                }
+                attempt = (attempt + 1).coerceAtMost(1000)
+                val delayMs = EligibilityRecoveryPolicy.retryDelayMillis(attempt)
+                AttendanceMonitorStatus.waitingForEligibility()
+                showVerificationNotification("Verification pending — reconnecting to CRM; GPS paused")
+                val cause = if (e is EligibilityHttpFailure) "HTTP ${e.status}" else e.javaClass.simpleName
+                diagnostics.record("API_RETRY", "Daily eligibility unavailable ($cause); attempt=$attempt; retryMs=$delayMs; service retained and GPS paused")
+                Log.w(tag, "Daily eligibility unavailable ($cause); service retained; retry in ${delayMs}ms")
+                withTimeoutOrNull(delayMs) { recoveryWakeups.receive() }
+            }
+        }
+        return null
     }
 
     private suspend fun verificationLoop() {
@@ -162,10 +222,13 @@ class AttendancePresenceService : Service() {
                     stopSelf()
                     return
                 }
-                val day = try { AttendanceDayGate.fetch(this@AttendancePresenceService) }
-                    catch (e: CancellationException) { throw e }
-                    catch (e: Exception) { Log.w(tag, "Daily eligibility unavailable; pausing sensors", e); stopSelf(); return }
-                if (day.date != workDate || day.monitoringMode == "PAUSED") { stopSelf(); return }
+                val day = awaitDailyEligibility() ?: return
+                if (day.date != workDate || day.monitoringMode == "PAUSED") {
+                    diagnostics.record("POLICY_PAUSED", "CRM daily status=${day.status}; monitoring stopped")
+                    stopSelf(); return
+                }
+                AttendanceMonitorStatus.running()
+                showVerificationNotification("Monitoring attendance for the work session you started")
                 Log.i(tag, "Verification burst: " + reason)
                 diagnostics.record("VERIFICATION", "Verification burst: " + reason)
                 // Refresh office evidence policy; no background geofences are registered.
@@ -212,7 +275,7 @@ class AttendancePresenceService : Service() {
                 }
                 if (!calibrating && com.prodigit.bodhiattendance.domain.attendance.AttendanceEngineRuntimeProvider.getInstance(this@AttendancePresenceService)
                         .runtimeSession.getSnapshot().attendanceState == com.prodigit.bodhiattendance.domain.attendance.AttendanceState.CHECKED_OUT) {
-                    diagnostics.record("PRIVACY_PAUSED", "Checked out; location and Wi-Fi monitoring stopped; next-day reminder only")
+                    diagnostics.record("PRIVACY_PAUSED", "Checked out; tracking stopped; next workday requires manual app opening")
                     AttendancePrivacyPolicy.pauseAfterCheckout(this@AttendancePresenceService)
                     stopSelf()
                     return
@@ -377,6 +440,7 @@ class AttendancePresenceService : Service() {
 
     override fun onDestroy() {
         if (registered) connectivity.unregisterNetworkCallback(callback)
+        if (recoveryNetworkRegistered) connectivity.unregisterNetworkCallback(recoveryCallback)
         scope.cancel()
         fences.removeGeofences(fenceIntent)
             .addOnFailureListener { Log.w(tag, "Geofence cleanup failed", it) }

@@ -155,6 +155,7 @@ fun PermissionsScreen(
                         Text("Location privacy", fontWeight = FontWeight.Bold, color = Ink)
                         Text(if (com.prodigit.bodhiattendance.core.monitoring.AttendancePrivacyPolicy.isPaused(context))
                             "Location monitoring is paused after checkout."
+                            else if (monitoring.verificationPending) "Verification pending: retrying CRM; GPS is paused."
                             else if (monitoring.running) "Attendance monitoring is running for your work session."
                             else "Attendance monitoring is not running.", color = Muted)
                         Text("Daily eligibility: " + dailyStatus.replace('_', ' '), color = Muted)
