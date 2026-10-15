@@ -36,6 +36,7 @@ import kotlin.coroutines.resumeWithException
 class AttendancePresenceService : Service() {
     private val tag = "ATTENDANCE_MONITOR"
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Main.immediate)
+    private val diagnostics by lazy { AttendanceDiagnostics(applicationContext) }
     private val evaluator by lazy { AutomaticAttendanceEvaluator(applicationContext) }
     private val arrivals by lazy { ArrivalCandidateRecorder(applicationContext) }
     @Volatile private var arrivalOffices = emptyList<com.prodigit.bodhiattendance.domain.model.AttendanceLocationConfig>()
@@ -74,6 +75,7 @@ class AttendancePresenceService : Service() {
         }
         val observed = wifiSignal
         scope.launch {
+            diagnostics.record("WIFI_TRIGGER", reason)
             try {
                 if (!HomeLocationCalibration.requested && observed != null) arrivals.record(observed.first, observed.second, arrivalOffices)
             } catch (e: CancellationException) { throw e }
@@ -125,6 +127,7 @@ class AttendancePresenceService : Service() {
                 ?: "recovery/policy deadline"
             try {
                 Log.i(tag, "Verification burst: " + reason)
+                diagnostics.record("VERIFICATION", "Verification burst: " + reason)
                 // Register/update CRM geofences without selecting local attendance policy.
                 try { withTimeoutOrNull(10_000L) { refreshGeofences() } }
                 catch (e: CancellationException) { throw e }
@@ -161,8 +164,14 @@ class AttendancePresenceService : Service() {
                     if (!calibrating) {
                         evaluator.observe(refinedLocation, bssid, wifiDisconnected = isWifiDisconnected())
                     }
-                } else Log.w(tag, "No fresh GPS fix; attendance remains unknown")
+                } else {
+                    Log.w(tag, "No fresh GPS fix; attendance remains unknown")
+                    diagnostics.record("GPS", "No fresh GPS fix; attendance remains unknown")
+                }
                 if (!calibrating) {
+                    try { diagnostics.upload() }
+                    catch (e: CancellationException) { throw e }
+                    catch (_: Exception) { Log.w(tag, "Diagnostics retained for retry") }
                     uploadEvidenceSafely()
                     scheduleArrivalUpload()
                 }
@@ -184,6 +193,7 @@ class AttendancePresenceService : Service() {
             } catch (e: CancellationException) { throw e }
             catch (e: Exception) {
                 Log.w(tag, "Verification unavailable; no absence inferred", e)
+                diagnostics.record("VERIFICATION", "Verification failed; no absence inferred")
                 waitMs = RECOVERY_MS
             }
             if (HomeLocationCalibration.requested) {
