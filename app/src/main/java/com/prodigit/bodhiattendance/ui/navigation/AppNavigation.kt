@@ -123,6 +123,8 @@ private const val ROUTE_REGISTERED_DEVICE =
 private const val ROUTE_PERMISSIONS = "permissions"
 private const val ROUTE_BATTERY_OPTIMIZATION =
     "battery_optimization"
+private const val ROUTE_OFFICE_WIFI = "office_wifi"
+
 private const val ROUTE_APP_LOCK = "app_lock_pin"
 private const val ROUTE_BIOMETRIC = "biometric_unlock"
 private const val ROUTE_OFFLINE_DATA = "offline_data"
@@ -733,7 +735,7 @@ private fun MainApplication(onSignedOut: () -> Unit) {
 
                     onOfficeWifiClick = {
                         mainNavController.navigate(
-                            ROUTE_ATTENDANCE_CONFIGURATION
+                            ROUTE_OFFICE_WIFI
                         ) {
                             launchSingleTop = true
                         }
@@ -761,6 +763,12 @@ private fun MainApplication(onSignedOut: () -> Unit) {
                     onBack = {
                         mainNavController.popBackStack()
                     }
+                )
+            }
+
+            composable(ROUTE_OFFICE_WIFI) {
+                com.prodigit.bodhiattendance.ui.systemhealth.OfficeWifiScreen(
+                    onBack = { mainNavController.popBackStack() }
                 )
             }
 
@@ -1284,4 +1292,5 @@ private fun DeviceBlockedScreen() {
         )
     }
 }
+
 

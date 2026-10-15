@@ -68,7 +68,7 @@ fun SystemHealthScreen(
             title = "Attendance Configuration", message = live.configuration?.let { "${it.locations.size} CRM offices loaded" } ?: "Configuration unavailable"),
         officeWifiRequirement = office?.wifiRequired,
         officeBleRequirement = office?.bleRequired,
-        officeWifi = officeWifiHealth(office?.wifiRequired, office?.wifi.orEmpty().map { it.bssid }, diagnostics.detectedBssid),
+        officeWifi = officeWifiHealth(office?.wifiRequired, office?.wifi.orEmpty().map { it.bssid }, diagnostics.detectedBssid, diagnostics.wifiEnabled),
         officeBeacon = officeBeaconHealth(office?.bleRequired),
         bluetoothPermission = when (office?.bleRequired) {
             true -> diagnostics.bluetoothPermission
@@ -253,4 +253,5 @@ private fun HealthExplanation(title: String, message: String) {
         }
     }
 }
+
 

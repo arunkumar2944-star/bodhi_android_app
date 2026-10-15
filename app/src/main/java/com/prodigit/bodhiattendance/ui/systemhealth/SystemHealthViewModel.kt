@@ -370,6 +370,7 @@ class SystemHealthViewModel(
                             batteryOptimization,
 
                         detectedBssid = readWifiBssid(),
+                        wifiEnabled = readWifiEnabled(),
 
 
                         // ============================================
@@ -1535,6 +1536,10 @@ class SystemHealthViewModel(
     }
 
 
+    private fun readWifiEnabled(): Boolean? = try {
+        (appContext.getSystemService(Context.WIFI_SERVICE) as WifiManager).isWifiEnabled
+    } catch (_: SecurityException) { null }
+
     @Suppress("DEPRECATION")
     private fun readWifiBssid(): String? = try {
         (appContext.getSystemService(Context.WIFI_SERVICE) as WifiManager).connectionInfo?.bssid
@@ -1603,3 +1608,4 @@ class SystemHealthViewModel(
         }
     }
 }
+

@@ -79,23 +79,49 @@ fun AppAccessGate(content: @Composable () -> Unit) {
     val prefs = rememberAccessPreferences()
     val enabled = accessPreference(prefs,"lock_enabled")
     val biometric = accessPreference(prefs,"biometric_enabled")
-    var locked by remember(enabled) { mutableStateOf(enabled) }
-    var message by remember { mutableStateOf("") }
     val activity = LocalContext.current as FragmentActivity
+    val access: AppAccessViewModel = androidx.lifecycle.viewmodel.compose.viewModel(viewModelStoreOwner = activity)
+    LaunchedEffect(enabled) { access.configure(enabled) }
+    DisposableEffect(activity, access) {
+        onDispose {
+            // Preserve rotation, but never carry an unlock through leaving
+            // the authenticated UI (for example logout and sign-in again).
+            if (!activity.isChangingConfigurations) access.reset()
+        }
+    }
+    var message by remember { mutableStateOf("") }
     DisposableEffect(activity, enabled) {
         if (enabled) activity.window.addFlags(android.view.WindowManager.LayoutParams.FLAG_SECURE)
         else activity.window.clearFlags(android.view.WindowManager.LayoutParams.FLAG_SECURE)
         onDispose { activity.window.clearFlags(android.view.WindowManager.LayoutParams.FLAG_SECURE) }
     }
     val lifecycle = LocalLifecycleOwner.current.lifecycle
-    DisposableEffect(lifecycle,enabled) {
-        val observer = LifecycleEventObserver { _, event -> if (enabled && event == Lifecycle.Event.ON_STOP) locked = true }
+    DisposableEffect(lifecycle, enabled, activity, access) {
+        val keyguard = activity.getSystemService(KeyguardManager::class.java)
+        val observer = LifecycleEventObserver { _, event ->
+            if (event == Lifecycle.Event.ON_STOP) {
+                access.onBackground(android.os.SystemClock.elapsedRealtime(), activity.isChangingConfigurations)
+            } else if (event == Lifecycle.Event.ON_RESUME) {
+                access.onForeground(android.os.SystemClock.elapsedRealtime(), keyguard?.isKeyguardLocked == true)
+            }
+        }
+        val screenReceiver = object : android.content.BroadcastReceiver() {
+            override fun onReceive(context: Context?, intent: android.content.Intent?) {
+                if (intent?.action == android.content.Intent.ACTION_SCREEN_OFF) access.screenLocked()
+            }
+        }
         lifecycle.addObserver(observer)
-        onDispose { lifecycle.removeObserver(observer) }
+        ContextCompat.registerReceiver(activity, screenReceiver,
+            android.content.IntentFilter(android.content.Intent.ACTION_SCREEN_OFF),
+            ContextCompat.RECEIVER_NOT_EXPORTED)
+        onDispose {
+            lifecycle.removeObserver(observer)
+            activity.unregisterReceiver(screenReceiver)
+        }
     }
-    val unlock = rememberAppAuthentication(biometric, { locked = false; message = "" }, { message = it })
-    val pinUnlock = rememberAppAuthentication(false, { locked = false; message = "" }, { message = it })
-    if (enabled && locked) {
+    val unlock = rememberAppAuthentication(biometric, { access.authenticated(); message = "" }, { message = it })
+    val pinUnlock = rememberAppAuthentication(false, { access.authenticated(); message = "" }, { message = it })
+    if (enabled && access.locked) {
         Surface(Modifier.fillMaxSize()) {
             Column(Modifier.padding(28.dp), verticalArrangement = Arrangement.Center) {
                 Text("Bodhi Attendance is locked", style = MaterialTheme.typography.headlineSmall)
@@ -107,3 +133,4 @@ fun AppAccessGate(content: @Composable () -> Unit) {
         }
     } else content()
 }
+

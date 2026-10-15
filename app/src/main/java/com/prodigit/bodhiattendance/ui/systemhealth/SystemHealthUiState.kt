@@ -190,6 +190,8 @@ data class SystemHealthUiState(
     //
     // AA:BB:CC:DD:EE:FF
 
+    val wifiEnabled: Boolean? = null,
+
     val detectedBssid: String? =
         null,
 
@@ -316,3 +318,4 @@ data class SystemHealthUiState(
     val isRefreshing: Boolean =
         false
 )
+
