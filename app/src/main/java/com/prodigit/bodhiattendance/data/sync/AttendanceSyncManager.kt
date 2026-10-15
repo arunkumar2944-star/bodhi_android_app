@@ -115,7 +115,9 @@ class AttendanceSyncManager(
 
         token: String,
 
-        batchSize: Int = 20
+        batchSize: Int = 20,
+        userId: Int? = null,
+        deviceId: String? = null
 
     ): SyncResult {
 
@@ -161,11 +163,9 @@ class AttendanceSyncManager(
         // LOAD RETRYABLE UNSYNCED EVENTS
         // ====================================================
 
-        val events =
-            offlineAttendanceRepository
-                .getUnsyncedBatch(
-                    limit = batchSize
-                )
+        val events = if (userId != null && deviceId != null)
+            offlineAttendanceRepository.getScopedUnsyncedBatch(userId, deviceId, batchSize)
+        else offlineAttendanceRepository.getUnsyncedBatch(limit = batchSize)
 
 
         // ====================================================

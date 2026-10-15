@@ -109,6 +109,9 @@ class OfflineAttendanceRepository(
     // REJECTED events are intentionally excluded by the DAO.
     // ========================================================
 
+    suspend fun getScopedUnsyncedBatch(userId: Int, deviceId: String, limit: Int): List<AttendanceEventEntity> =
+        attendanceEventDao.getScopedUnsyncedBatch(userId, deviceId, limit)
+
     suspend fun getUnsyncedBatch(
         limit: Int
     ): List<AttendanceEventEntity> {

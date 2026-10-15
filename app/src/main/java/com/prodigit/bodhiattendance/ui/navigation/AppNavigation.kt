@@ -416,9 +416,9 @@ private fun MainApplication(onSignedOut: () -> Unit) {
 
     MainAppLayout(
         hasUpcomingOnDuty = live.onDuty?.any { assignment ->
-            val date = runCatching { java.time.LocalDate.parse(assignment.date) }.getOrNull()
-            val today = java.time.LocalDate.now(java.time.ZoneId.of("Asia/Kolkata"))
-            assignment.status in setOf("APPROVED", "ACTIVE") && date != null && !date.isBefore(today) && !date.isAfter(today.plusDays(15))
+            val today = live.attendance?.today?.let { runCatching { java.time.LocalDate.parse(it) }.getOrNull() }
+                ?: java.time.LocalDate.now(java.time.ZoneId.of("Asia/Kolkata"))
+            com.prodigit.bodhiattendance.domain.attendance.OnDutyWindow.isVisible(assignment.date, assignment.status, today)
         } == true,
 
         selectedDestination =
@@ -1048,6 +1048,7 @@ private fun MainApplication(onSignedOut: () -> Unit) {
                     } else {
                         logoutScope.launch {
                             com.prodigit.bodhiattendance.core.monitoring.AttendanceMonitorStartGate.reset()
+                            com.prodigit.bodhiattendance.core.monitoring.AttendancePrivacyPolicy.cancel(liveContext)
                             liveContext.stopService(android.content.Intent(liveContext, com.prodigit.bodhiattendance.core.monitoring.AttendancePresenceService::class.java))
                             com.prodigit.bodhiattendance.core.session.AndroidTokenManager(liveContext).revokeOnLogout()
                             liveModel.clearAfterLogout()

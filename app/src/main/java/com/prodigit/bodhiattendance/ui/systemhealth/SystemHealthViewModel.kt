@@ -1259,13 +1259,13 @@ class SystemHealthViewModel(
             HealthItemState(
 
                 status =
-                    HealthStatus.NOT_READY,
+                    HealthStatus.NOT_REQUIRED,
 
                 title =
                     "Background Location",
 
                 message =
-                    "Background location permission required"
+                    "Optional geofence alerts; start monitoring by opening the app"
             )
         }
     }

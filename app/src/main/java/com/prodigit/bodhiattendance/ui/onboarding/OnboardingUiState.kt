@@ -65,14 +65,13 @@ data class OnboardingUiState(
     // Location is considered ready only when:
     //
     // 1. Precise location permission granted
-    // 2. Background location permission granted
-    // 3. Device location service switched ON
+    // Background location is optional for geofence alerts.
+    // 2. Device location service switched ON
     // ============================================================
 
     val locationReady: Boolean
         get() =
             locationPermissionGranted &&
-                    backgroundLocationGranted &&
                     locationServiceEnabled
 
 

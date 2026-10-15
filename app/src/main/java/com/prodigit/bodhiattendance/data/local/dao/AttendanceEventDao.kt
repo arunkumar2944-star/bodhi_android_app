@@ -13,6 +13,9 @@ import kotlinx.coroutines.flow.Flow
 
 @Dao
 interface AttendanceEventDao {
+    @Query("SELECT * FROM attendance_events WHERE userId=:userId AND deviceId=:deviceId AND syncStatus IN ('PENDING','FAILED_RETRYABLE') ORDER BY createdAt ASC LIMIT :limit")
+    suspend fun getScopedUnsyncedBatch(userId: Int, deviceId: String, limit: Int): List<AttendanceEventEntity>
+
 
 
     // ============================================================

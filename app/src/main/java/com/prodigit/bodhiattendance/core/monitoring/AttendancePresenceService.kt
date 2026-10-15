@@ -68,6 +68,7 @@ class AttendancePresenceService : Service() {
         }
     }
     private fun signalWifi(reason: String) {
+        if (AttendancePrivacyPolicy.isPaused(this)) return
         val bssid = readBssid()
         if (reason == "Wi-Fi lost") wifiSignal = null
         else if (bssid != null && !bssid.equals(wifiSignal?.first, true)) {
@@ -92,7 +93,7 @@ class AttendancePresenceService : Service() {
     }
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
-        if (!hasFineLocation()) { stopSelf(); return START_NOT_STICKY }
+        if (intent == null || AttendancePrivacyPolicy.isPaused(this) || !hasFineLocation()) { stopSelf(); return START_NOT_STICKY }
         try {
             val notification = NotificationCompat.Builder(this, CHANNEL_ID)
                 .setSmallIcon(com.prodigit.bodhiattendance.R.mipmap.ic_launcher)
@@ -117,22 +118,41 @@ class AttendancePresenceService : Service() {
             Log.e(tag, "Monitoring start blocked", e)
             stopSelf(); return START_NOT_STICKY
         }
-        return START_STICKY
+        return START_NOT_STICKY
     }
 
     private suspend fun verificationLoop() {
         var waitMs = RECOVERY_MS
         var gpsRetries = 0
         while (currentCoroutineContext().isActive) {
+            if (com.prodigit.bodhiattendance.domain.attendance.AttendanceEngineRuntimeProvider.getInstance(this@AttendancePresenceService)
+                    .runtimeSession.getSnapshot().mode != com.prodigit.bodhiattendance.domain.attendance.AttendanceEngineRuntimeMode.READY) {
+                stopSelf()
+                return
+            }
+            if (com.prodigit.bodhiattendance.domain.attendance.AttendanceEngineRuntimeProvider.getInstance(this@AttendancePresenceService)
+                    .runtimeSession.getSnapshot().attendanceState == com.prodigit.bodhiattendance.domain.attendance.AttendanceState.CHECKED_OUT) {
+                AttendancePrivacyPolicy.pauseAfterCheckout(this@AttendancePresenceService)
+                stopSelf()
+                return
+            }
             val reason = withTimeoutOrNull(waitMs) { AttendanceVerificationSignals.triggers.receive() }
                 ?: "recovery/policy deadline"
             try {
+                if (AttendancePrivacyPolicy.isPaused(this@AttendancePresenceService) ||
+                    com.prodigit.bodhiattendance.domain.attendance.AttendanceEngineRuntimeProvider.getInstance(this@AttendancePresenceService)
+                        .runtimeSession.getSnapshot().attendanceState == com.prodigit.bodhiattendance.domain.attendance.AttendanceState.CHECKED_OUT) {
+                    AttendancePrivacyPolicy.pauseAfterCheckout(this@AttendancePresenceService)
+                    stopSelf()
+                    return
+                }
                 Log.i(tag, "Verification burst: " + reason)
                 diagnostics.record("VERIFICATION", "Verification burst: " + reason)
                 // Register/update CRM geofences without selecting local attendance policy.
                 try { withTimeoutOrNull(10_000L) { refreshGeofences() } }
                 catch (e: CancellationException) { throw e }
                 catch (e: Exception) { Log.w(tag, "Geofencing unavailable; using bounded recovery verification", e) }
+                if (AttendancePrivacyPolicy.isPaused(this@AttendancePresenceService)) { stopSelf(); return }
                 // Persist approved Wi-Fi arrival before waiting for any GPS fix.
                 try {
                     if (!HomeLocationCalibration.requested) {
@@ -143,6 +163,7 @@ class AttendancePresenceService : Service() {
                     }
                 } catch (e: CancellationException) { throw e }
                 catch (e: Exception) { Log.w("ARRIVAL_EVIDENCE", "Arrival evidence retained for retry", e) }
+                if (AttendancePrivacyPolicy.isPaused(this@AttendancePresenceService)) { stopSelf(); return }
                 val source = CancellationTokenSource()
                 val location = try {
                     withTimeoutOrNull(35_000L) {
@@ -168,6 +189,13 @@ class AttendancePresenceService : Service() {
                 } else {
                     Log.w(tag, "No fresh GPS fix; attendance remains unknown")
                     diagnostics.record("GPS", "No fresh GPS fix; attendance remains unknown")
+                }
+                if (!calibrating && com.prodigit.bodhiattendance.domain.attendance.AttendanceEngineRuntimeProvider.getInstance(this@AttendancePresenceService)
+                        .runtimeSession.getSnapshot().attendanceState == com.prodigit.bodhiattendance.domain.attendance.AttendanceState.CHECKED_OUT) {
+                    diagnostics.record("PRIVACY_PAUSED", "Checked out; location and Wi-Fi monitoring stopped; next-day reminder only")
+                    AttendancePrivacyPolicy.pauseAfterCheckout(this@AttendancePresenceService)
+                    stopSelf()
+                    return
                 }
                 if (!calibrating) {
                     try { diagnostics.upload() }
@@ -357,7 +385,9 @@ class AttendancePresenceService : Service() {
         if (registered) connectivity.unregisterNetworkCallback(callback)
         scope.cancel()
         fences.removeGeofences(fenceIntent).addOnFailureListener { Log.w(tag, "Geofence cleanup failed", it) }
+        stopForeground(STOP_FOREGROUND_REMOVE)
         AttendanceMonitorStatus.stopped()
+        AttendanceMonitorStartGate.onServiceStopped()
         super.onDestroy()
     }
     override fun onBind(intent: Intent?): IBinder? = null
@@ -373,6 +403,7 @@ class AttendancePresenceService : Service() {
         private const val REFINE_WINDOW_MS = 12_000L
         private const val MAX_GPS_RETRIES = 3
         fun start(context: Context): Boolean {
+            if (AttendancePrivacyPolicy.isPaused(context)) return false
             if (ContextCompat.checkSelfPermission(context, Manifest.permission.ACCESS_FINE_LOCATION) !=
                 PackageManager.PERMISSION_GRANTED) return false
             return try {

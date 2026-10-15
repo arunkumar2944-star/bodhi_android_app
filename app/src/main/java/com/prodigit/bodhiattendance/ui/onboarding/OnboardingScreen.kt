@@ -518,12 +518,6 @@ fun OnboardingScreen(
 
 
                         !uiState
-                            .backgroundLocationGranted ->
-
-                            "Allow location all the time for automatic attendance"
-
-
-                        !uiState
                             .locationServiceEnabled ->
 
                             "Turn on device location service"
@@ -531,7 +525,7 @@ fun OnboardingScreen(
 
                         else ->
 
-                            "Ready for office geofence detection"
+                            "Ready: monitoring starts while the app is visible and stops after checkout"
                     },
 
 
@@ -547,12 +541,6 @@ fun OnboardingScreen(
                             .locationPermissionGranted ->
 
                             "Allow"
-
-
-                        !uiState
-                            .backgroundLocationGranted ->
-
-                            "Allow Always"
 
 
                         !uiState
@@ -613,48 +601,6 @@ fun OnboardingScreen(
 
 
                         // =====================================================
-                        // BACKGROUND LOCATION
-                        // =====================================================
-
-                        !uiState
-                            .backgroundLocationGranted -> {
-
-
-                            if (
-                                Build.VERSION.SDK_INT >=
-                                Build.VERSION_CODES.R
-                            ) {
-
-
-                                openApplicationSettings(
-                                    context
-                                )
-
-
-                            } else if (
-                                Build.VERSION.SDK_INT >=
-                                Build.VERSION_CODES.Q
-                            ) {
-
-
-                                backgroundLocationLauncher
-                                    .launch(
-
-                                        Manifest.permission
-                                            .ACCESS_BACKGROUND_LOCATION
-                                    )
-
-
-                            } else {
-
-
-                                viewModel
-                                    .refreshSystemStatus()
-                            }
-                        }
-
-
-                        // =====================================================
                         // LOCATION SERVICE
                         // =====================================================
 
@@ -674,6 +620,9 @@ fun OnboardingScreen(
                 }
             )
 
+
+            Text("Precise location with While using the app is enough to start monitoring. Keep the monitoring notification enabled during work. Always allow is optional for background geofence alerts; it does not override the checkout privacy pause.", style = MaterialTheme.typography.bodySmall)
+            Text("After checkout, location monitoring stops. Open the app next workday to resume; a reminder is scheduled around 8:00 AM IST.", style = MaterialTheme.typography.bodySmall)
 
             // =================================================================
             // BLUETOOTH

@@ -49,6 +49,9 @@ class MainActivity : FragmentActivity() {
         setIntent(intent)
         handleCalibrationIntent(intent)
         handleUiResetIntent(intent)
+        if (lifecycle.currentState.isAtLeast(androidx.lifecycle.Lifecycle.State.RESUMED)) {
+            AttendanceMonitorStartGate.onActivityResumed(applicationContext)
+        }
     }
 
     private fun handleUiResetIntent(intent: android.content.Intent?) {

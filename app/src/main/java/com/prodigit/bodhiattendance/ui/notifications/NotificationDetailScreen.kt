@@ -21,7 +21,7 @@ fun NotificationDetailScreen(id: String, onBack: () -> Unit) {
         catch (e: CancellationException) { throw e }
         catch (e: Exception) { error = e.message ?: "Notification unavailable" }
     }
-    PrototypePage("Notification details", "Request decision", onBack) {
+    PrototypePage("Notification details", "Updates from CRM", onBack) {
         if (error != null) {
             Text(error.orEmpty())
             Button(onClick = { attempt++ }) { Text("Retry") }
@@ -29,11 +29,11 @@ fun NotificationDetailScreen(id: String, onBack: () -> Unit) {
         else detail?.let { row ->
             PrototypePanel {
                 Text(row.title, style = MaterialTheme.typography.titleLarge)
-                row.requestDate?.let { PrototypeDetail("Request date", it) }
-                row.requestDescription?.takeIf { it.isNotBlank() }?.let { PrototypeDetail("Your request", it) }
+                row.requestDate?.let { PrototypeDetail("Date", it) }
+                row.requestDescription?.takeIf { it.isNotBlank() }?.let { PrototypeDetail(if (row.requestType == "ON_DUTY") "Assignment" else "Your request", it) }
                 PrototypeDetail("Decision", row.status.orEmpty())
                 PrototypeDetail("Remarks", row.description.ifBlank { "No additional remarks" })
-                row.reviewedBy?.takeIf { it.isNotBlank() }?.let { PrototypeDetail("Reviewed by", it) }
+                row.reviewedBy?.takeIf { it.isNotBlank() }?.let { PrototypeDetail(if (row.requestType == "ON_DUTY") "Assigned by" else "Reviewed by", it) }
                 row.time?.let { PrototypeDetail("Decision time", it) }
             }
         }

@@ -70,8 +70,8 @@ private fun getPermissionChecks(context: Context): List<PermissionCheck> {
 
     return listOf(
         PermissionCheck("Precise Location", "Fine location permission for GPS-based presence", fine),
-        PermissionCheck("Background Location", "Location access while the app is in the background", background,
-            notRequired = Build.VERSION.SDK_INT < 29),
+        PermissionCheck("Background Location", "Optional geofence alerts. Monitoring stops after checkout; open the app next day to resume.", background,
+            notRequired = !background),
         PermissionCheck("Nearby Devices", "Bluetooth scan and connect permissions", nearby,
             notRequired = !nearbyRequired),
         PermissionCheck("Location Service", "Android device location is turned on", locationEnabled),
@@ -86,6 +86,7 @@ fun PermissionsScreen(
 ) {
     val context = LocalContext.current
     val lifecycleOwner = LocalLifecycleOwner.current
+    val monitoring by com.prodigit.bodhiattendance.core.monitoring.AttendanceMonitorStatus.state.collectAsState()
     var checks by remember { mutableStateOf(getPermissionChecks(context)) }
 
     DisposableEffect(lifecycleOwner) {
@@ -148,6 +149,18 @@ fun PermissionsScreen(
                                     "registration and synchronization are checked separately in System Health.",
                             color = Muted, fontSize = 12.sp, lineHeight = 18.sp
                         )
+                    }
+                }
+            }
+            item {
+                Card(colors = CardDefaults.cardColors(containerColor = Color.White)) {
+                    Column(Modifier.padding(16.dp)) {
+                        Text("Location privacy", fontWeight = FontWeight.Bold, color = Ink)
+                        Text(if (com.prodigit.bodhiattendance.core.monitoring.AttendancePrivacyPolicy.isPaused(context))
+                            "Location monitoring is paused after checkout."
+                            else if (monitoring.running) "Attendance monitoring is running for your work session."
+                            else "Attendance monitoring is not running.", color = Muted)
+                        Text("Monitoring stops after checkout. A reminder around 8:00 AM IST next day asks you to open the app; the reminder collects no location. Saved attendance can still upload while location is paused.", color = Muted, fontSize = 12.sp)
                     }
                 }
             }

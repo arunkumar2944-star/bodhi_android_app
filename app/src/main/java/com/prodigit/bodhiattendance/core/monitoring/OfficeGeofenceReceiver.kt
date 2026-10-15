@@ -19,8 +19,8 @@ class OfficeGeofenceReceiver : BroadcastReceiver() {
             Log.w("ATTENDANCE_MONITOR", "Geofence error=" + event.errorCode)
             return
         }
-        // An alert triggers fresh verification; it never authorizes an event itself.
+        if (AttendancePrivacyPolicy.isPaused(context)) return
+        // Alerts wake an already validated monitoring loop; never start a new location service in the background.
         AttendanceVerificationSignals.request("geofence transition")
-        AttendancePresenceService.start(context)
     }
 }

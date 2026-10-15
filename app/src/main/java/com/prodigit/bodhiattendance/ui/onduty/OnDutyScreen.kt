@@ -35,6 +35,7 @@ import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
@@ -149,6 +150,13 @@ fun OnDutyScreen(
         )
     }
 
+
+    LaunchedEffect(allAssignments, displayMonth, displayYear) {
+        val old = selectedAssignment
+        selectedAssignment = allAssignments.firstOrNull { row ->
+            old != null && row.month == displayMonth && row.year == displayYear && row.day == old.day && row.month == old.month && row.year == old.year && row.startTime == old.startTime
+        } ?: allAssignments.firstOrNull { it.month == displayMonth && it.year == displayYear }
+    }
 
     // ========================================================
     // ASSIGNMENTS FOR CURRENT MONTH
