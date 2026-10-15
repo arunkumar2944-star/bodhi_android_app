@@ -49,6 +49,7 @@ class AttendancePresenceService : Service() {
     private var worker: Job? = null
     private var arrivalUploadJob: Job? = null
     private var registered = false
+    private var arrivalVerificationDeadline: Long? = null
     private var lastWifiSignature: String? = null
     private var fenceSignature: String? = null
     private val fenceIntent by lazy {
@@ -96,7 +97,7 @@ class AttendancePresenceService : Service() {
         if (worker?.isActive == true) return START_NOT_STICKY
         val morning = intent?.action == ACTION_MORNING
         if (intent == null || !hasFineLocation() ||
-            (morning && (!AttendancePrivacyPolicy.needsMorningReconciliation(this) || !AttendancePrivacyPolicy.hasBackgroundLocation(this))) ||
+            (morning && (!AttendanceDayGate.arrivalAlertsArmed(this) || !AttendancePrivacyPolicy.hasBackgroundLocation(this))) ||
             (!morning && AttendancePrivacyPolicy.isPaused(this))) { stopSelf(); return START_NOT_STICKY }
         try {
             val notification = NotificationCompat.Builder(this, CHANNEL_ID)
@@ -110,7 +111,8 @@ class AttendancePresenceService : Service() {
             if (worker?.isActive != true) {
                 worker = scope.launch {
                     try {
-                    if (morning && !prepareMorning()) { stopSelf(); return@launch }
+                    if (!prepareMonitoring()) { stopSelf(); return@launch }
+                    AttendanceDayGate.removeArrivalAlerts(this@AttendancePresenceService)
                     if (AttendancePrivacyPolicy.isPaused(this@AttendancePresenceService)) { stopSelf(); return@launch }
                     if (!registered) {
                         connectivity.registerNetworkCallback(NetworkRequest.Builder()
@@ -145,14 +147,17 @@ class AttendancePresenceService : Service() {
     }
 
     /** No location/Wi-Fi callbacks until pending uploads and authoritative day reconciliation succeed. */
-    private suspend fun prepareMorning(): Boolean {
+    private suspend fun prepareMonitoring(): Boolean {
         val context = this@AttendancePresenceService
         val session = com.prodigit.bodhiattendance.core.session.SessionManager(context)
         val device = com.prodigit.bodhiattendance.core.device.DeviceIdManager(context).getDeviceId() ?: return false
         if (session.getUserId() <= 0) return false
-        while (currentCoroutineContext().isActive && AttendancePrivacyPolicy.needsMorningReconciliation(context)) {
+        while (currentCoroutineContext().isActive) {
             try {
                 if (AttendanceBackgroundSync.run(context, diagnostics = false)) {
+                    if (AttendancePrivacyPolicy.isPaused(context) && !AttendancePrivacyPolicy.needsMorningReconciliation(context)) return false
+                    val day = AttendanceDayGate.fetch(context)
+                    if (day.monitoringMode == "PAUSED") return false
                     val token = com.prodigit.bodhiattendance.core.session.AndroidTokenManager(context).usableAccessToken()
                     if (token != null) {
                         val provider = com.prodigit.bodhiattendance.domain.attendance.AttendanceEngineRuntimeProvider.getInstance(context)
@@ -166,6 +171,7 @@ class AttendancePresenceService : Service() {
                             }
                             if (state.mode == com.prodigit.bodhiattendance.domain.attendance.AttendanceEngineRuntimeMode.READY) {
                                 AttendancePrivacyPolicy.resumeAfterServerValidation(context)
+                                arrivalVerificationDeadline = if (!day.hasCheckIn) SystemClock.elapsedRealtime() + 120_000L else null
                                 return true
                             }
                         }
@@ -193,7 +199,14 @@ class AttendancePresenceService : Service() {
                 stopSelf()
                 return
             }
-            val reason = withTimeoutOrNull(waitMs) { AttendanceVerificationSignals.triggers.receive() }
+            val arrivalDeadline = arrivalVerificationDeadline
+            if (arrivalDeadline != null) {
+                val state = com.prodigit.bodhiattendance.domain.attendance.AttendanceEngineRuntimeProvider.getInstance(this@AttendancePresenceService).runtimeSession.getSnapshot().attendanceState
+                if (state != com.prodigit.bodhiattendance.domain.attendance.AttendanceState.NOT_CHECKED_IN) arrivalVerificationDeadline = null
+                else if (SystemClock.elapsedRealtime() >= arrivalDeadline) { stopSelf(); return }
+            }
+            val boundedWait = arrivalVerificationDeadline?.let { (it - SystemClock.elapsedRealtime()).coerceIn(1L, waitMs) } ?: waitMs
+            val reason = withTimeoutOrNull(boundedWait) { AttendanceVerificationSignals.triggers.receive() }
                 ?: "recovery/policy deadline"
             try {
                 if (AttendancePrivacyPolicy.isPaused(this@AttendancePresenceService) ||
@@ -203,6 +216,11 @@ class AttendancePresenceService : Service() {
                     stopSelf()
                     return
                 }
+                val day = try { AttendanceDayGate.fetch(this@AttendancePresenceService) }
+                    catch (e: CancellationException) { throw e }
+                    catch (e: Exception) { Log.w(tag, "Daily eligibility unavailable; pausing sensors", e); stopSelf(); return }
+                if (day.monitoringMode == "PAUSED") { stopSelf(); return }
+                if (arrivalVerificationDeadline?.let { SystemClock.elapsedRealtime() >= it } == true && !day.hasCheckIn) { stopSelf(); return }
                 Log.i(tag, "Verification burst: " + reason)
                 diagnostics.record("VERIFICATION", "Verification burst: " + reason)
                 // Register/update CRM geofences without selecting local attendance policy.
@@ -443,7 +461,12 @@ class AttendancePresenceService : Service() {
         scope.cancel()
         fences.removeGeofences(fenceIntent)
             .addOnFailureListener { Log.w(tag, "Geofence cleanup failed", it) }
-            .addOnCompleteListener { AttendancePrivacyPolicy.terminateAfterCheckoutCleanup(applicationContext) }
+            .addOnCompleteListener {
+                AttendanceDayGate.clearArrivalAlerts(applicationContext).addOnCompleteListener {
+                    AttendancePrivacyPolicy.terminateAfterCheckoutCleanup(applicationContext)
+                    if (!AttendancePrivacyPolicy.isPaused(applicationContext)) AttendanceDayGate.schedule(applicationContext)
+                }
+            }
         stopForeground(STOP_FOREGROUND_REMOVE)
         AttendanceMonitorStatus.stopped()
         AttendanceMonitorStartGate.onServiceStopped()
@@ -453,8 +476,9 @@ class AttendancePresenceService : Service() {
 
     companion object {
         private const val ACTION_MORNING = "com.prodigit.bodhiattendance.RESUME_MORNING"
-        fun startMorning(context: Context): Boolean {
-            if (!AttendancePrivacyPolicy.automaticRestartReady(context) || !AttendancePrivacyPolicy.needsMorningReconciliation(context)) return false
+        fun startFromOfficeEntry(context: Context): Boolean {
+            if (!AttendancePrivacyPolicy.hasBackgroundLocation(context) || !AttendanceDayGate.arrivalAlertsArmed(context)) return false
+            if (AttendancePrivacyPolicy.isPaused(context) && !AttendancePrivacyPolicy.needsMorningReconciliation(context)) return false
             return try {
                 ContextCompat.startForegroundService(context, Intent(context, AttendancePresenceService::class.java).setAction(ACTION_MORNING))
                 true

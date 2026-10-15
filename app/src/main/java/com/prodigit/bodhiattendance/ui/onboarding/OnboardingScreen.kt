@@ -622,7 +622,7 @@ fun OnboardingScreen(
 
 
             Text("Choose Precise location and While using the app first. For automatic 8 AM restart without opening the app, separately allow background location and Alarms & reminders. Tracking stops after checkout even with background permission.", style = MaterialTheme.typography.bodySmall)
-            Text("After checkout, the screen closes and location monitoring stops. Next day at 8:00 AM IST, the app verifies the new workday and resumes monitoring in the background. A monitoring notification remains visible.", style = MaterialTheme.typography.bodySmall)
+            Text("After checkout, the screen closes and location monitoring stops. At 8:00 AM IST next day, a network-only CRM check handles holidays, approved leave and manager exceptions. Eligible days wait for an office-entry alert before GPS/Wi-Fi verification.", style = MaterialTheme.typography.bodySmall)
 
             androidx.compose.material3.TextButton(onClick = {
                 context.startActivity(Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS,

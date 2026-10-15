@@ -5,6 +5,7 @@ import retrofit2.http.*
 
 // Dedicated employee read models; event-writing APIs remain owned by the engine.
 interface MobileUiApi {
+    @GET("api/v1/attendance/day-policy/mine") suspend fun dayEligibility(@Header("Authorization") token: String, @Query("device_id") deviceId: String): Response<MobileReply<DailyEligibility>>
     @GET("api/v1/auth/me") suspend fun profile(@Header("Authorization") token: String): Response<ProfileReply>
     @GET("api/v1/attendance/mobile/attendance") suspend fun attendance(@Header("Authorization") token: String): Response<MobileReply<AttendanceReadModel>>
     @GET("api/v1/attendance/mobile/requests") suspend fun requests(@Header("Authorization") token: String): Response<MobileReply<List<MobileRequest>>>
@@ -28,3 +29,7 @@ data class MobileNotification(val id: String, val title: String, val description
     val requestDate: String? = null, val requestDescription: String? = null, val reviewedBy: String? = null)
 data class NotificationReadReceipt(val id: String, val readAt: String)
 data class MobileDuty(val date: String, val dutyType: String, val startTime: String, val endTime: String, val location: String, val purpose: String, val assignedBy: String, val status: String, val remarks: String)
+
+data class DailyEligibility(val userId: Int, val date: String, val serverTimeMs: Long,
+    val status: String, val monitoringMode: String, val hasCheckIn: Boolean,
+    val attendanceState: String, val validUntilMs: Long)

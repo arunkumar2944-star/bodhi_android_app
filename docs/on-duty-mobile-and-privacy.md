@@ -12,6 +12,9 @@ In-app notifications now combine reviewed requests with On Duty assignments, inc
 
 ## Location permission and privacy
 
+Updated by [Daily attendance eligibility](daily-attendance-eligibility.md): the 08:00 alarm now schedules network-only CRM checks and passive office-entry waiting. It no longer directly starts routine location monitoring. The daily eligibility document takes precedence over the earlier restart details below.
+
+
 Onboarding starts with precise While using location. Unattended 08:00 Asia/Kolkata startup additionally requires Allow all the time location and Alarms & reminders special access. The onboarding and Permissions pages explain these and link to Android settings. Missing access falls back to a tap-to-open reminder; it is never reported as automatic-ready. No privileged USE_EXACT_ALARM permission or hidden Activity launch is used.
 
 At a newly created CHECK_OUT, persist the privacy pause and next-day 08:00 alarm before closing the UI. Stop the foreground service, cancel work coroutines and Wi-Fi callbacks, remove geofences, clear sensor display, then self-terminate the app process after the geofence cleanup completes. This is Process.killProcess, not Android force-stop: the OS-owned PendingIntent alarm and persisted network-only upload job survive. Saved Room events remain durable and their UUIDs remain unchanged. A network upload interrupted by termination is retried by the saved job. No attendance tracking runs overnight.

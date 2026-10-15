@@ -23,6 +23,19 @@ object AttendanceMonitorStartGate {
         if (!startupReady || !activityResumed || startRequested || task?.isActive == true) return
         task = scope.launch {
             try {
+                AttendanceDayGate.schedule(context)
+                if (AttendancePrivacyPolicy.isPaused(context) && !AttendancePrivacyPolicy.needsMorningReconciliation(context)) return@launch
+                if (!AttendanceBackgroundSync.run(context, diagnostics = false)) return@launch
+                val day = AttendanceDayGate.fetch(context)
+                if (day.monitoringMode == "PAUSED") {
+                    AttendanceDayGate.removeArrivalAlerts(context)
+                    context.stopService(android.content.Intent(context, AttendancePresenceService::class.java))
+                    return@launch
+                }
+                if (!day.hasCheckIn) {
+                    AttendanceDayGate.armArrivalAlerts(context)
+                    return@launch
+                }
                 val provider = AttendanceEngineRuntimeProvider.getInstance(context)
                 val restored = provider.runtimeSession.getSnapshot()
                 if (AttendancePrivacyPolicy.needsMorningReconciliation(context) ||

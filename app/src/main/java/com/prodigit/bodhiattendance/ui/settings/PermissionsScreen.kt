@@ -70,8 +70,8 @@ private fun getPermissionChecks(context: Context): List<PermissionCheck> {
 
     return listOf(
         PermissionCheck("Precise Location", "Fine location permission for GPS-based presence", fine),
-        PermissionCheck("Background Location", "Allow all the time enables automatic 8 AM restart. Tracking still stops after checkout.", background),
-        PermissionCheck("Morning restart alarm", "Alarms & reminders access starts attendance monitoring at 8:00 AM IST.",
+        PermissionCheck("Background Location", "Allow all the time enables office-entry alerts on eligible workdays. Tracking stops after checkout.", background),
+        PermissionCheck("Morning restart alarm", "Alarms & reminders access schedules the network-only workday check at 8:00 AM IST.",
             com.prodigit.bodhiattendance.core.monitoring.AttendancePrivacyPolicy.hasExactAlarmAccess(context)),
         PermissionCheck("Nearby Devices", "Bluetooth scan and connect permissions", nearby,
             notRequired = !nearbyRequired),
@@ -87,6 +87,7 @@ fun PermissionsScreen(
 ) {
     val context = LocalContext.current
     val lifecycleOwner = LocalLifecycleOwner.current
+    val dailyStatus by com.prodigit.bodhiattendance.core.monitoring.AttendanceDayGate.state.collectAsState()
     val monitoring by com.prodigit.bodhiattendance.core.monitoring.AttendanceMonitorStatus.state.collectAsState()
     var checks by remember { mutableStateOf(getPermissionChecks(context)) }
 
@@ -161,7 +162,8 @@ fun PermissionsScreen(
                             "Location monitoring is paused after checkout."
                             else if (monitoring.running) "Attendance monitoring is running for your work session."
                             else "Attendance monitoring is not running.", color = Muted)
-                        Text("Monitoring stops and the app screen closes after checkout. With background location and alarm access, monitoring restarts at 8:00 AM IST next day without opening the screen. Saved attendance may upload while tracking is paused. If access is missing, a reminder asks you to open the app.", color = Muted, fontSize = 12.sp)
+                        Text("Daily eligibility: " + dailyStatus.replace('_', ' '), color = Muted)
+                        Text("At 8 AM IST a network-only CRM check excludes holidays, approved leave and manager-recorded absence. Eligible employees wait for an office-entry alert; routine GPS verification does not start from home. CRM changes apply on the next successful check. Saved events may still upload while tracking is paused.", color = Muted, fontSize = 12.sp)
                     }
                 }
             }
