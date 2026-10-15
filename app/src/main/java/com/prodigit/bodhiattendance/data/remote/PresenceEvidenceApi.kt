@@ -22,8 +22,26 @@ data class PresenceEvidenceBatch(
 )
 data class PresenceEvidenceUploadResponse(val success: Boolean, val accepted: List<String>?)
 
+data class ArrivalCandidateItem(
+    val id: String,
+    @SerializedName("office_id") val officeId: Long,
+    @SerializedName("boot_id") val bootId: String,
+    @SerializedName("anchor_uuid") val anchorUuid: String,
+    @SerializedName("observed_elapsed_ms") val observedElapsedMs: Long,
+    @SerializedName("wifi_bssid") val wifiBssid: String
+)
+data class ArrivalCandidateBatch(
+    @SerializedName("device_id") val deviceId: String,
+    val candidates: List<ArrivalCandidateItem>
+)
+
 interface PresenceEvidenceApi {
+    @POST("api/v1/attendance/presence-evidence/arrivals")
+    suspend fun uploadArrivals(@Header("Authorization") token: String,
+                              @Body batch: ArrivalCandidateBatch): Response<PresenceEvidenceUploadResponse>
+
     @POST("api/v1/attendance/presence-evidence")
     suspend fun upload(@Header("Authorization") token: String,
                        @Body batch: PresenceEvidenceBatch): Response<PresenceEvidenceUploadResponse>
 }
+

@@ -37,12 +37,16 @@ class AttendancePresenceService : Service() {
     private val tag = "ATTENDANCE_MONITOR"
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Main.immediate)
     private val evaluator by lazy { AutomaticAttendanceEvaluator(applicationContext) }
+    private val arrivals by lazy { ArrivalCandidateRecorder(applicationContext) }
+    @Volatile private var arrivalOffices = emptyList<com.prodigit.bodhiattendance.domain.model.AttendanceLocationConfig>()
+    @Volatile private var wifiSignal: Pair<String, Long>? = null
     private val evidenceJournal by lazy { PresenceEvidenceJournal(applicationContext) }
     private val tokens by lazy { AndroidTokenManager(applicationContext) }
     private val fused by lazy { LocationServices.getFusedLocationProviderClient(this) }
     private val fences by lazy { LocationServices.getGeofencingClient(this) }
     private val connectivity by lazy { getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager }
     private var worker: Job? = null
+    private var arrivalUploadJob: Job? = null
     private var registered = false
     private var lastWifiSignature: String? = null
     private var fenceSignature: String? = null
@@ -62,7 +66,21 @@ class AttendancePresenceService : Service() {
             }
         }
     }
-    private fun signalWifi(reason: String) = AttendanceVerificationSignals.request(reason)
+    private fun signalWifi(reason: String) {
+        val bssid = readBssid()
+        if (reason == "Wi-Fi lost") wifiSignal = null
+        else if (bssid != null && !bssid.equals(wifiSignal?.first, true)) {
+            wifiSignal = bssid to SystemClock.elapsedRealtime()
+        }
+        val observed = wifiSignal
+        scope.launch {
+            try {
+                if (!HomeLocationCalibration.requested && observed != null) arrivals.record(observed.first, observed.second, arrivalOffices)
+            } catch (e: CancellationException) { throw e }
+            catch (e: Exception) { Log.w("ARRIVAL_EVIDENCE", "Arrival observation deferred", e) }
+        }
+        AttendanceVerificationSignals.request(reason)
+    }
 
     override fun onCreate() {
         super.onCreate()
@@ -111,6 +129,16 @@ class AttendancePresenceService : Service() {
                 try { withTimeoutOrNull(10_000L) { refreshGeofences() } }
                 catch (e: CancellationException) { throw e }
                 catch (e: Exception) { Log.w(tag, "Geofencing unavailable; using bounded recovery verification", e) }
+                // Persist approved Wi-Fi arrival before waiting for any GPS fix.
+                try {
+                    if (!HomeLocationCalibration.requested) {
+                        val bssid = readBssid()
+                        val signal = wifiSignal?.takeIf { it.first.equals(bssid, true) &&
+                            SystemClock.elapsedRealtime() - it.second in 0..60_000L }
+                        arrivals.record(bssid, signal?.second ?: SystemClock.elapsedRealtime(), arrivalOffices)
+                    }
+                } catch (e: CancellationException) { throw e }
+                catch (e: Exception) { Log.w("ARRIVAL_EVIDENCE", "Arrival evidence retained for retry", e) }
                 val source = CancellationTokenSource()
                 val location = try {
                     withTimeoutOrNull(35_000L) {
@@ -132,9 +160,12 @@ class AttendancePresenceService : Service() {
                     AttendanceMonitorStatus.observation(refinedLocation.latitude, refinedLocation.longitude, refinedLocation.accuracy, bssid)
                     if (!calibrating) {
                         evaluator.observe(refinedLocation, bssid, wifiDisconnected = isWifiDisconnected())
-                        uploadEvidenceSafely()
                     }
                 } else Log.w(tag, "No fresh GPS fix; attendance remains unknown")
+                if (!calibrating) {
+                    uploadEvidenceSafely()
+                    scheduleArrivalUpload()
+                }
                 val gpsNeedsRetry = refinedLocation == null || evaluator.needsBetterGps
                 val due = if (refinedLocation != null) evaluator.nextVerificationElapsedMs else null
                 waitMs = if (evaluator.needsContinuityChecks) {
@@ -216,6 +247,15 @@ class AttendancePresenceService : Service() {
         return best
     }
 
+    private fun scheduleArrivalUpload() {
+        if (arrivalUploadJob?.isActive == true) return
+        arrivalUploadJob = scope.launch {
+            try { arrivals.upload() }
+            catch (e: CancellationException) { throw e }
+            catch (e: Exception) { Log.w("ARRIVAL_EVIDENCE", "Arrival evidence upload deferred", e) }
+        }
+    }
+
     private suspend fun uploadEvidenceSafely() {
         // An audit-only upload. Failure never blocks normal attendance processing.
         val token = tokens.usableAccessToken() ?: return
@@ -243,18 +283,35 @@ class AttendancePresenceService : Service() {
     }
 
     private suspend fun refreshGeofences() {
+        val token = tokens.usableAccessToken() ?: return
+        if (arrivalOffices.isEmpty()) {
+            arrivalOffices = com.prodigit.bodhiattendance.data.local.repository.AttendanceConfigCacheRepository(
+                com.prodigit.bodhiattendance.data.local.database.AttendanceDatabase.getInstance(applicationContext).attendanceConfigDao()
+            ).getCachedConfiguration()
+        }
+        val remote = AttendanceConfigRepositoryImpl(RetrofitClient.attendanceApi).getActiveAttendanceConfig(token)
+        if (remote.isSuccess) {
+            arrivalOffices = remote.getOrThrow()
+            com.prodigit.bodhiattendance.data.local.repository.AttendanceConfigCacheRepository(
+                com.prodigit.bodhiattendance.data.local.database.AttendanceDatabase.getInstance(applicationContext).attendanceConfigDao()
+            ).replaceConfiguration(arrivalOffices)
+        } else if (arrivalOffices.isEmpty()) {
+            arrivalOffices = com.prodigit.bodhiattendance.data.local.repository.AttendanceConfigCacheRepository(
+                com.prodigit.bodhiattendance.data.local.database.AttendanceDatabase.getInstance(applicationContext).attendanceConfigDao()
+            ).getCachedConfiguration()
+        }
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q && ContextCompat.checkSelfPermission(this,
                 Manifest.permission.ACCESS_BACKGROUND_LOCATION) != PackageManager.PERMISSION_GRANTED) {
             Log.w(tag, "Background location missing; geofence alerts unavailable, recovery checks remain")
             return
         }
-        val token = tokens.usableAccessToken() ?: return
-        val offices = AttendanceConfigRepositoryImpl(RetrofitClient.attendanceApi)
-            .getActiveAttendanceConfig(token).getOrThrow().filter {
-                it.latitude.isFinite() && it.latitude in -90.0..90.0 &&
-                it.longitude.isFinite() && it.longitude in -180.0..180.0 &&
-                it.geofenceRadiusMeters.isFinite() && it.geofenceRadiusMeters > 0
-            }.take(100)
+        // Cached offices may preserve review evidence offline, but never replace
+        // a fresh CRM response when registering operational geofences.
+        val offices = remote.getOrThrow().filter {
+            it.latitude.isFinite() && it.latitude in -90.0..90.0 &&
+            it.longitude.isFinite() && it.longitude in -180.0..180.0 &&
+            it.geofenceRadiusMeters.isFinite() && it.geofenceRadiusMeters > 0
+        }.take(100)
         val signature = offices.joinToString { "" + it.id + ":" + it.latitude + ":" + it.longitude + ":" + it.geofenceRadiusMeters }
         if (signature == fenceSignature) return
         fences.removeGeofences(fenceIntent).awaitResult()
@@ -320,3 +377,4 @@ private suspend fun <T> Task<T>.awaitResult(): T = suspendCancellableCoroutine {
     addOnFailureListener { if (continuation.isActive) continuation.resumeWithException(it) }
     addOnCanceledListener { continuation.cancel() }
 }
+

@@ -2,6 +2,9 @@ package com.prodigit.bodhiattendance.data.local.database
 
 import android.content.Context
 
+import com.prodigit.bodhiattendance.data.local.dao.ArrivalCandidateDao
+import com.prodigit.bodhiattendance.data.local.entity.ArrivalCandidateEntity
+
 import androidx.room.Database
 import androidx.room.Room
 import androidx.room.RoomDatabase
@@ -111,11 +114,12 @@ import com.prodigit.bodhiattendance.data.local.entity.TimeAnchorEntity
         TimeAnchorEntity::class,
 
         AttendanceEngineStateEntity::class,
-        RegisteredDeviceEntity::class
+        RegisteredDeviceEntity::class,
+        ArrivalCandidateEntity::class
 
     ],
 
-    version = 8,
+    version = 9,
 
     exportSchema = false
 )
@@ -126,6 +130,8 @@ abstract class AttendanceDatabase :
     // ========================================================
     // ATTENDANCE EVENT DAO
     // ========================================================
+
+    abstract fun arrivalCandidateDao(): ArrivalCandidateDao
 
     abstract fun registeredDeviceDao(): RegisteredDeviceDao
 
@@ -545,6 +551,18 @@ abstract class AttendanceDatabase :
         // trusted time anchors are preserved.
         // ====================================================
 
+        private val MIGRATION_8_9 = object : Migration(8, 9) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL("""CREATE TABLE IF NOT EXISTS arrival_candidates (
+                    id TEXT NOT NULL PRIMARY KEY, userId INTEGER NOT NULL, companyId INTEGER NOT NULL,
+                    deviceId TEXT NOT NULL, officeId INTEGER NOT NULL, bootId TEXT NOT NULL,
+                    anchorUuid TEXT NOT NULL, observedElapsedMs INTEGER NOT NULL,
+                    wifiBssid TEXT NOT NULL, uploaded INTEGER NOT NULL
+                )""")
+                db.execSQL("CREATE INDEX IF NOT EXISTS index_arrival_candidates_userId_deviceId_uploaded ON arrival_candidates(userId, deviceId, uploaded)")
+            }
+        }
+
         private val MIGRATION_7_8 = object : Migration(7, 8) {
             override fun migrate(db: SupportSQLiteDatabase) {
                 db.execSQL("""
@@ -694,7 +712,8 @@ abstract class AttendanceDatabase :
                                 MIGRATION_4_5,
                                 MIGRATION_5_6,
                                 MIGRATION_6_7,
-                                MIGRATION_7_8
+                                MIGRATION_7_8,
+                                MIGRATION_8_9
                             )
 
                             .build()
