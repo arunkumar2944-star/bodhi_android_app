@@ -1000,13 +1000,17 @@ class StartupViewModel(
         )
 
 
-        reportStartupFailure()
+        val reconciliationError = when (reconciliationResult) {
+            is AttendanceEngineBootstrapResult.RetryLater -> reconciliationResult.error
+            is AttendanceEngineBootstrapResult.Failure -> reconciliationResult.error
+            else -> null
+        }
+        reportStartupFailure(reconciliationError)
+        if ((reconciliationError as? retrofit2.HttpException)?.code() == 409) {
+            _startupError.value = "Attendance timing conflict. Contact your CRM admin."
+        }
 
-
-        _destination.value =
-            StartupDestination.LOADING
-
-
+        _destination.value = StartupDestination.LOADING
         retryDeviceValidation()
     }
 
