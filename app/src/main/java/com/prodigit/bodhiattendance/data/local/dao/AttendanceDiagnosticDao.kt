@@ -7,7 +7,7 @@ import com.prodigit.bodhiattendance.data.local.entity.AttendanceDiagnosticEntity
 @Dao
 interface AttendanceDiagnosticDao {
     @Insert suspend fun insert(row: AttendanceDiagnosticEntity)
-    @Query("SELECT * FROM attendance_diagnostics WHERE userId=:userId AND deviceId=:deviceId AND uploaded=0 ORDER BY observedElapsedMs LIMIT 30")
+    @Query("SELECT * FROM attendance_diagnostics WHERE userId=:userId AND deviceId=:deviceId AND uploaded=0 ORDER BY CASE WHEN category IN ('CLOCK_MISMATCH','TRUSTED_TIME_UNAVAILABLE','DEVICE_TIME_CHANGED','TRUSTED_TIME_AVAILABLE') THEN 0 ELSE 1 END, rowid LIMIT 30")
     suspend fun pending(userId: Int, deviceId: String): List<AttendanceDiagnosticEntity>
     @Query("UPDATE attendance_diagnostics SET uploaded=1 WHERE userId=:userId AND deviceId=:deviceId AND id IN (:ids)")
     suspend fun acknowledge(userId: Int, deviceId: String, ids: List<String>)

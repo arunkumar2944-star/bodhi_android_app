@@ -23,30 +23,66 @@ class AttendanceDiagnostics(context: Context) {
     private val app = context.applicationContext
     private val dao = AttendanceDatabase.getInstance(app).attendanceDiagnosticDao()
     suspend fun record(category: String, message: String, observedElapsedMs: Long = SystemClock.elapsedRealtime()) {
-        Log.i(if (category.startsWith("ENGINE")) "ATTENDANCE_ENGINE" else "ATTENDANCE_DIAGNOSTICS", message)
+        recordPersisted(category, message, observedElapsedMs)
+    }
+
+    internal suspend fun recordPersisted(category: String, message: String,
+                                         observedElapsedMs: Long = SystemClock.elapsedRealtime()): Boolean {
+        Log.i(if (category.startsWith("ENGINE")) "ATTENDANCE_ENGINE" else "ATTENDANCE_DIAGNOSTICS", "$category: $message")
         try {
             val user = SessionManager(app).getUserId()
-            val device = DeviceIdManager(app).getDeviceId() ?: return
-            if (user <= 0) return
+            val device = DeviceIdManager(app).getDeviceId() ?: return false
+            if (user <= 0) return false
             dao.insert(AttendanceDiagnosticEntity(UUID.randomUUID().toString(), user, device,
                 BootSessionManager(app).getBootId(), observedElapsedMs, Instant.now().toString(),
                 category.take(40), message.take(1500)))
             dao.trim()
+            return true
         } catch (e: CancellationException) { throw e }
-        catch (_: Exception) { Log.w("ATTENDANCE_DIAGNOSTICS", "Diagnostic persistence unavailable") }
+        catch (_: Exception) {
+            Log.w("ATTENDANCE_DIAGNOSTICS", "Diagnostic persistence unavailable")
+            return false
+        }
     }
-    suspend fun upload() = uploadMutex.withLock {
+    suspend fun hasPending(): Boolean {
         val user = SessionManager(app).getUserId()
-        val device = DeviceIdManager(app).getDeviceId() ?: return@withLock
-        val token = AndroidTokenManager(app).usableAccessToken() ?: return@withLock
-        val rows = dao.pending(user, device)
-        if (rows.isEmpty()) return@withLock
-        val response = RetrofitClient.presenceEvidenceApi.uploadDiagnostics("Bearer $token",
-            DiagnosticBatch(device, rows.map { DiagnosticItem(it.id, it.bootId, it.observedElapsedMs,
-                it.deviceTime, it.category, it.message) }))
-        if (response.isSuccessful && response.body()?.success == true) {
-            dao.acknowledge(user, device, response.body()?.accepted.orEmpty().intersect(rows.map { it.id }.toSet()).toList())
-        } else Log.w("ATTENDANCE_DIAGNOSTICS", "Diagnostic upload deferred: HTTP ${response.code()}")
+        val device = DeviceIdManager(app).getDeviceId() ?: return false
+        return user > 0 && dao.pending(user, device).isNotEmpty()
+    }
+
+    suspend fun upload(): Boolean = uploadMutex.withLock {
+        val user = SessionManager(app).getUserId()
+        val device = DeviceIdManager(app).getDeviceId() ?: return@withLock true
+        if (user <= 0) return@withLock true
+        if (dao.pending(user, device).isEmpty()) return@withLock true
+        val token = AndroidTokenManager(app).usableAccessToken() ?: run {
+            Log.w("ATTENDANCE_DIAGNOSTICS", "Diagnostic upload deferred: access token unavailable")
+            return@withLock false
+        }
+        try {
+            deliverDiagnosticOutbox(
+                pending = { dao.pending(user, device) },
+                identify = { it.id },
+                send = { rows ->
+                    val response = RetrofitClient.presenceEvidenceApi.uploadDiagnostics("Bearer $token",
+                        DiagnosticBatch(device, rows.map { DiagnosticItem(it.id, it.bootId, it.observedElapsedMs,
+                            it.deviceTime, it.category, it.message) }))
+                    if (response.isSuccessful && response.body()?.success == true) {
+                        val accepted = response.body()?.accepted.orEmpty().toSet()
+                        Log.i("ATTENDANCE_DIAGNOSTICS", "Upload HTTP ${response.code()}: ${accepted.intersect(rows.map { it.id }.toSet()).size}/${rows.size} acknowledged")
+                        accepted
+                    } else {
+                        Log.w("ATTENDANCE_DIAGNOSTICS", "Diagnostic upload deferred: HTTP ${response.code()}")
+                        emptySet()
+                    }
+                },
+                acknowledge = { ids -> dao.acknowledge(user, device, ids) }
+            )
+        } catch (e: CancellationException) { throw e }
+        catch (e: Exception) {
+            Log.w("ATTENDANCE_DIAGNOSTICS", "Diagnostic upload retained for retry: ${e.javaClass.simpleName}")
+            false
+        }
     }
     companion object { private val uploadMutex = Mutex() }
 }

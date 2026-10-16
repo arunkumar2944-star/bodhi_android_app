@@ -37,14 +37,20 @@ class TrustedTimeMonitor(context: Context) {
         if (session.getUserId() <= 0) return@withLock
         val preferences = app.getSharedPreferences("trusted_clock_diagnostics", Context.MODE_PRIVATE)
         val signature = "${session.getUserId()}:${DeviceIdManager(app).getDeviceId()}:${BootSessionManager(app).getBootId()}:${current.status}:${current.anchorUuid}"
-        if (preferences.getString("signature", null) == signature) return@withLock
-        AttendanceDiagnostics(app).record(when {
+        if (preferences.getString("signature", null) == signature) {
+            // A deduplicated observation may still have an unacknowledged outbox row.
+            if (AttendanceDiagnostics(app).hasPending()) AttendanceBackgroundSync.schedule(app)
+            return@withLock
+        }
+        val saved = AttendanceDiagnostics(app).recordPersisted(when {
             !current.available -> "TRUSTED_TIME_UNAVAILABLE"
             current.mismatch -> "CLOCK_MISMATCH"
             else -> "TRUSTED_TIME_AVAILABLE"
         }, Gson().toJson(current))
-        preferences.edit().putString("signature", signature).apply()
-        AttendanceBackgroundSync.schedule(app)
+        if (saved) {
+            preferences.edit().putString("signature", signature).apply()
+            AttendanceDiagnosticDelivery.request(app)
+        }
     }
     companion object { private val reportMutex = Mutex() }
 }

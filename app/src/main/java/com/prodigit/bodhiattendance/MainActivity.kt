@@ -1,6 +1,8 @@
 package com.prodigit.bodhiattendance
 
 import android.os.Bundle
+import androidx.lifecycle.lifecycleScope
+import kotlinx.coroutines.launch
 import com.prodigit.bodhiattendance.core.monitoring.AttendanceMonitorStartGate
 import androidx.fragment.app.FragmentActivity
 import androidx.activity.compose.setContent
@@ -17,7 +19,33 @@ class MainActivity : FragmentActivity() {
             }
         }
     }
+    private val clockReceiver = object : android.content.BroadcastReceiver() {
+        override fun onReceive(context: android.content.Context, intent: android.content.Intent) {
+            if (intent.action == android.content.Intent.ACTION_TIME_CHANGED) captureClockDiagnostics(timeChanged = true)
+        }
+    }
+
+    private fun captureClockDiagnostics(timeChanged: Boolean = false) {
+        lifecycleScope.launch {
+            try {
+                val app = applicationContext
+                if (com.prodigit.bodhiattendance.core.session.SessionManager(app).getUserId() <= 0) return@launch
+                val monitor = com.prodigit.bodhiattendance.core.monitoring.TrustedTimeMonitor(app)
+                val clock = monitor.read()
+                if (timeChanged) {
+                    // System notification proves a clock adjustment, not who made it or why.
+                    com.prodigit.bodhiattendance.core.monitoring.AttendanceDiagnostics(app)
+                        .record("DEVICE_TIME_CHANGED", com.google.gson.Gson().toJson(clock))
+                }
+                monitor.report(clock)
+                com.prodigit.bodhiattendance.core.monitoring.AttendanceDiagnosticDelivery.request(app)
+            } catch (e: kotlinx.coroutines.CancellationException) { throw e }
+            catch (e: Exception) { android.util.Log.w("ATTENDANCE_DIAGNOSTICS", "Clock check deferred: ${e.javaClass.simpleName}") }
+        }
+    }
+
     override fun onDestroy() {
+        unregisterReceiver(clockReceiver)
         unregisterReceiver(checkoutReceiver)
         super.onDestroy()
     }
@@ -25,6 +53,7 @@ class MainActivity : FragmentActivity() {
 
     override fun onResume() {
         super.onResume()
+        captureClockDiagnostics()
         AttendanceMonitorStartGate.onActivityResumed(applicationContext)
     }
 
@@ -41,6 +70,9 @@ class MainActivity : FragmentActivity() {
         com.prodigit.bodhiattendance.core.monitoring.AttendancePrivacyPolicy.removeLegacyAutomation(applicationContext)
         androidx.core.content.ContextCompat.registerReceiver(this, checkoutReceiver,
             android.content.IntentFilter(com.prodigit.bodhiattendance.core.monitoring.AttendancePrivacyPolicy.CLOSE_AFTER_CHECKOUT),
+            androidx.core.content.ContextCompat.RECEIVER_NOT_EXPORTED)
+        androidx.core.content.ContextCompat.registerReceiver(this, clockReceiver,
+            android.content.IntentFilter(android.content.Intent.ACTION_TIME_CHANGED),
             androidx.core.content.ContextCompat.RECEIVER_NOT_EXPORTED)
         handleCalibrationIntent(intent)
         handleUiResetIntent(intent)
