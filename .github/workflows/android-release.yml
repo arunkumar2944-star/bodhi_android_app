@@ -2,6 +2,8 @@ name: Bodhi Attendance APK
 
 on:
   workflow_dispatch:
+  pull_request:
+    branches: [android-ui-development]
   push:
     branches:
       - android-ui-development
@@ -46,7 +48,8 @@ jobs:
           ./gradlew --no-daemon --stacktrace :app:testDebugUnitTest \
             --tests 'com.prodigit.bodhiattendance.domain.attendance.AttendancePresenceDecisionEngineTest' \
             --tests 'com.prodigit.bodhiattendance.domain.attendance.DeparturePhaseRecoveryTest' \
-            --tests 'com.prodigit.bodhiattendance.core.monitoring.DepartureEvidenceTrackerTest'
+            --tests 'com.prodigit.bodhiattendance.core.monitoring.DepartureEvidenceTrackerTest' \
+            --tests 'com.prodigit.bodhiattendance.core.monitoring.TrustedClockEvidenceTest'
 
       - name: Build hosted-backend debug APK and unsigned release APK
         run: |
