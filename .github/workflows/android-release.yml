@@ -49,7 +49,8 @@ jobs:
             --tests 'com.prodigit.bodhiattendance.domain.attendance.AttendancePresenceDecisionEngineTest' \
             --tests 'com.prodigit.bodhiattendance.domain.attendance.DeparturePhaseRecoveryTest' \
             --tests 'com.prodigit.bodhiattendance.core.monitoring.DepartureEvidenceTrackerTest' \
-            --tests 'com.prodigit.bodhiattendance.core.monitoring.TrustedClockEvidenceTest'
+            --tests 'com.prodigit.bodhiattendance.core.monitoring.TrustedClockEvidenceTest' \
+            --tests 'com.prodigit.bodhiattendance.ui.systemhealth.TrustedTimeHealthTest'
 
       - name: Build hosted-backend debug APK and unsigned release APK
         run: |

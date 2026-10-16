@@ -10,10 +10,13 @@ import androidx.compose.material.icons.outlined.*
 import androidx.compose.material3.*
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
+import androidx.lifecycle.repeatOnLifecycle
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.rememberCoroutineScope
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.delay
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -58,6 +61,15 @@ fun SystemHealthScreen(
         lifecycleOwner.lifecycle.addObserver(observer)
         viewModel.refreshHealth()
         onDispose { lifecycleOwner.lifecycle.removeObserver(observer) }
+    }
+    // Recheck only local clock evidence while visible; do not repeat network health checks.
+    LaunchedEffect(lifecycleOwner, viewModel) {
+        lifecycleOwner.lifecycle.repeatOnLifecycle(Lifecycle.State.STARTED) {
+            while (true) {
+                viewModel.refreshTrustedTimeHealth()
+                delay(1_000L)
+            }
+        }
     }
     val live = com.prodigit.bodhiattendance.ui.live.liveUiState()
     val day = live.attendance?.let { read -> read.days.firstOrNull { it.date == read.today } }

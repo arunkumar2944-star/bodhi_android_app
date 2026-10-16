@@ -37,6 +37,7 @@ import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
 
@@ -316,8 +317,7 @@ class SystemHealthViewModel(
                 // TRUSTED TIME
                 // ====================================================
 
-                val trustedTime =
-                    checkTrustedTime()
+                refreshTrustedTimeHealth()
 
 
                 // ====================================================
@@ -376,14 +376,6 @@ class SystemHealthViewModel(
 
                         detectedBssid = readWifiBssid(),
                         wifiEnabled = readWifiEnabled(),
-
-
-                        // ============================================
-                        // TRUSTED TIME
-                        // ============================================
-
-                        trustedTime =
-                            trustedTime,
 
 
                         // ============================================
@@ -840,15 +832,17 @@ class SystemHealthViewModel(
     // This method does NOT create or refresh a time anchor.
     // ============================================================
 
+    /** Local-only refresh for the visible health screen; never calls the anchor API. */
+    suspend fun refreshTrustedTimeHealth() {
+        val health = checkTrustedTime()
+        _uiState.update { it.copy(trustedTime = health) }
+    }
+
     private suspend fun checkTrustedTime(): HealthItemState {
         val monitor = com.prodigit.bodhiattendance.core.monitoring.TrustedTimeMonitor(appContext)
         val clock = monitor.read()
         monitor.report(clock)
-        return HealthItemState(
-            status = if (clock.available) HealthStatus.READY else HealthStatus.NOT_READY,
-            title = "Trusted Time",
-            message = clock.message
-        )
+        return trustedTimeHealth(clock)
     }
 
 

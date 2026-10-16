@@ -32,4 +32,25 @@ class TrustedClockEvidenceTest {
             TrustedClockEvidence.calculate(server, -1L, "anchor", true, 200L, ms)
         )) { assertFalse(clock.available); assertNull(clock.trustedTimeMs) }
     }
+    @Test fun calendarDayChangeKeepsSameBootAnchorAndDetectsFakePhoneDate() {
+        val twoDays = 2L * 24 * 60 * 60 * 1000
+        val nextDay = TrustedClockEvidence.calculate(server, 100L, "anchor", true,
+            100L + twoDays, ms + twoDays - 7_200_000L)
+        assertEquals(ms + twoDays, nextDay.trustedTimeMs)
+        assertEquals("anchor", nextDay.anchorUuid)
+        assertTrue(nextDay.mismatch)
+    }
+
+    @Test fun renewedServerAnchorCannotAdoptTheChangedPhoneClock() {
+        val elapsed = 7_200_100L
+        val wrongPhoneTime = ms - 3_600_000L
+        val original = TrustedClockEvidence.calculate(server, 100L, "original", true,
+            elapsed, wrongPhoneTime)
+        val refreshed = TrustedClockEvidence.calculate("2026-10-16T08:00:00Z", elapsed,
+            "new-server-anchor", true, elapsed, wrongPhoneTime)
+        assertEquals(original.trustedTimeMs, refreshed.trustedTimeMs)
+        assertTrue(original.mismatch)
+        assertTrue(refreshed.mismatch)
+    }
+
 }

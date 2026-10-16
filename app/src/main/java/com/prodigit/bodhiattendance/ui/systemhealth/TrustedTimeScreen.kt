@@ -22,6 +22,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
+import androidx.lifecycle.repeatOnLifecycle
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import java.text.DateFormat
 import java.util.Date
@@ -76,12 +77,14 @@ fun TrustedTimeScreen(
         snapshot = getTimeSnapshot(context)
         scope.launch { clock = monitor.read(); clock?.let { monitor.report(it) } }
     }
-    LaunchedEffect(monitor) {
-        while (true) {
-            snapshot = getTimeSnapshot(context)
-            clock = monitor.read()
-            clock?.let { monitor.report(it) }
-            delay(1_000L)
+    LaunchedEffect(monitor, lifecycleOwner) {
+        lifecycleOwner.lifecycle.repeatOnLifecycle(Lifecycle.State.STARTED) {
+            while (true) {
+                snapshot = getTimeSnapshot(context)
+                clock = monitor.read()
+                clock?.let { monitor.report(it) }
+                delay(1_000L)
+            }
         }
     }
     fun formatTime(ms: Long?): String = ms?.let {
@@ -134,7 +137,7 @@ fun TrustedTimeScreen(
                     }
                     Column(Modifier.weight(1f)) {
                         Text("Clock verification", fontWeight = FontWeight.Bold, color = TimeText)
-                        Text(clock?.message ?: "Checking trusted time…", fontSize = 12.sp, color = if (clock?.available == true && clock?.mismatch == false) TimeBlue else Color(0xFFB27A18))
+                        Text(clock?.let { trustedTimeHealth(it).message } ?: "Checking trusted time…", fontSize = 12.sp, color = if (clock?.available == true && clock?.mismatch == false) TimeBlue else Color(0xFFB27A18))
                     }
                 }
                 Spacer(Modifier.height(12.dp))
@@ -142,6 +145,18 @@ fun TrustedTimeScreen(
                     "Attendance time uses the saved server reference plus elapsed time from this phone boot. The device clock is shown separately and cannot change that reference.",
                     color = TimeMuted, fontSize = 12.sp, lineHeight = 18.sp
                 )
+            }
+        }
+        if (clock?.mismatch == true) {
+            item {
+                TimePanel(background = Color(0xFFFFF4DE)) {
+                    Text("Action required: correct the phone clock", fontWeight = FontWeight.Bold, color = Color(0xFF8A5B12))
+                    Spacer(Modifier.height(6.dp))
+                    Text(
+                        "Open Date & Time Settings and turn on automatic date & time. Return here to confirm the clock difference clears. Attendance continues to use protected server-backed time; changing the phone clock does not reset the server reference.",
+                        color = TimeMuted, fontSize = 12.sp, lineHeight = 18.sp
+                    )
+                }
             }
         }
         item {
@@ -161,6 +176,12 @@ fun TrustedTimeScreen(
             TimeSection("VERIFICATION", "Trustworthy timestamp checks for attendance")
             Spacer(Modifier.height(8.dp))
             TimePanel {
+                TimeDetail("Phone clock status", when {
+                    clock?.available != true -> "Not verified"
+                    clock?.mismatch == true -> "Action required: clock mismatch"
+                    else -> "Within 60-second tolerance"
+                })
+                HorizontalDivider(color = TimeBorder)
                 TimeDetail("Trusted attendance time (IST)", formatTime(clock?.trustedTimeMs))
                 HorizontalDivider(color = TimeBorder)
                 TimeDetail("Trusted server reference", if (clock?.available == true) "Persisted server anchor" else "Unavailable")
@@ -168,6 +189,8 @@ fun TrustedTimeScreen(
                 TimeDetail("Phone minus trusted time", clock?.clockDifferenceMs?.let { "${it / 1000} seconds" } ?: "Not measured")
                 HorizontalDivider(color = TimeBorder)
                 TimeDetail("Last server anchor (IST)", clock?.anchorServerTime?.let { runCatching { formatTime(java.time.Instant.parse(it).toEpochMilli()) }.getOrNull() } ?: "Unavailable")
+                HorizontalDivider(color = TimeBorder)
+                TimeDetail("Server reference ID", clock?.anchorUuid ?: "Unavailable")
                 HorizontalDivider(color = TimeBorder)
                 TimeDetail("Anchor age", clock?.anchorAgeMs?.let { "${it / 60_000} minutes" } ?: "Unavailable")
                 HorizontalDivider(color = TimeBorder)
