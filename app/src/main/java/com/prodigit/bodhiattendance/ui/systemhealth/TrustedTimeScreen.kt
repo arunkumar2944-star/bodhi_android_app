@@ -2,7 +2,6 @@ package com.prodigit.bodhiattendance.ui.systemhealth
 
 import android.content.ActivityNotFoundException
 import android.content.Intent
-import android.os.Build
 import android.os.SystemClock
 import android.provider.Settings
 import androidx.compose.foundation.BorderStroke
@@ -27,6 +26,10 @@ import androidx.lifecycle.compose.LocalLifecycleOwner
 import java.text.DateFormat
 import java.util.Date
 import java.util.TimeZone
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
+import com.prodigit.bodhiattendance.core.monitoring.TrustedTimeMonitor
+import com.prodigit.bodhiattendance.core.monitoring.TrustedClockEvidence
 
 private val TimeBlue = Color(0xFF1769E8)
 private val TimeText = Color(0xFF142343)
@@ -66,7 +69,26 @@ fun TrustedTimeScreen(
     val context = LocalContext.current
     val lifecycleOwner = LocalLifecycleOwner.current
     var snapshot by remember { mutableStateOf(getTimeSnapshot(context)) }
-    fun refresh() { snapshot = getTimeSnapshot(context) }
+    val monitor = remember(context) { TrustedTimeMonitor(context) }
+    var clock by remember { mutableStateOf<TrustedClockEvidence?>(null) }
+    val scope = rememberCoroutineScope()
+    fun refresh() {
+        snapshot = getTimeSnapshot(context)
+        scope.launch { clock = monitor.read(); clock?.let { monitor.report(it) } }
+    }
+    LaunchedEffect(monitor) {
+        while (true) {
+            snapshot = getTimeSnapshot(context)
+            clock = monitor.read()
+            clock?.let { monitor.report(it) }
+            delay(1_000L)
+        }
+    }
+    fun formatTime(ms: Long?): String = ms?.let {
+        DateFormat.getDateTimeInstance(DateFormat.MEDIUM, DateFormat.MEDIUM).apply {
+            timeZone = TimeZone.getTimeZone("Asia/Kolkata")
+        }.format(Date(it)) + " IST"
+    } ?: "Unavailable"
 
     DisposableEffect(lifecycleOwner, context) {
         val observer = LifecycleEventObserver { _, event ->
@@ -112,12 +134,12 @@ fun TrustedTimeScreen(
                     }
                     Column(Modifier.weight(1f)) {
                         Text("Clock verification", fontWeight = FontWeight.Bold, color = TimeText)
-                        Text("Server verification pending", fontSize = 12.sp, color = Color(0xFFB27A18))
+                        Text(clock?.message ?: "Checking trusted time…", fontSize = 12.sp, color = if (clock?.available == true && clock?.mismatch == false) TimeBlue else Color(0xFFB27A18))
                     }
                 }
                 Spacer(Modifier.height(12.dp))
                 Text(
-                    "Automatic time settings can be checked locally, but a trusted clock needs a verified reference. This device has not been verified against server time here.",
+                    "Attendance time uses the saved server reference plus elapsed time from this phone boot. The device clock is shown separately and cannot change that reference.",
                     color = TimeMuted, fontSize = 12.sp, lineHeight = 18.sp
                 )
             }
@@ -139,11 +161,15 @@ fun TrustedTimeScreen(
             TimeSection("VERIFICATION", "Trustworthy timestamp checks for attendance")
             Spacer(Modifier.height(8.dp))
             TimePanel {
-                TimeDetail("Trusted server reference", "Not connected")
+                TimeDetail("Trusted attendance time (IST)", formatTime(clock?.trustedTimeMs))
                 HorizontalDivider(color = TimeBorder)
-                TimeDetail("Clock difference", "Not measured")
+                TimeDetail("Trusted server reference", if (clock?.available == true) "Persisted server anchor" else "Unavailable")
                 HorizontalDivider(color = TimeBorder)
-                TimeDetail("Last server verification", "Never")
+                TimeDetail("Phone minus trusted time", clock?.clockDifferenceMs?.let { "${it / 1000} seconds" } ?: "Not measured")
+                HorizontalDivider(color = TimeBorder)
+                TimeDetail("Last server anchor (IST)", clock?.anchorServerTime?.let { runCatching { formatTime(java.time.Instant.parse(it).toEpochMilli()) }.getOrNull() } ?: "Unavailable")
+                HorizontalDivider(color = TimeBorder)
+                TimeDetail("Anchor age", clock?.anchorAgeMs?.let { "${it / 60_000} minutes" } ?: "Unavailable")
                 HorizontalDivider(color = TimeBorder)
                 TimeDetail("Monotonic clock", "Available")
             }
@@ -182,12 +208,12 @@ fun TrustedTimeScreen(
             ) {
                 Icon(Icons.Outlined.Refresh, contentDescription = null)
                 Spacer(Modifier.width(8.dp))
-                Text("Refresh Device Clock")
+                Text("Refresh Trusted Time Status")
             }
         }
         item {
             Text(
-                "Prototype: This page does not change system settings, certify timestamps, or create attendance records. Automatic time alone is not proof of clock accuracy.",
+                "Status is read from persisted server evidence for this device and boot. Refresh reads that evidence; it does not request a new server anchor. CRM validates attendance timestamps when records are synchronized.",
                 fontSize = 11.sp, lineHeight = 16.sp, color = TimeMuted
             )
         }
