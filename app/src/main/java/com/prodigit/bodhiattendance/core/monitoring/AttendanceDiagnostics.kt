@@ -22,14 +22,14 @@ import java.util.UUID
 class AttendanceDiagnostics(context: Context) {
     private val app = context.applicationContext
     private val dao = AttendanceDatabase.getInstance(app).attendanceDiagnosticDao()
-    suspend fun record(category: String, message: String) {
+    suspend fun record(category: String, message: String, observedElapsedMs: Long = SystemClock.elapsedRealtime()) {
         Log.i(if (category.startsWith("ENGINE")) "ATTENDANCE_ENGINE" else "ATTENDANCE_DIAGNOSTICS", message)
         try {
             val user = SessionManager(app).getUserId()
             val device = DeviceIdManager(app).getDeviceId() ?: return
             if (user <= 0) return
             dao.insert(AttendanceDiagnosticEntity(UUID.randomUUID().toString(), user, device,
-                BootSessionManager(app).getBootId(), SystemClock.elapsedRealtime(), Instant.now().toString(),
+                BootSessionManager(app).getBootId(), observedElapsedMs, Instant.now().toString(),
                 category.take(40), message.take(1500)))
             dao.trim()
         } catch (e: CancellationException) { throw e }

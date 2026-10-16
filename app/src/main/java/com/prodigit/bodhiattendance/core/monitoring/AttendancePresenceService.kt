@@ -266,6 +266,7 @@ class AttendancePresenceService : Service() {
                     else "Monitoring attendance for the work session you started")
                 Log.i(tag, "Verification burst: " + reason)
                 diagnostics.record("VERIFICATION", "Verification burst: " + reason)
+                TrustedTimeMonitor(applicationContext).report()
                 // Refresh office evidence policy; no background geofences are registered.
                 val freshConfiguration = if (OfflineWorkSessionStore.isOffline()) false else try {
                     withTimeoutOrNull(10_000L) { refreshOfficeConfiguration() } == true
@@ -312,6 +313,13 @@ class AttendancePresenceService : Service() {
                 } else {
                     Log.w(tag, "No fresh GPS fix; attendance remains unknown")
                     diagnostics.record("GPS", "No fresh GPS fix; attendance remains unknown")
+                    val bssid = readBssid()
+                    val disconnected = isWifiDisconnected()
+                    val reviewOffice = arrivalOffices.filter { office -> !disconnected && bssid != null &&
+                        office.wifiAccessPoints.any { it.bssid.equals(bssid, true) } }.singleOrNull()
+                    AttendanceReviewEvidence(applicationContext).record(null, bssid, disconnected, reviewOffice,
+                        "UNAVAILABLE", com.prodigit.bodhiattendance.domain.attendance.AttendanceEngineRuntimeProvider
+                            .getInstance(applicationContext).runtimeSession.getSnapshot().attendanceState.name)
                 }
                 if (!calibrating && com.prodigit.bodhiattendance.domain.attendance.AttendanceEngineRuntimeProvider.getInstance(this@AttendancePresenceService)
                         .runtimeSession.getSnapshot().attendanceState == com.prodigit.bodhiattendance.domain.attendance.AttendanceState.CHECKED_OUT) {
