@@ -141,6 +141,7 @@ fun SystemHealthScreen(
                 Box(Modifier.fillMaxWidth().clickable(onClick = onPermissionsClick)) {
                     SystemHealthCard(uiState.backgroundLocationPermission, Icons.Outlined.MyLocation, showDivider = true)
                 }
+                SystemHealthCard(uiState.gpsIntegrity, Icons.Outlined.GpsFixed, showDivider = true)
                 Box(Modifier.fillMaxWidth().clickable(onClick = onPermissionsClick)) {
                     SystemHealthCard(uiState.locationService, Icons.Outlined.GpsFixed, showDivider = true)
                 }

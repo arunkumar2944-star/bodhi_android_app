@@ -65,6 +65,8 @@ data class HealthItemState(
 
 data class SystemHealthUiState(
 
+    val gpsIntegrity: HealthItemState = HealthItemState(title = "GPS Integrity"),
+
 
     // ========================================================
     // LOCATION

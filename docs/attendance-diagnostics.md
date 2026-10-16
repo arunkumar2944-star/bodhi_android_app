@@ -28,3 +28,24 @@ Phone test: note exit time, leave office normally, check WIFI_TRIGGER → VERIFI
 
 
 Update: see `verified-wifi-arrival.md` for the current arrival policy, employee-only timeline and Admin/Manager diagnostic panel. Its access/UI rules supersede the earlier self-service diagnostic display described above.
+
+
+## GPS integrity diagnostics
+
+GPS rejection now records one explicit category: `MOCK_LOCATION_DETECTED`,
+`GPS_STALE` (older than 60 seconds), or `GPS_INVALID` (coordinates, accuracy,
+or elapsed timestamp invalid). Mock takes priority when several checks fail.
+These are diagnostic rows, never attendance events. Rejection returns before
+arrival confirmation, presence journaling, or runtime attendance evaluation.
+
+System Health includes GPS Integrity in its readiness summary. A mock warning
+remains through stale/invalid readings until a fresh valid non-mock reading
+arrives, which records `GPS_RECOVERED`. This is in-process sensor status;
+after process restart the UI waits for another reading rather than claiming readiness.
+Selecting a Developer Options mock app alone is not a positive detection.
+
+Device verification: start fake GPS, wait for a verification burst, and confirm
+`MOCK_LOCATION_DETECTED` plus a red GPS Integrity warning, with no new attendance
+event. Stop fake GPS and wait for a fresh real fix; confirm `GPS_RECOVERED`.
+Also test a poor initial fix followed by a mocked refinement fix: the mock must
+reach rejection rather than silently retaining the earlier real reading.

@@ -296,7 +296,7 @@ class AttendancePresenceService : Service() {
                 } finally { source.cancel() }
                 // A one-shot fix may be inaccurate indoors. If so, briefly sample
                 // additional Fused Location fixes; CRM accuracy policy remains authoritative.
-                val refinedLocation = if (location != null && location.hasAccuracy() &&
+                val refinedLocation = if (location != null && GpsEvidenceStatus.rejection(location) == null && location.hasAccuracy() &&
                     location.accuracy > REFINE_ABOVE_METERS) {
                     val remaining = if (OfflineWorkSessionStore.isOffline()) offlineSession.sensorBudgetMs() else REFINE_WINDOW_MS
                     if (remaining > 0L) withTimeoutOrNull(remaining) { improvePoorFix(location) } ?: location else location
@@ -387,8 +387,12 @@ class AttendancePresenceService : Service() {
             withTimeoutOrNull(REFINE_WINDOW_MS) {
                 while (currentCoroutineContext().isActive) {
                     val fix = fixes.receive()
-                    @Suppress("DEPRECATION")
-                    val mocked = fix.isFromMockProvider
+                    val mocked = androidx.core.location.LocationCompat.isMock(fix)
+                    // Surface mock fixes to the evaluator instead of silently keeping an older real fix.
+                    if (mocked) {
+                        best = fix
+                        break
+                    }
                     val age = SystemClock.elapsedRealtimeNanos() - fix.elapsedRealtimeNanos
                     if (!mocked && fix.hasAccuracy() && fix.accuracy.isFinite() &&
                         fix.accuracy >= 0f && age in 0L..15_000_000_000L &&

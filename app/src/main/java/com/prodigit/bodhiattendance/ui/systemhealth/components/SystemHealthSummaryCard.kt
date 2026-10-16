@@ -73,6 +73,7 @@ fun SystemHealthSummaryCard(
         add(uiState.locationPermission)
         add(uiState.backgroundLocationPermission)
         add(uiState.locationService)
+        add(uiState.gpsIntegrity)
         add(uiState.registeredDevice)
         add(uiState.trustedTime)
         add(uiState.batteryOptimization)

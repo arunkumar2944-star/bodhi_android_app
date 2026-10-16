@@ -206,6 +206,11 @@ class SystemHealthViewModel(
         // Continuously observe Room synchronization state.
 
         observeSyncStatus()
+        viewModelScope.launch {
+            com.prodigit.bodhiattendance.core.monitoring.GpsEvidenceStatus.state.collectLatest { gps ->
+                _uiState.value = _uiState.value.copy(gpsIntegrity = gpsIntegrityHealth(gps))
+            }
+        }
     }
 
 

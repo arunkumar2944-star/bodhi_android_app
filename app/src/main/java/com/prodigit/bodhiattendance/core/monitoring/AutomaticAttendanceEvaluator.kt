@@ -2,7 +2,6 @@ package com.prodigit.bodhiattendance.core.monitoring
 
 import android.content.Context
 import android.location.Location
-import android.os.SystemClock
 import android.util.Log
 import com.prodigit.bodhiattendance.core.device.DeviceIdManager
 import com.prodigit.bodhiattendance.core.network.RetrofitClient
@@ -41,16 +40,21 @@ class AutomaticAttendanceEvaluator(context: Context, private val workDate: Strin
         needsContinuityChecks = false
         nextVerificationElapsedMs = null
         val tag = "ATTENDANCE_ENGINE"
-        @Suppress("DEPRECATION")
-        if (location.isFromMockProvider || !location.hasAccuracy() ||
-            !location.accuracy.isFinite() || location.accuracy < 0f ||
-            location.elapsedRealtimeNanos <= 0L ||
-            SystemClock.elapsedRealtimeNanos() - location.elapsedRealtimeNanos !in 0..60_000_000_000L) {
+        val rejection = GpsEvidenceStatus.rejection(location)
+        val wasMocked = GpsEvidenceStatus.state.value.rejection == GpsEvidenceRejection.MOCK_LOCATION_DETECTED
+        GpsEvidenceStatus.report(rejection)
+        if (rejection != null) {
             departureEvidence.reset()
             needsBetterGps = true
-            diagnostics.record("ENGINE", "Ignoring mock, stale or invalid GPS evidence")
+            diagnostics.record(rejection.name, when (rejection) {
+                GpsEvidenceRejection.MOCK_LOCATION_DETECTED ->
+                    "Mock location detected; attendance events blocked. Stop fake GPS and wait for a fresh real location."
+                GpsEvidenceRejection.GPS_STALE -> "GPS reading older than 60 seconds; no attendance event"
+                GpsEvidenceRejection.GPS_INVALID -> "Invalid GPS coordinates, accuracy or elapsed timestamp; no attendance event"
+            })
             return@withLock
         }
+        if (wasMocked) diagnostics.record("GPS_RECOVERED", "Fresh valid non-mock GPS received; normal verification resumed")
         val offline = if (OfflineWorkSessionStore.isOffline()) offlineSession.current() else null
         if (OfflineWorkSessionStore.isOffline() && offline == null) {
             diagnostics.record("OFFLINE_EXPIRED", "No valid offline authorization; attendance evaluation paused")
