@@ -46,7 +46,7 @@ class AutomaticAttendanceEvaluator(context: Context, private val workDate: Strin
         GpsEvidenceStatus.report(rejection)
         if (rejection != null) {
             reviewEvidence.record(location, bssid, wifiDisconnected, null, rejection.name,
-                provider.runtimeSession.getSnapshot().attendanceState.name)
+                provider.runtimeSession.getSnapshot().attendanceState?.name ?: "UNKNOWN")
             departureEvidence.reset()
             needsBetterGps = true
             diagnostics.record(rejection.name, when (rejection) {
@@ -112,7 +112,7 @@ class AutomaticAttendanceEvaluator(context: Context, private val workDate: Strin
             // Retain uncertainty for review, never invent office presence.
             val reviewOffice = offices.filter { candidate -> !wifiDisconnected && bssid != null &&
                 candidate.wifiAccessPoints.any { it.bssid.equals(bssid, true) } }.singleOrNull()
-            reviewEvidence.record(location, bssid, wifiDisconnected, reviewOffice, "UNCERTAIN", snapshot.attendanceState.name)
+            reviewEvidence.record(location, bssid, wifiDisconnected, reviewOffice, "UNCERTAIN", snapshot.attendanceState?.name ?: "UNKNOWN")
             journal.record(location, null, false, "UNCERTAIN")
             diagnostics.record("ENGINE", "Evaluation paused: no unambiguous CRM office; absence is not inferred")
             return@withLock
@@ -122,7 +122,7 @@ class AutomaticAttendanceEvaluator(context: Context, private val workDate: Strin
             return@withLock
         }
         suspend fun uncertain(reason: String) {
-            reviewEvidence.record(location, bssid, wifiDisconnected, office, "UNCERTAIN", snapshot.attendanceState.name)
+            reviewEvidence.record(location, bssid, wifiDisconnected, office, "UNCERTAIN", snapshot.attendanceState?.name ?: "UNKNOWN")
             departureEvidence.reset()
             needsBetterGps = true
             val evidence = AttendanceEngineEvidence(latitude = location.latitude, longitude = location.longitude,
@@ -189,7 +189,7 @@ class AutomaticAttendanceEvaluator(context: Context, private val workDate: Strin
         evidence.arrivalProof?.let { proof -> diagnostics.record("ARRIVAL_CONFIRMED",
             "officeId=${office.id}; candidate=${proof.id}; arrivalElapsedMs=${proof.observedElapsedMs}; confirmedElapsedMs=${proof.confirmedElapsedMs}") }
         reviewEvidence.record(location, bssid, wifiDisconnected, office,
-            if (inside) "INSIDE" else "OUTSIDE", snapshot.attendanceState.name)
+            if (inside) "INSIDE" else "OUTSIDE", snapshot.attendanceState?.name ?: "UNKNOWN")
         journal.record(location, office.id, wifiVerified, if (inside) "PRESENT" else "ABSENT_CANDIDATE")
         val result = provider.runtimeSession.evaluate(token, session.getUserId(), session.getCompanyId(),
             deviceId, evidence, policy)
