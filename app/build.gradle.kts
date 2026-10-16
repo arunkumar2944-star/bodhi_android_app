@@ -48,7 +48,7 @@ android {
             37
 
         versionCode =
-            2
+            3
 
         versionName =
             "1.1"

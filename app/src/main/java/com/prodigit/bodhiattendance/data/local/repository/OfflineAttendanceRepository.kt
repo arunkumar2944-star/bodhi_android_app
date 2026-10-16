@@ -112,6 +112,9 @@ class OfflineAttendanceRepository(
     suspend fun getScopedUnsyncedBatch(userId: Int, deviceId: String, limit: Int): List<AttendanceEventEntity> =
         attendanceEventDao.getScopedUnsyncedBatch(userId, deviceId, limit)
 
+    suspend fun hasScopedUnsettledEvents(userId: Int, deviceId: String): Boolean =
+        attendanceEventDao.hasScopedUnsettledEvents(userId, deviceId)
+
     suspend fun getUnsyncedBatch(
         limit: Int
     ): List<AttendanceEventEntity> {

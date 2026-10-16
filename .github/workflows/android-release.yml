@@ -48,6 +48,7 @@ jobs:
           ./gradlew --no-daemon --stacktrace :app:testDebugUnitTest \
             --tests 'com.prodigit.bodhiattendance.domain.attendance.AttendancePresenceDecisionEngineTest' \
             --tests 'com.prodigit.bodhiattendance.domain.attendance.DeparturePhaseRecoveryTest' \
+            --tests 'com.prodigit.bodhiattendance.domain.attendance.AttendanceRuntimeStateRefreshTest' \
             --tests 'com.prodigit.bodhiattendance.core.monitoring.DepartureEvidenceTrackerTest' \
             --tests 'com.prodigit.bodhiattendance.core.monitoring.TrustedClockEvidenceTest' \
             --tests 'com.prodigit.bodhiattendance.ui.systemhealth.TrustedTimeHealthTest' \

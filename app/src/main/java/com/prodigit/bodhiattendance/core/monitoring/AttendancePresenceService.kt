@@ -261,6 +261,17 @@ class AttendancePresenceService : Service() {
                     diagnostics.record("POLICY_PAUSED", "CRM daily status=${day.status}; monitoring stopped")
                     stopSelf(); return
                 }
+                if (!evaluator.refreshServerState(day)) {
+                    // No sensor evaluation while queued writes or reconciliation remain unresolved.
+                    waitMs = MIN_RETRY_MS
+                    continue
+                }
+                if (com.prodigit.bodhiattendance.domain.attendance.AttendanceEngineRuntimeProvider.getInstance(this)
+                        .runtimeSession.getSnapshot().attendanceState == com.prodigit.bodhiattendance.domain.attendance.AttendanceState.CHECKED_OUT) {
+                    diagnostics.record("PRIVACY_PAUSED", "CRM reconciliation confirmed checkout; tracking stopped")
+                    AttendancePrivacyPolicy.pauseAfterCheckout(this, day.date)
+                    stopSelf(); return
+                }
                 AttendanceMonitorStatus.running()
                 showVerificationNotification(if (OfflineWorkSessionStore.isOffline()) "Offline attendance — saved on phone, pending CRM validation"
                     else "Monitoring attendance for the work session you started")

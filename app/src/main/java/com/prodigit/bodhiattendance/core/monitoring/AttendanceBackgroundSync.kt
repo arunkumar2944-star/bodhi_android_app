@@ -50,7 +50,7 @@ object AttendanceBackgroundSync {
         val offline = OfflineAttendanceRepository(db.attendanceEventDao(), AttendanceDiagnostics(context))
         AttendanceSyncManager(AttendanceRepositoryImpl(RetrofitClient.attendanceApi), offline,
             TimeAnchorLocalRepository(db.timeAnchorDao())).syncUnsyncedEvents(token, userId = user, deviceId = device)
-        offline.getScopedUnsyncedBatch(user, device, 1).isEmpty() && diagnosticsComplete && (provisionalComplete || !diagnostics)
+        !offline.hasScopedUnsettledEvents(user, device) && diagnosticsComplete && (provisionalComplete || !diagnostics)
     }
 }
 

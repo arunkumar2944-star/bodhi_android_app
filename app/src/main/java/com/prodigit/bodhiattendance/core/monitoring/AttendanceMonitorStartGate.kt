@@ -33,7 +33,10 @@ object AttendanceMonitorStartGate {
                     context.stopService(Intent(context, AttendancePresenceService::class.java))
                     return@launch
                 }
-                if (startRequested && AttendanceMonitorStatus.state.value.running) return@launch
+                if (startRequested && AttendanceMonitorStatus.state.value.running) {
+                    AttendanceVerificationSignals.request("Visible app opened; refresh CRM attendance state")
+                    return@launch
+                }
                 val session = SessionManager(context)
                 val device = DeviceIdManager(context).getDeviceId() ?: return@launch
                 val token = AndroidTokenManager(context).usableAccessToken() ?: return@launch

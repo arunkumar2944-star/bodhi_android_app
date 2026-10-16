@@ -1129,67 +1129,37 @@ class AttendanceEngineRuntimeSession(
 // ========================================================
 
     suspend fun applyReconciledState(
-
         userId: Int,
-
         deviceId: String,
+        bootstrapResult: AttendanceEngineBootstrapResult.Ready
+    ): AttendanceEngineRuntimeSnapshot = evaluationMutex.withLock {
+        applyReconciledStateLocked(userId, deviceId, bootstrapResult)
+    }
 
-        bootstrapResult:
-        AttendanceEngineBootstrapResult.Ready
+    suspend fun refreshAuthoritativeState(
+        userId: Int,
+        deviceId: String,
+        expectedState: AttendanceState,
+        settlePending: suspend () -> Boolean,
+        bootstrap: suspend (AttendanceEngineRuntimeSnapshot) -> AttendanceEngineBootstrapResult
+    ): AttendanceRuntimeRefreshResult = AttendanceRuntimeStateRefresh(evaluationMutex).refresh(
+        userId, deviceId, expectedState, ::createSnapshot, settlePending, bootstrap,
+        apply = { applyReconciledStateLocked(userId, deviceId, it) }
+    )
 
+    /** Caller holds evaluationMutex through pending sync, bootstrap, and application. */
+    private fun applyReconciledStateLocked(
+        userId: Int,
+        deviceId: String,
+        bootstrapResult: AttendanceEngineBootstrapResult.Ready
     ): AttendanceEngineRuntimeSnapshot {
-
-
-        return evaluationMutex.withLock {
-
-
-            // =====================================================
-            // SESSION IDENTITY MUST MATCH
-            // =====================================================
-
-            if (
-                boundUserId !=
-                userId
-            ) {
-
-                throw IllegalStateException(
-                    "Reconciled user does not match attendance runtime user"
-                )
-            }
-
-
-            if (
-                boundDeviceId !=
-                deviceId
-            ) {
-
-                throw IllegalStateException(
-                    "Reconciled device does not match attendance runtime device"
-                )
-            }
-
-
-            // =====================================================
-            // APPLY SAFE RECONCILED STATE
-            // =====================================================
-
-            currentAttendanceState =
-                bootstrapResult
-                    .attendanceState
-
-            currentPhase =
-                bootstrapResult
-                    .phase
-
-            runtimeMode =
-                AttendanceEngineRuntimeMode.READY
-
-            runtimeReason =
-                null
-
-
-            createSnapshot()
-        }
+        check(boundUserId == userId) { "Reconciled user does not match attendance runtime user" }
+        check(boundDeviceId == deviceId) { "Reconciled device does not match registered device" }
+        currentAttendanceState = bootstrapResult.attendanceState
+        currentPhase = bootstrapResult.phase
+        runtimeMode = AttendanceEngineRuntimeMode.READY
+        runtimeReason = null
+        return createSnapshot()
     }
 
 

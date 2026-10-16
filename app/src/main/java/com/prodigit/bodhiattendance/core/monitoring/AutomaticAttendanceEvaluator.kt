@@ -37,6 +37,48 @@ class AutomaticAttendanceEvaluator(context: Context, private val workDate: Strin
     var nextVerificationElapsedMs: Long? = null
         private set
 
+    /** Daily eligibility notices a mismatch; authoritative bootstrap decides the replacement. */
+    suspend fun refreshServerState(day: com.prodigit.bodhiattendance.data.remote.DailyEligibility): Boolean = mutex.withLock {
+        if (OfflineWorkSessionStore.isOffline()) return@withLock true
+        val expected = runCatching { AttendanceState.valueOf(day.attendanceState) }.getOrNull()
+        if (day.date != workDate || expected == null) {
+            diagnostics.record("STATE_RECONCILIATION_PENDING", "CRM workday/state could not be validated")
+            return@withLock false
+        }
+        val device = devices.getDeviceId() ?: return@withLock false
+        val token = tokens.usableAccessToken() ?: return@withLock false
+        val result = provider.runtimeSession.refreshAuthoritativeState(
+            userId = session.getUserId(), deviceId = device, expectedState = expected,
+            settlePending = { AttendanceBackgroundSync.run(contextForOffline, diagnostics = false) },
+            bootstrap = { before ->
+                diagnostics.record("STATE_RECONCILIATION", "workDate=$workDate; local=${before.attendanceState}; CRM daily=$expected")
+                val currentBoot = boot.getBootId()
+                val sameDayOffice = officeContext.read(session.getUserId(), session.getCompanyId(), device, workDate, currentBoot)
+                provider.reconciliationManager.reconcile(token, session.getUserId(), session.getCompanyId(), device,
+                    resumePhase = before.phase.takeIf { sameDayOffice != null })
+            }
+        )
+        when (result) {
+            AttendanceRuntimeRefreshResult.Unchanged -> true
+            is AttendanceRuntimeRefreshResult.Deferred -> {
+                diagnostics.record("STATE_RECONCILIATION_PENDING", result.reason)
+                AttendanceBackgroundSync.schedule(contextForOffline)
+                false
+            }
+            is AttendanceRuntimeRefreshResult.Updated -> {
+                departureEvidence.reset()
+                boundOfficeId = result.bootstrap.officeId?.takeIf {
+                    result.bootstrap.attendanceState in setOf(AttendanceState.WORKING, AttendanceState.ON_BREAK)
+                }
+                boundOfficeId?.let { office ->
+                    officeContext.save(session.getUserId(), session.getCompanyId(), device, workDate, boot.getBootId(), office)
+                }
+                diagnostics.record("STATE_RECONCILED", "workDate=$workDate; state=${result.bootstrap.attendanceState}; fresh sensor evidence required before an event")
+                true
+            }
+        }
+    }
+
     suspend fun observe(location: Location, bssid: String?, wifiDisconnected: Boolean = false) = mutex.withLock {
         needsBetterGps = false
         needsContinuityChecks = false
