@@ -319,7 +319,7 @@ class AttendancePresenceService : Service() {
                         office.wifiAccessPoints.any { it.bssid.equals(bssid, true) } }.singleOrNull()
                     AttendanceReviewEvidence(applicationContext).record(null, bssid, disconnected, reviewOffice,
                         "UNAVAILABLE", com.prodigit.bodhiattendance.domain.attendance.AttendanceEngineRuntimeProvider
-                            .getInstance(applicationContext).runtimeSession.getSnapshot().attendanceState.name)
+                            .getInstance(applicationContext).runtimeSession.getSnapshot().attendanceState?.name ?: "UNKNOWN")
                 }
                 if (!calibrating && com.prodigit.bodhiattendance.domain.attendance.AttendanceEngineRuntimeProvider.getInstance(this@AttendancePresenceService)
                         .runtimeSession.getSnapshot().attendanceState == com.prodigit.bodhiattendance.domain.attendance.AttendanceState.CHECKED_OUT) {
