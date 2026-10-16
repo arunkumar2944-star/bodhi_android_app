@@ -4,6 +4,8 @@ on:
   push:
     branches: [android-ui-development]
   workflow_dispatch:
+  pull_request:
+    branches: [android-ui-development]
 
 permissions:
   contents: read
@@ -42,11 +44,13 @@ jobs:
             "$SOURCE/domain/attendance/AttendancePresenceDecisionEngine.kt" \
             "$SOURCE/domain/attendance/DeparturePhaseRecovery.kt" \
             "$SOURCE/core/monitoring/GpsEvidenceValidation.kt" \
+            "$SOURCE/core/monitoring/TrustedClockEvidence.kt" \
             "$SOURCE/core/monitoring/DepartureEvidenceTracker.kt" \
             "$SOURCE/core/monitoring/OfflineWorkSessionPolicy.kt" \
             "$TEST_SOURCE/domain/attendance/AttendancePresenceDecisionEngineTest.kt" \
             "$TEST_SOURCE/domain/attendance/DeparturePhaseRecoveryTest.kt" \
             "$TEST_SOURCE/core/monitoring/GpsEvidenceValidationTest.kt" \
+            "$TEST_SOURCE/core/monitoring/TrustedClockEvidenceTest.kt" \
             "$TEST_SOURCE/core/monitoring/DepartureEvidenceTrackerTest.kt" \
             "$TEST_SOURCE/core/monitoring/OfflineWorkSessionPolicyTest.kt" \
             -cp "$TEST_TOOLS/junit.jar:$TEST_TOOLS/hamcrest.jar" \
@@ -55,5 +59,6 @@ jobs:
             com.prodigit.bodhiattendance.domain.attendance.AttendancePresenceDecisionEngineTest \
             com.prodigit.bodhiattendance.domain.attendance.DeparturePhaseRecoveryTest \
             com.prodigit.bodhiattendance.core.monitoring.GpsEvidenceValidationTest \
+            com.prodigit.bodhiattendance.core.monitoring.TrustedClockEvidenceTest \
             com.prodigit.bodhiattendance.core.monitoring.DepartureEvidenceTrackerTest \
             com.prodigit.bodhiattendance.core.monitoring.OfflineWorkSessionPolicyTest
