@@ -840,88 +840,14 @@ class SystemHealthViewModel(
     // This method does NOT create or refresh a time anchor.
     // ============================================================
 
-    private fun checkTrustedTime():
-            HealthItemState {
-
-
-        // ========================================================
-        // READ STORED TIME ANCHOR
-        // ========================================================
-
-        val anchor =
-            timeAnchorStorage
-                .getAnchor()
-
-
-        if (anchor == null) {
-
-            return HealthItemState(
-
-                status =
-                    HealthStatus.NOT_READY,
-
-                title =
-                    "Trusted Time",
-
-                message =
-                    "Trusted time anchor unavailable"
-            )
-        }
-
-
-        // ========================================================
-        // CURRENT BOOT SESSION
-        // ========================================================
-
-        val currentBootId =
-            bootSessionManager
-                .getBootId()
-
-
-        // ========================================================
-        // VERIFY BOOT SESSION
-        //
-        // Anchor:
-        // bootId = A
-        //
-        // Phone restarts:
-        // current bootId = B
-        //
-        // A != B
-        //
-        // Old anchor must not be trusted.
-        // ========================================================
-
-        if (anchor.bootId != currentBootId) {
-
-            return HealthItemState(
-
-                status =
-                    HealthStatus.NOT_READY,
-
-                title =
-                    "Trusted Time",
-
-                message =
-                    "Trusted time must be refreshed after device restart"
-            )
-        }
-
-
-        // ========================================================
-        // READY
-        // ========================================================
-
+    private suspend fun checkTrustedTime(): HealthItemState {
+        val monitor = com.prodigit.bodhiattendance.core.monitoring.TrustedTimeMonitor(appContext)
+        val clock = monitor.read()
+        monitor.report(clock)
         return HealthItemState(
-
-            status =
-                HealthStatus.READY,
-
-            title =
-                "Trusted Time",
-
-            message =
-                "Server-backed trusted time available"
+            status = if (clock.available) HealthStatus.READY else HealthStatus.NOT_READY,
+            title = "Trusted Time",
+            message = clock.message
         )
     }
 
