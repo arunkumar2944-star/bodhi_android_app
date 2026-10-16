@@ -116,11 +116,12 @@ import com.prodigit.bodhiattendance.data.local.entity.TimeAnchorEntity
         AttendanceEngineStateEntity::class,
         RegisteredDeviceEntity::class,
         ArrivalCandidateEntity::class,
+        com.prodigit.bodhiattendance.data.local.entity.ProvisionalArrivalEntity::class,
         com.prodigit.bodhiattendance.data.local.entity.AttendanceDiagnosticEntity::class
 
     ],
 
-    version = 12,
+    version = 13,
 
     exportSchema = false
 )
@@ -135,6 +136,7 @@ abstract class AttendanceDatabase :
     abstract fun attendanceDiagnosticDao(): com.prodigit.bodhiattendance.data.local.dao.AttendanceDiagnosticDao
 
     abstract fun arrivalCandidateDao(): ArrivalCandidateDao
+    abstract fun provisionalArrivalDao(): com.prodigit.bodhiattendance.data.local.dao.ProvisionalArrivalDao
 
     abstract fun registeredDeviceDao(): RegisteredDeviceDao
 
@@ -554,6 +556,18 @@ abstract class AttendanceDatabase :
         // trusted time anchors are preserved.
         // ====================================================
 
+        private val MIGRATION_12_13 = object : Migration(12, 13) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL("""CREATE TABLE IF NOT EXISTS provisional_arrivals (
+                    id TEXT NOT NULL PRIMARY KEY, userId INTEGER NOT NULL, companyId INTEGER NOT NULL,
+                    deviceId TEXT NOT NULL, workDate TEXT NOT NULL, officeId INTEGER NOT NULL,
+                    trustedTimeMs INTEGER NOT NULL, payloadJson TEXT NOT NULL, status TEXT NOT NULL,
+                    requestId TEXT, message TEXT
+                )""")
+                db.execSQL("CREATE UNIQUE INDEX IF NOT EXISTS index_provisional_arrivals_userId_companyId_deviceId_workDate_officeId ON provisional_arrivals(userId, companyId, deviceId, workDate, officeId)")
+            }
+        }
+
         private val MIGRATION_11_12 = object : Migration(11, 12) {
             override fun migrate(db: SupportSQLiteDatabase) {
                 db.execSQL("ALTER TABLE attendance_events ADD COLUMN offlinePermit TEXT")
@@ -742,7 +756,8 @@ abstract class AttendanceDatabase :
                                 MIGRATION_8_9,
                                 MIGRATION_9_10,
                                 MIGRATION_10_11,
-                                MIGRATION_11_12
+                                MIGRATION_11_12,
+                                MIGRATION_12_13
                             )
 
                             .build()

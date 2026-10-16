@@ -14,6 +14,7 @@ import kotlinx.coroutines.sync.withLock
 /** Evaluates fresh evidence only; unknown sensors/configuration never mean absence. */
 class AutomaticAttendanceEvaluator(context: Context, private val workDate: String) {
     private val arrivals = ArrivalCandidateRecorder(context.applicationContext)
+    private val provisionalArrivals = ProvisionalArrivalRecorder(context.applicationContext)
     private val diagnostics = AttendanceDiagnostics(context.applicationContext)
     private val reviewEvidence = AttendanceReviewEvidence(context.applicationContext)
     private val journal = PresenceEvidenceJournal(context.applicationContext)
@@ -154,6 +155,7 @@ class AutomaticAttendanceEvaluator(context: Context, private val workDate: Strin
         val definitelyOutside = distanceMeters - location.accuracy > office.geofenceRadiusMeters
         diagnostics.record("ENGINE", "Evidence officeId=${office.id}; distance=${distanceMeters}m; accuracy=${location.accuracy}m; radius=${office.geofenceRadiusMeters}m; wifiMatched=$wifiVerified; wifiDisconnected=$wifiDisconnected")
         if (inside && policy.wifiRequired == true && !wifiVerified) {
+            if (wifiDisconnected) provisionalArrivals.record(location, office, distanceMeters, true)
             uncertain("Inside GPS with missing or nonmatching office Wi-Fi")
             return@withLock
         }

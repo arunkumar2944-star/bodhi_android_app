@@ -22,6 +22,23 @@ data class PresenceEvidenceBatch(
 )
 data class PresenceEvidenceUploadResponse(val success: Boolean, val accepted: List<String>?)
 
+data class ProvisionalArrivalItem(
+    val id: String,
+    @SerializedName("office_id") val officeId: Long,
+    @SerializedName("boot_id") val bootId: String,
+    @SerializedName("anchor_uuid") val anchorUuid: String,
+    @SerializedName("observed_elapsed_ms") val observedElapsedMs: Long,
+    @SerializedName("captured_elapsed_ms") val capturedElapsedMs: Long,
+    val latitude: Double, val longitude: Double,
+    @SerializedName("accuracy_meters") val accuracyMeters: Double,
+    @SerializedName("mock_detected") val mockDetected: Boolean,
+    @SerializedName("wifi_disconnected") val wifiDisconnected: Boolean,
+    @SerializedName("clock_difference_ms") val clockDifferenceMs: Long,
+    @SerializedName("offline_permit") val offlinePermit: String
+)
+data class ProvisionalArrivalUpload(@SerializedName("device_id") val deviceId: String, val arrival: ProvisionalArrivalItem)
+data class ProvisionalArrivalResponse(val success: Boolean, val requestId: String?, val status: String?)
+
 data class ArrivalCandidateItem(
     val id: String,
     @SerializedName("office_id") val officeId: Long,
@@ -46,6 +63,10 @@ data class DiagnosticItem(
 data class DiagnosticBatch(@SerializedName("device_id") val deviceId: String, val logs: List<DiagnosticItem>)
 
 interface PresenceEvidenceApi {
+    @POST("api/v1/attendance/presence-evidence/provisional-arrivals")
+    suspend fun uploadProvisional(@Header("Authorization") token: String,
+                                 @Body batch: ProvisionalArrivalUpload): Response<ProvisionalArrivalResponse>
+
     @POST("api/v1/attendance/diagnostics")
     suspend fun uploadDiagnostics(@Header("Authorization") token: String,
                                   @Body batch: DiagnosticBatch): Response<PresenceEvidenceUploadResponse>

@@ -425,7 +425,10 @@ class AttendancePresenceService : Service() {
     private fun scheduleArrivalUpload() {
         if (arrivalUploadJob?.isActive == true) return
         arrivalUploadJob = scope.launch {
-            try { arrivals.upload() }
+            try {
+                arrivals.upload()
+                if (!ProvisionalArrivalRecorder(applicationContext).upload()) AttendanceBackgroundSync.schedule(applicationContext)
+            }
             catch (e: CancellationException) { throw e }
             catch (e: Exception) { Log.w("ARRIVAL_EVIDENCE", "Arrival evidence upload deferred", e) }
         }

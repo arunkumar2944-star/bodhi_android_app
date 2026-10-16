@@ -37,6 +37,10 @@ object AttendanceBackgroundSync {
             catch (e: CancellationException) { throw e }
             catch (_: Exception) { false }
         } else true
+        // Historical supporting evidence is independent of today's monitoring eligibility.
+        val provisionalComplete = try { ProvisionalArrivalRecorder(context).upload() }
+        catch (e: CancellationException) { throw e }
+        catch (_: Exception) { false }
         // Reconnection validates current employee/device eligibility before attempting saved writes.
         // A PAUSED policy revokes the local lease; queued events still reach server review.
         try { AttendanceDayGate.fetch(context) }
@@ -46,7 +50,7 @@ object AttendanceBackgroundSync {
         val offline = OfflineAttendanceRepository(db.attendanceEventDao(), AttendanceDiagnostics(context))
         AttendanceSyncManager(AttendanceRepositoryImpl(RetrofitClient.attendanceApi), offline,
             TimeAnchorLocalRepository(db.timeAnchorDao())).syncUnsyncedEvents(token, userId = user, deviceId = device)
-        offline.getScopedUnsyncedBatch(user, device, 1).isEmpty() && diagnosticsComplete
+        offline.getScopedUnsyncedBatch(user, device, 1).isEmpty() && diagnosticsComplete && (provisionalComplete || !diagnostics)
     }
 }
 
