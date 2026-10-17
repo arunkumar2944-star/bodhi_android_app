@@ -1,5 +1,8 @@
 package com.prodigit.bodhiattendance.ui.navigation
 
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
@@ -573,7 +576,13 @@ private fun MainApplication(onSignedOut: () -> Unit) {
                 ROUTE_DASHBOARD,
 
             modifier =
-                Modifier.fillMaxSize()
+                Modifier.fillMaxSize(),
+
+            // Consistent, subtle screen transitions across the authenticated app.
+            enterTransition = { fadeIn(animationSpec = tween(180)) },
+            exitTransition = { fadeOut(animationSpec = tween(120)) },
+            popEnterTransition = { fadeIn(animationSpec = tween(180)) },
+            popExitTransition = { fadeOut(animationSpec = tween(120)) }
 
         ) {
 
