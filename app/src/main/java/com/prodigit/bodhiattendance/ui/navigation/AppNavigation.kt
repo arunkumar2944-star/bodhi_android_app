@@ -3,6 +3,11 @@ package com.prodigit.bodhiattendance.ui.navigation
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.core.tween
+import androidx.compose.foundation.gestures.detectHorizontalDragGestures
+import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.input.pointer.consume
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
@@ -567,6 +572,21 @@ private fun MainApplication(onSignedOut: () -> Unit) {
         // ROUTE_LAUNCH belongs only to AppNavigation().
         // ====================================================
 
+        // Swipe only between top-level bottom tabs. Keep forms, details,
+        // horizontal controls and authentication routes gesture-free.
+        val swipeTabs = BottomNavigationDestination.entries.filter {
+            it != BottomNavigationDestination.ON_DUTY ||
+                live.onDuty?.any { assignment ->
+                    val today = live.attendance?.today?.let { date ->
+                        runCatching { java.time.LocalDate.parse(date) }.getOrNull()
+                    } ?: java.time.LocalDate.now(java.time.ZoneId.of("Asia/Kolkata"))
+                    com.prodigit.bodhiattendance.domain.attendance.OnDutyWindow.isVisible(
+                        assignment.date, assignment.status, today)
+                } == true
+        }
+        val isPrimaryTab = currentRoute in swipeTabs.map { it.route }
+        val swipeThreshold = with(LocalDensity.current) { 96.dp.toPx() }
+
         NavHost(
 
             navController =
@@ -576,7 +596,32 @@ private fun MainApplication(onSignedOut: () -> Unit) {
                 ROUTE_DASHBOARD,
 
             modifier =
-                Modifier.fillMaxSize(),
+                Modifier.fillMaxSize().then(
+                    if (isPrimaryTab) Modifier.pointerInput(currentRoute, swipeTabs, swipeThreshold) {
+                        var horizontalDistance = 0f
+                        detectHorizontalDragGestures(
+                            onDragStart = { horizontalDistance = 0f },
+                            onHorizontalDrag = { change, dragAmount ->
+                                horizontalDistance += dragAmount
+                                if (kotlin.math.abs(horizontalDistance) > swipeThreshold) change.consume()
+                            },
+                            onDragEnd = {
+                                if (kotlin.math.abs(horizontalDistance) >= swipeThreshold) {
+                                    val currentIndex = swipeTabs.indexOfFirst { it.route == currentRoute }
+                                    val nextIndex = currentIndex +
+                                        if (horizontalDistance < 0f) 1 else -1
+                                    if (currentIndex >= 0 && nextIndex in swipeTabs.indices) {
+                                        mainNavController.navigate(swipeTabs[nextIndex].route) {
+                                            popUpTo(ROUTE_DASHBOARD) { saveState = true }
+                                            launchSingleTop = true
+                                            restoreState = true
+                                        }
+                                    }
+                                }
+                            }
+                        )
+                    } else Modifier
+                ),
 
             // Consistent, subtle screen transitions across the authenticated app.
             enterTransition = { fadeIn(animationSpec = tween(180)) },
