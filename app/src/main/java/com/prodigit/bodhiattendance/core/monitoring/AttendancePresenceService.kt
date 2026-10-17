@@ -49,6 +49,7 @@ class AttendancePresenceService : Service() {
     private val connectivity by lazy { getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager }
     private var worker: Job? = null
     private var arrivalUploadJob: Job? = null
+    private var heartbeatJob: Job? = null
     private var registered = false
     private var recoveryNetworkRegistered = false
     private val recoveryWakeups = Channel<Unit>(Channel.CONFLATED)
@@ -163,6 +164,7 @@ class AttendancePresenceService : Service() {
                         registered = true
                     }
                     AttendanceMonitorStatus.running()
+                    startHeartbeatLoop()
                     showVerificationNotification("Monitoring attendance for the work session you started")
                     arrivals.resetContinuity()
                     signalWifi("startup")
@@ -179,6 +181,44 @@ class AttendancePresenceService : Service() {
             stopSelf(); return START_NOT_STICKY
         }
         return START_NOT_STICKY
+    }
+
+
+    /**
+     * Network-only liveness signal, independent of GPS verification.
+     * A force-stopped process cannot send this; the CRM scheduler detects silence.
+     * Do not enqueue historical heartbeats: delayed sends would misrepresent liveness.
+     */
+    private fun startHeartbeatLoop() {
+        if (heartbeatJob?.isActive == true) return
+        heartbeatJob = scope.launch(Dispatchers.IO) {
+            while (isActive && !AttendancePrivacyPolicy.isPaused(applicationContext)) {
+                try {
+                    val session = com.prodigit.bodhiattendance.core.session.SessionManager(applicationContext)
+                    val deviceId = com.prodigit.bodhiattendance.core.device.DeviceIdManager(applicationContext).getDeviceId()
+                    if (session.getUserId() <= 0 || deviceId.isNullOrBlank()) break
+                    val runtime = com.prodigit.bodhiattendance.domain.attendance.AttendanceEngineRuntimeProvider
+                        .getInstance(applicationContext).runtimeSession.getSnapshot()
+                    if (runtime.attendanceState == com.prodigit.bodhiattendance.domain.attendance.AttendanceState.CHECKED_OUT) break
+                    if (runtime.mode in setOf(
+                            com.prodigit.bodhiattendance.domain.attendance.AttendanceEngineRuntimeMode.READY,
+                            com.prodigit.bodhiattendance.domain.attendance.AttendanceEngineRuntimeMode.RECONCILIATION_REQUIRED)) {
+                        val token = tokens.usableAccessToken()
+                        if (token != null) {
+                            val response = RetrofitClient.attendanceHeartbeatApi.send(
+                                "Bearer $token",
+                                com.prodigit.bodhiattendance.data.remote.AttendanceHeartbeatRequest(deviceId)
+                            )
+                            if (!response.isSuccessful) Log.w(tag, "Heartbeat rejected HTTP ${response.code()}")
+                            else if (response.body()?.recovered == true)
+                                diagnostics.record("MONITORING_RECOVERED", "Server confirmed monitoring heartbeat recovery")
+                        }
+                    }
+                } catch (e: CancellationException) { throw e }
+                catch (e: Exception) { Log.w(tag, "Heartbeat deferred: ${e.javaClass.simpleName}") }
+                delay(HEARTBEAT_INTERVAL_MS)
+            }
+        }
     }
 
     private fun showVerificationNotification(message: String) {
@@ -544,6 +584,7 @@ class AttendancePresenceService : Service() {
         if (registered) connectivity.unregisterNetworkCallback(callback)
         if (recoveryNetworkRegistered) connectivity.unregisterNetworkCallback(recoveryCallback)
         workdayEndJob?.cancel()
+        heartbeatJob?.cancel()
         scope.cancel()
         fences.removeGeofences(fenceIntent)
             .addOnFailureListener { Log.w(tag, "Geofence cleanup failed", it) }
@@ -563,6 +604,7 @@ class AttendancePresenceService : Service() {
         private const val ACTION_VISIBLE_START = "com.prodigit.bodhiattendance.VISIBLE_WORK_SESSION"
         private const val CHANNEL_ID = "attendance_presence"
         private const val NOTIFICATION_ID = 2401
+        private const val HEARTBEAT_INTERVAL_MS = 2 * 60_000L
         private const val RECOVERY_MS = 5 * 60_000L
         private const val MIN_RETRY_MS = 15_000L
         private const val GPS_RETRY_MS = 30_000L
