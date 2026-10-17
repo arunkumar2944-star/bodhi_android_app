@@ -55,6 +55,14 @@ fun OfficeWifiScreen(onBack: () -> Unit) {
     val office = live.configuration?.locations?.firstOrNull { it.id == day?.officeId }
     var detected by remember(context) { mutableStateOf(readWifiDiagnostic(context)) }
     var settingsError by remember { mutableStateOf<String?>(null) }
+    // Refresh local router evidence while this screen is visible; the shared
+    // CRM attendance/configuration state is refreshed by authenticated navigation.
+    LaunchedEffect(context) {
+        while (true) {
+            detected = readWifiDiagnostic(context)
+            kotlinx.coroutines.delay(30_000)
+        }
+    }
     val launcher = rememberLauncherForActivityResult(ActivityResultContracts.StartActivityForResult()) {
         detected = readWifiDiagnostic(context)
     }
@@ -78,18 +86,23 @@ fun OfficeWifiScreen(onBack: () -> Unit) {
         item {
             TextButton(onClick = onBack) { Text("Back") }
             Text("Office Wi-Fi Router", style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold)
-            Text("Connection and router verification for your checked-in office.")
+            Text("Live router verification against the office recorded by CRM for today.")
         }
         item {
             WifiPanel {
-                WifiRow("Checked-in office", day?.officeName ?: office?.locationName ?: "Not available")
+                WifiRow("CRM attendance office", day?.officeName ?: "Not available")
+                WifiRow("CRM office ID", day?.officeId?.toString() ?: "Not available")
+                WifiRow("Router policy office", office?.locationName ?: "Not available")
                 WifiRow("Wi-Fi requirement", when (office?.wifiRequired) { true -> "Required"; false -> "Not required"; null -> "Not available" })
                 Text(health.message, color = when (health.status) {
                     HealthStatus.NOT_READY -> MaterialTheme.colorScheme.error
                     HealthStatus.READY -> androidx.compose.ui.graphics.Color(0xFF17804E)
                     else -> MaterialTheme.colorScheme.onSurfaceVariant
                 })
-                if (office == null) Text("The checked-in office or its CRM configuration is unavailable. Refresh System Health to reload it.")
+                if (office == null) Text("The CRM office configuration for today is unavailable. The router cannot be verified.")
+                if (office != null && !day?.officeName.isNullOrBlank() && !office.locationName.equals(day?.officeName, ignoreCase = true)) {
+                    Text("CRM office name and configured policy name disagree. Verify the attendance office ID and CRM location configuration.", color = MaterialTheme.colorScheme.error)
+                }
             }
         }
         item {
@@ -100,7 +113,7 @@ fun OfficeWifiScreen(onBack: () -> Unit) {
                 WifiRow("Router BSSID", detected.bssid ?: "Unavailable")
                 WifiRow("Precise location permission", if (detected.preciseLocationGranted) "Granted" else "Required to read router identity")
                 WifiRow("Location services", if (detected.locationEnabled) "On" else "Off")
-                Text("Android may hide router identity without location permission or location services. An unavailable identity is not a confirmed router mismatch.")
+                Text("This compares the current router with the approved routers for today’s CRM attendance office. If you move to another office, that office must be reflected in CRM before its router policy can be verified. Android may hide the router identity without location permission or location services.")
             }
         }
         if (office != null) item {
