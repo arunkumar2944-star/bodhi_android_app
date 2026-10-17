@@ -13,7 +13,7 @@ interface AttendanceDiagnosticDao {
     suspend fun acknowledge(userId: Int, deviceId: String, ids: List<String>)
     @Query("SELECT * FROM attendance_diagnostics WHERE userId=:userId ORDER BY rowid DESC LIMIT 200")
     fun recent(userId: Int): Flow<List<AttendanceDiagnosticEntity>>
-    // Bounded storage, including offline rows; never deletes attendance events.
-    @Query("DELETE FROM attendance_diagnostics WHERE rowid NOT IN (SELECT rowid FROM attendance_diagnostics ORDER BY rowid DESC LIMIT 10000)")
+    // Preserve ALL unsent diagnostic evidence; prune only already-acknowledged rows.
+    @Query("DELETE FROM attendance_diagnostics WHERE uploaded=1 AND rowid NOT IN (SELECT rowid FROM attendance_diagnostics WHERE uploaded=1 ORDER BY rowid DESC LIMIT 10000)")
     suspend fun trim()
 }
