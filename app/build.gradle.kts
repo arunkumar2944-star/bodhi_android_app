@@ -32,7 +32,7 @@ android {
     compileSdk {
 
         version =
-            release(37)
+            release(36)
     }
 
 
@@ -45,7 +45,7 @@ android {
             26
 
         targetSdk =
-            37
+            36
 
         versionCode =
             4
