@@ -37,17 +37,16 @@ jobs:
         with:
           packages: platform-tools
 
-      - name: Install Android API 37
-        run: sdkmanager "platforms;android-37" "build-tools;37.0.0"
+      - name: Install Android API 36
+        run: sdkmanager "platforms;android-36" "build-tools;36.0.0"
 
       - name: Prepare Gradle wrapper
         run: chmod +x ./gradlew
 
-      - name: Test departure timing and recovery
+      - name: Run all Android unit tests
         run: |
-          ./gradlew --no-daemon --stacktrace :app:testDebugUnitTest \
-            --tests 'com.prodigit.bodhiattendance.domain.attendance.AttendancePresenceDecisionEngineTest' \
-            --tests 'com.prodigit.bodhiattendance.domain.attendance.DeparturePhaseRecoveryTest' \
+          ./gradlew --no-daemon --stacktrace :app:testDebugUnitTest
+--tests 'com.prodigit.bodhiattendance.domain.attendance.DeparturePhaseRecoveryTest' \
             --tests 'com.prodigit.bodhiattendance.domain.attendance.AttendanceRuntimeStateRefreshTest' \
             --tests 'com.prodigit.bodhiattendance.core.monitoring.DepartureEvidenceTrackerTest' \
             --tests 'com.prodigit.bodhiattendance.core.monitoring.WorkdayBoundaryTest' \
@@ -99,7 +98,7 @@ jobs:
           printf '%s' "$KEYSTORE_B64" | base64 --decode > "$RUNNER_TEMP/bodhi-sign/release.jks"
           APK="$(find app/build/outputs/apk/release -maxdepth 1 -name '*.apk' -type f | head -n 1)"
           test -n "$APK"
-          BUILD_TOOLS="$ANDROID_HOME/build-tools/37.0.0"
+          BUILD_TOOLS="$ANDROID_HOME/build-tools/36.0.0"
           "$BUILD_TOOLS/zipalign" -f -p 4 "$APK" "$RUNNER_TEMP/bodhi-sign/aligned.apk"
           "$BUILD_TOOLS/apksigner" sign \
             --ks "$RUNNER_TEMP/bodhi-sign/release.jks" \
