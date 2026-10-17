@@ -153,7 +153,6 @@ class AttendancePresenceService : Service() {
                     val day = awaitDailyEligibility() ?: return@launch
                     if (day.date != workDate || day.monitoringMode == "PAUSED") {
                     if (day.monitoringMode == "PAUSED") stopHeartbeatIfPolicyPaused()
-                        if (day.monitoringMode == "PAUSED") stopHeartbeatIfPolicyPaused()
                         if (day.date != workDate) {
                             workDate?.let { AttendancePrivacyPolicy.pauseAtWorkdayEnd(this@AttendancePresenceService, it) }
                         }
@@ -365,6 +364,7 @@ class AttendancePresenceService : Service() {
                 }
                 val day = awaitDailyEligibility() ?: return
                 if (day.date != workDate || day.monitoringMode == "PAUSED") {
+                    if (day.monitoringMode == "PAUSED") stopHeartbeatIfPolicyPaused()
                     if (day.date != workDate) {
                         workDate?.let { AttendancePrivacyPolicy.pauseAtWorkdayEnd(this@AttendancePresenceService, it) }
                     }
