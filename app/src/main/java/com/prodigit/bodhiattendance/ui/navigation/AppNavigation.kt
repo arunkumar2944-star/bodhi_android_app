@@ -346,6 +346,12 @@ private fun MainApplication(onSignedOut: () -> Unit) {
             ?.destination
             ?.route
 
+    // Refresh shared CRM state whenever the employee opens another screen.
+    // This is read-only and does not modify local attendance or server decisions.
+    LaunchedEffect(currentRoute) {
+        if (currentRoute != null) liveModel.refresh()
+    }
+
 
     // ========================================================
     // SELECTED BOTTOM NAVIGATION DESTINATION
