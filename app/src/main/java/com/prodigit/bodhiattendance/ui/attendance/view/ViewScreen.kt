@@ -2065,13 +2065,31 @@ private fun AttendanceDetailsScreenContent(
 
             ) {
 
-                val breaks = attendance.events.filter { it.type == "BREAK_START" }
-                if (breaks.isEmpty()) Text("No accepted break events for this day")
-                breaks.forEachIndexed { index, start ->
-                    val end = attendance.events.firstOrNull { it.type == "BREAK_END" && it.timeMs >= start.timeMs }
-                    BreakTimelineItem(Icons.Outlined.Coffee, "Break ${index + 1}",
+                // Derive breaks from consecutive accepted events. A provisional
+                // BREAK_START classified as CHECK_OUT at the same trusted time is
+                // an office departure, not an additional employee break.
+                val orderedEvents = attendance.events.sortedBy { it.timeMs }
+                val breaks = orderedEvents.mapIndexedNotNull { position, start ->
+                    if (start.type != "BREAK_START") return@mapIndexedNotNull null
+                    val following = orderedEvents.getOrNull(position + 1)
+                    if (following?.type == "CHECK_OUT" &&
+                        following.timeMs == start.timeMs) return@mapIndexedNotNull null
+                    val end = following?.takeIf { it.type == "BREAK_END" }
+                    val durationMinutes = end?.let {
+                        ((it.timeMs - start.timeMs).coerceAtLeast(0L) / 60000L)
+                    }
+                    Triple(start, end, durationMinutes)
+                }
+                if (breaks.isEmpty()) Text("No completed break periods")
+                breaks.forEachIndexed { index, (start, end, durationMinutes) ->
+                    BreakTimelineItem(
+                        Icons.Outlined.Coffee,
+                        "Break ${index + 1}" +
+                            (durationMinutes?.let { " · ${it} min" } ?: " · In progress"),
                         com.prodigit.bodhiattendance.ui.live.displayTime(start.timeMs),
-                        com.prodigit.bodhiattendance.ui.live.displayTime(end?.timeMs), Color(0xFF176DE5))
+                        end?.let { com.prodigit.bodhiattendance.ui.live.displayTime(it.timeMs) } ?: "—",
+                        Color(0xFF176DE5)
+                    )
                 }
             }
         }
