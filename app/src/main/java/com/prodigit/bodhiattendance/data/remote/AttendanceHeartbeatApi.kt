@@ -17,6 +17,10 @@ data class AttendanceHeartbeatResponse(
 )
 
 interface AttendanceHeartbeatApi {
+    @POST("api/v1/attendance/monitor/stop")
+    suspend fun stop(@Header("Authorization") authorization: String,
+                     @Body request: AttendanceHeartbeatRequest): Response<AttendanceHeartbeatResponse>
+
     @POST("api/v1/attendance/monitor/heartbeat")
     suspend fun send(
         @Header("Authorization") authorization: String,
