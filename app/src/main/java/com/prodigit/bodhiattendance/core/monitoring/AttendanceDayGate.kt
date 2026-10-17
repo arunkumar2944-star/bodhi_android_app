@@ -13,6 +13,8 @@ import com.prodigit.bodhiattendance.data.remote.DailyEligibility
 
 /** Eligibility is read only when the employee opens the app or monitoring is already running. */
 object AttendanceDayGate {
+    @Volatile private var clockReference: Pair<DailyEligibility, Long>? = null
+    fun verifiedClockElapsed(day: DailyEligibility): Long? = clockReference?.takeIf { it.first == day }?.second
     private val statusFlow = kotlinx.coroutines.flow.MutableStateFlow("NOT_VERIFIED")
     val state: kotlinx.coroutines.flow.StateFlow<String> = statusFlow
     private fun prefs(c: Context) = c.getSharedPreferences("attendance_day_gate", Context.MODE_PRIVATE)
@@ -41,6 +43,7 @@ object AttendanceDayGate {
             throw EligibilityHttpFailure(403)
         }
         if (result.monitoringMode == "PAUSED") OfflineWorkSessionStore.clear(c, "CRM paused attendance monitoring")
+        clockReference = result to started
         statusFlow.value = result.status
         prefs(c).edit().putString("status", result.status).putString("date", result.date)
             .putString("mode", result.monitoringMode).apply()
@@ -58,7 +61,7 @@ object AttendanceDayGate {
             PendingIntent.FLAG_UPDATE_CURRENT or if (Build.VERSION.SDK_INT >= 31) PendingIntent.FLAG_MUTABLE else 0)
         return runCatching { client.removeGeofences(oldOffice) }.getOrElse { com.google.android.gms.tasks.Tasks.forResult<Void>(null) }
     }
-    fun clearStatus(c: Context) { prefs(c).edit().clear().apply(); statusFlow.value = "NOT_VERIFIED" }
+    fun clearStatus(c: Context) { clockReference = null; prefs(c).edit().clear().apply(); statusFlow.value = "NOT_VERIFIED" }
 }
 
 /** Compatibility components can only discard work scheduled by old builds. */
