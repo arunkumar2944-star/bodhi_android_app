@@ -52,6 +52,8 @@ class AttendancePresenceService : Service() {
     private var arrivalUploadJob: Job? = null
     private var heartbeatJob: Job? = null
     private var lastSensorIssue: String? = null
+    private var lastReadinessSignature: String? = null
+    @Volatile private var lastHeartbeatReceivedElapsedMs: Long? = null
     private var registered = false
     private var recoveryNetworkRegistered = false
     private val recoveryWakeups = Channel<Unit>(Channel.CONFLATED)
@@ -214,8 +216,11 @@ class AttendancePresenceService : Service() {
                                 com.prodigit.bodhiattendance.data.remote.AttendanceHeartbeatRequest(deviceId)
                             )
                             if (!response.isSuccessful) Log.w(tag, "Heartbeat rejected HTTP ${response.code()}")
-                            else if (response.body()?.recovered == true)
-                                diagnostics.record("MONITORING_RECOVERED", "Server confirmed monitoring heartbeat recovery")
+                            else {
+                                lastHeartbeatReceivedElapsedMs = SystemClock.elapsedRealtime()
+                                if (response.body()?.recovered == true)
+                                    diagnostics.record("MONITORING_RECOVERED", "Server confirmed monitoring heartbeat recovery")
+                            }
                         }
                     }
                 } catch (e: CancellationException) { throw e }
@@ -225,28 +230,44 @@ class AttendancePresenceService : Service() {
         }
     }
 
-    /** Transition-only sensor alerts; persisted in Room and uploaded by existing diagnostic sync. */
+    /** Change-only sensor evidence, retained offline in Room and later uploaded.
+     * Captured values are device observations, not proof of employee intent or departure.
+     */
     private suspend fun reportSensorReadiness() {
         val locationManager = getSystemService(Context.LOCATION_SERVICE) as LocationManager
-        // isLocationEnabled() was introduced in API 28; minSdk is 26.
-        val locationEnabled = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
-            locationManager.isLocationEnabled
-        } else {
-            locationManager.isProviderEnabled(LocationManager.GPS_PROVIDER) ||
+        val locationEnabled = try {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) locationManager.isLocationEnabled
+            else locationManager.isProviderEnabled(LocationManager.GPS_PROVIDER) ||
                 locationManager.isProviderEnabled(LocationManager.NETWORK_PROVIDER)
-        }
+        } catch (_: Exception) { false }
         val permissionGranted = hasFineLocation()
         val wifiEnabled = (getSystemService(Context.WIFI_SERVICE) as WifiManager).isWifiEnabled
-        val issue = when {
-            !permissionGranted -> "LOCATION_PERMISSION_MISSING"
-            !locationEnabled -> "LOCATION_DISABLED"
-            !wifiEnabled -> "WIFI_DISABLED"
-            else -> null
-        }
-        if (issue != lastSensorIssue) {
-            diagnostics.record(issue ?: "SENSORS_RESTORED",
-                "Monitoring sensor availability changed; attendance presence cannot be inferred")
-            lastSensorIssue = issue
+        val bssid = if (wifiEnabled) readBssid() else null
+        val wifiDisconnected = isWifiDisconnected()
+        val network = connectivity.activeNetwork?.let { connectivity.getNetworkCapabilities(it) }
+        val internetValidated = network?.hasCapability(NetworkCapabilities.NET_CAPABILITY_VALIDATED) == true
+        val now = SystemClock.elapsedRealtime()
+        val heartbeatAgeSeconds = lastHeartbeatReceivedElapsedMs?.let { ((now - it) / 1000).coerceAtLeast(0) }
+        // Do not create an event on every heartbeat. Capture transitions, including
+        // network recovery and separate sensor failure combinations.
+        val signature = listOf(permissionGranted, locationEnabled, wifiEnabled, wifiDisconnected,
+            bssid ?: "NONE", internetValidated).joinToString("|")
+        if (signature != lastReadinessSignature) {
+            val state = when {
+                !permissionGranted -> "LOCATION_PERMISSION_MISSING"
+                !locationEnabled -> "LOCATION_DISABLED"
+                !wifiEnabled -> "WIFI_DISABLED"
+                wifiDisconnected -> "WIFI_DISCONNECTED"
+                !internetValidated -> "NETWORK_UNAVAILABLE"
+                else -> "SENSORS_RESTORED"
+            }
+            diagnostics.record("SENSOR_STATE",
+                "state=$state; locationPermission=$permissionGranted; locationEnabled=$locationEnabled; " +
+                "wifiEnabled=$wifiEnabled; wifiConnected=${!wifiDisconnected}; bssid=${bssid ?: "UNAVAILABLE"}; " +
+                "networkValidated=$internetValidated; lastHeartbeatAckAgeSeconds=${heartbeatAgeSeconds ?: "NONE"}; " +
+                "observedElapsedMs=$now; noAttendanceInference=true")
+            lastReadinessSignature = signature
+            lastSensorIssue = if (state == "SENSORS_RESTORED") null else state
             AttendanceBackgroundSync.schedule(applicationContext)
             AttendanceVerificationSignals.request("Sensor availability changed")
         }
