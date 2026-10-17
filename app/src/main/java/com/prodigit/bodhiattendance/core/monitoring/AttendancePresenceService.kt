@@ -6,6 +6,7 @@ import android.app.NotificationManager
 import android.app.PendingIntent
 import android.app.Service
 import android.location.Location
+import android.location.LocationManager
 import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
@@ -50,6 +51,7 @@ class AttendancePresenceService : Service() {
     private var worker: Job? = null
     private var arrivalUploadJob: Job? = null
     private var heartbeatJob: Job? = null
+    private var lastSensorIssue: String? = null
     private var registered = false
     private var recoveryNetworkRegistered = false
     private val recoveryWakeups = Channel<Unit>(Channel.CONFLATED)
@@ -194,6 +196,7 @@ class AttendancePresenceService : Service() {
         heartbeatJob = scope.launch(Dispatchers.IO) {
             while (isActive && !AttendancePrivacyPolicy.isPaused(applicationContext)) {
                 try {
+                    reportSensorReadiness()
                     val session = com.prodigit.bodhiattendance.core.session.SessionManager(applicationContext)
                     val deviceId = com.prodigit.bodhiattendance.core.device.DeviceIdManager(applicationContext).getDeviceId()
                     if (session.getUserId() <= 0 || deviceId.isNullOrBlank()) break
@@ -218,6 +221,26 @@ class AttendancePresenceService : Service() {
                 catch (e: Exception) { Log.w(tag, "Heartbeat deferred: ${e.javaClass.simpleName}") }
                 delay(HEARTBEAT_INTERVAL_MS)
             }
+        }
+    }
+
+    /** Transition-only sensor alerts; persisted in Room and uploaded by existing diagnostic sync. */
+    private suspend fun reportSensorReadiness() {
+        val locationEnabled = (getSystemService(Context.LOCATION_SERVICE) as LocationManager).isLocationEnabled
+        val permissionGranted = hasFineLocation()
+        val wifiEnabled = (getSystemService(Context.WIFI_SERVICE) as WifiManager).isWifiEnabled
+        val issue = when {
+            !permissionGranted -> "LOCATION_PERMISSION_MISSING"
+            !locationEnabled -> "LOCATION_DISABLED"
+            !wifiEnabled -> "WIFI_DISABLED"
+            else -> null
+        }
+        if (issue != lastSensorIssue) {
+            diagnostics.record(issue ?: "SENSORS_RESTORED",
+                "Monitoring sensor availability changed; attendance presence cannot be inferred")
+            lastSensorIssue = issue
+            AttendanceBackgroundSync.schedule(applicationContext)
+            AttendanceVerificationSignals.request("Sensor availability changed")
         }
     }
 
