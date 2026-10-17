@@ -152,6 +152,8 @@ class AttendancePresenceService : Service() {
                     try {
                     val day = awaitDailyEligibility() ?: return@launch
                     if (day.date != workDate || day.monitoringMode == "PAUSED") {
+                    if (day.monitoringMode == "PAUSED") stopHeartbeatIfPolicyPaused()
+                        if (day.monitoringMode == "PAUSED") stopHeartbeatIfPolicyPaused()
                         if (day.date != workDate) {
                             workDate?.let { AttendancePrivacyPolicy.pauseAtWorkdayEnd(this@AttendancePresenceService, it) }
                         }
@@ -244,6 +246,19 @@ class AttendancePresenceService : Service() {
         }
     }
 
+
+    private suspend fun stopHeartbeatIfPolicyPaused() {
+        try {
+            val id = com.prodigit.bodhiattendance.core.device.DeviceIdManager(applicationContext).getDeviceId() ?: return
+            val token = withTimeoutOrNull(3_000L) { tokens.usableAccessToken() } ?: return
+            withTimeoutOrNull(3_000L) {
+                RetrofitClient.attendanceHeartbeatApi.stop(
+                    "Bearer $token", com.prodigit.bodhiattendance.data.remote.AttendanceHeartbeatRequest(id))
+            }
+        } catch (e: CancellationException) { throw e }
+        catch (e: Exception) { Log.w(tag, "Monitor stop will be reconciled by CRM policy", e) }
+    }
+
     private fun showVerificationNotification(message: String) {
         requireNotNull(getSystemService(NotificationManager::class.java)).notify(NOTIFICATION_ID,
             NotificationCompat.Builder(this, CHANNEL_ID)
@@ -333,6 +348,7 @@ class AttendancePresenceService : Service() {
             }
             if (com.prodigit.bodhiattendance.domain.attendance.AttendanceEngineRuntimeProvider.getInstance(this@AttendancePresenceService)
                     .runtimeSession.getSnapshot().attendanceState == com.prodigit.bodhiattendance.domain.attendance.AttendanceState.CHECKED_OUT) {
+                stopHeartbeatIfPolicyPaused()
                 AttendancePrivacyPolicy.pauseAfterCheckout(this@AttendancePresenceService)
                 stopSelf()
                 return
