@@ -15,8 +15,12 @@ object AttendancePrivacyPolicy {
     fun isPaused(c: Context): Boolean = prefs(c).getBoolean("paused", false)
     fun canResumeOn(c: Context, serverDay: String): Boolean = !isPaused(c) ||
         WorkdayPrivacySchedule.canResume(prefs(c).getString("checkout_day", null), serverDay)
-    fun pauseAfterCheckout(c: Context, serverDay: String = LocalDate.now(ZoneId.of("Asia/Kolkata")).toString()) {
-        OfflineWorkSessionStore.clear(c, "Checked out — offline monitoring stopped")
+    fun pauseAfterCheckout(c: Context, serverDay: String = LocalDate.now(ZoneId.of("Asia/Kolkata")).toString()) =
+        pause(c, serverDay, "Checked out — offline monitoring stopped")
+    fun pauseAtWorkdayEnd(c: Context, workDate: String) =
+        pause(c, workDate, "Workday ended — saved events retained for CRM validation")
+    private fun pause(c: Context, serverDay: String, reason: String) {
+        OfflineWorkSessionStore.clear(c, reason)
         if (!isPaused(c)) {
             prefs(c).edit().putBoolean("paused", true).putString("checkout_day", serverDay).commit()
             checkoutShutdownRequested = true

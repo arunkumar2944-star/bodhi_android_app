@@ -50,6 +50,7 @@ jobs:
             --tests 'com.prodigit.bodhiattendance.domain.attendance.DeparturePhaseRecoveryTest' \
             --tests 'com.prodigit.bodhiattendance.domain.attendance.AttendanceRuntimeStateRefreshTest' \
             --tests 'com.prodigit.bodhiattendance.core.monitoring.DepartureEvidenceTrackerTest' \
+            --tests 'com.prodigit.bodhiattendance.core.monitoring.WorkdayBoundaryTest' \
             --tests 'com.prodigit.bodhiattendance.core.monitoring.TrustedClockEvidenceTest' \
             --tests 'com.prodigit.bodhiattendance.ui.systemhealth.TrustedTimeHealthTest' \
             --tests 'com.prodigit.bodhiattendance.core.monitoring.DiagnosticOutboxDeliveryTest'

@@ -100,7 +100,8 @@ data class AttendanceViewItem(
 
     val lunchBreakEnd: String = "--",
 
-    val events: List<com.prodigit.bodhiattendance.data.remote.MobileEvent> = emptyList()
+    val events: List<com.prodigit.bodhiattendance.data.remote.MobileEvent> = emptyList(),
+    val closureReason: String? = null
 )
 
 
@@ -140,12 +141,13 @@ fun ViewScreen(
             date = com.prodigit.bodhiattendance.ui.live.displayDate(day.date),
             day = java.time.LocalDate.parse(day.date).dayOfWeek.toString().lowercase().replaceFirstChar { it.uppercase() },
             checkIn = com.prodigit.bodhiattendance.ui.live.displayTime(day.checkInTimeMs),
-            checkOut = com.prodigit.bodhiattendance.ui.live.displayTime(day.checkOutTimeMs),
+            checkOut = if (day.requiresReview) "Day-end closure" else com.prodigit.bodhiattendance.ui.live.displayTime(day.checkOutTimeMs),
             workDuration = com.prodigit.bodhiattendance.ui.live.durationText(day.workMinutes),
-            status = when(day.state) { "WORKING" -> "Working"; "ON_BREAK" -> "On Break"; "CHECKED_OUT" -> "Checked Out"; else -> day.state.replace('_',' ') },
+            status = if (day.requiresReview) "Needs review" else when(day.state) { "WORKING" -> "Working"; "ON_BREAK" -> "On Break"; "CHECKED_OUT" -> "Checked Out"; else -> day.state.replace('_',' ') },
             officeName = day.officeName ?: "Office unavailable",
             totalBreak = com.prodigit.bodhiattendance.ui.live.durationText(day.breakMinutes),
-            events = day.events
+            events = day.events,
+            closureReason = day.closureReason
         )
     }
 
@@ -1029,6 +1031,11 @@ private fun AttendanceDayCard(
     ) {
 
         Column {
+            attendance.closureReason?.let { reason ->
+                Text(text = reason, modifier = Modifier.padding(15.dp),
+                    color = Color(0xFF8A5700), fontSize = 12.sp)
+            }
+
 
 
             // =================================================

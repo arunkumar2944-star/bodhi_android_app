@@ -60,6 +60,28 @@ class AttendancePresenceService : Service() {
         }
     }
     private var workDate: String? = null
+    private var workdayDeadlineElapsedMs: Long? = null
+    private var workdayEndJob: Job? = null
+
+    private fun armWorkdayEnd(day: com.prodigit.bodhiattendance.data.remote.DailyEligibility) {
+        if (day.date != workDate) return
+        if (OfflineWorkSessionStore.isOffline() && workdayDeadlineElapsedMs != null) return
+        // Map server time to request START, so network latency cannot extend tracking past midnight.
+        val reference = AttendanceDayGate.verifiedClockElapsed(day)
+            ?: if (workdayDeadlineElapsedMs != null) return else error("Online workday clock validation required")
+        val proposed = WorkdayBoundary.deadlineElapsed(day.date, day.serverTimeMs, reference)
+        // Refreshes never extend an already-authorized workday.
+        val deadline = minOf(workdayDeadlineElapsedMs ?: proposed, proposed)
+        workdayDeadlineElapsedMs = deadline
+        evaluator.setWorkdayDeadline(deadline)
+        workdayEndJob?.cancel()
+        workdayEndJob = scope.launch {
+            delay((deadline - SystemClock.elapsedRealtime()).coerceAtLeast(0L))
+            diagnostics.record("WORKDAY_ENDED", "workDate=${day.date}; sensors stopped; server policy closure pending; saved events retained")
+            AttendancePrivacyPolicy.pauseAtWorkdayEnd(this@AttendancePresenceService, day.date)
+            stopSelf()
+        }
+    }
     private var lastWifiSignature: String? = null
     private val fenceIntent by lazy {
         val flags = PendingIntent.FLAG_UPDATE_CURRENT or
@@ -127,9 +149,13 @@ class AttendancePresenceService : Service() {
                     try {
                     val day = awaitDailyEligibility() ?: return@launch
                     if (day.date != workDate || day.monitoringMode == "PAUSED") {
+                        if (day.date != workDate) {
+                            workDate?.let { AttendancePrivacyPolicy.pauseAtWorkdayEnd(this@AttendancePresenceService, it) }
+                        }
                         diagnostics.record("POLICY_PAUSED", "CRM daily status=${day.status}; monitoring stopped")
                         stopSelf(); return@launch
                     }
+                    armWorkdayEnd(day)
                     if (AttendancePrivacyPolicy.isPaused(this@AttendancePresenceService)) { stopSelf(); return@launch }
                     if (!registered) {
                         connectivity.registerNetworkCallback(NetworkRequest.Builder()
@@ -236,7 +262,9 @@ class AttendancePresenceService : Service() {
         var gpsRetries = 0
         while (currentCoroutineContext().isActive) {
             if (com.prodigit.bodhiattendance.domain.attendance.AttendanceEngineRuntimeProvider.getInstance(this@AttendancePresenceService)
-                    .runtimeSession.getSnapshot().mode != com.prodigit.bodhiattendance.domain.attendance.AttendanceEngineRuntimeMode.READY) {
+                    .runtimeSession.getSnapshot().mode !in setOf(
+                        com.prodigit.bodhiattendance.domain.attendance.AttendanceEngineRuntimeMode.READY,
+                        com.prodigit.bodhiattendance.domain.attendance.AttendanceEngineRuntimeMode.RECONCILIATION_REQUIRED)) {
                 stopSelf()
                 return
             }
@@ -258,9 +286,14 @@ class AttendancePresenceService : Service() {
                 }
                 val day = awaitDailyEligibility() ?: return
                 if (day.date != workDate || day.monitoringMode == "PAUSED") {
+                    if (day.date != workDate) {
+                        workDate?.let { AttendancePrivacyPolicy.pauseAtWorkdayEnd(this@AttendancePresenceService, it) }
+                    }
                     diagnostics.record("POLICY_PAUSED", "CRM daily status=${day.status}; monitoring stopped")
                     stopSelf(); return
                 }
+                armWorkdayEnd(day)
+                if (WorkdayBoundary.expired(workdayDeadlineElapsedMs, SystemClock.elapsedRealtime())) { stopSelf(); return }
                 if (!evaluator.refreshServerState(day)) {
                     // No sensor evaluation while queued writes or reconciliation remain unresolved.
                     waitMs = MIN_RETRY_MS
@@ -510,6 +543,7 @@ class AttendancePresenceService : Service() {
     override fun onDestroy() {
         if (registered) connectivity.unregisterNetworkCallback(callback)
         if (recoveryNetworkRegistered) connectivity.unregisterNetworkCallback(recoveryCallback)
+        workdayEndJob?.cancel()
         scope.cancel()
         fences.removeGeofences(fenceIntent)
             .addOnFailureListener { Log.w(tag, "Geofence cleanup failed", it) }

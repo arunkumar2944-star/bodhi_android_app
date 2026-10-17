@@ -30,6 +30,9 @@ class AutomaticAttendanceEvaluator(context: Context, private val workDate: Strin
     private val offlineSession = OfflineWorkSessionStore(context.applicationContext)
     private val officeContext = AttendanceOfficeContext(context.applicationContext)
     private val boot = com.prodigit.bodhiattendance.data.local.security.BootSessionManager(context.applicationContext)
+    private var workdayDeadlineElapsedMs: Long? = null
+    fun setWorkdayDeadline(deadline: Long) { workdayDeadlineElapsedMs = deadline }
+    private fun workdayEnded() = WorkdayBoundary.expired(workdayDeadlineElapsedMs, android.os.SystemClock.elapsedRealtime())
     var needsContinuityChecks: Boolean = false
         private set
     var needsBetterGps: Boolean = false
@@ -80,6 +83,10 @@ class AutomaticAttendanceEvaluator(context: Context, private val workDate: Strin
     }
 
     suspend fun observe(location: Location, bssid: String?, wifiDisconnected: Boolean = false) = mutex.withLock {
+        if (workdayEnded()) {
+            diagnostics.record("WORKDAY_ENDED", "Evaluation blocked for expired workDate=$workDate")
+            return@withLock
+        }
         needsBetterGps = false
         needsContinuityChecks = false
         nextVerificationElapsedMs = null
@@ -171,6 +178,7 @@ class AutomaticAttendanceEvaluator(context: Context, private val workDate: Strin
             val evidence = AttendanceEngineEvidence(latitude = location.latitude, longitude = location.longitude,
                 accuracyMeters = location.accuracy.toDouble(), capturedAtElapsedRealtimeMs = location.elapsedRealtimeNanos / 1_000_000L,
                 observationUncertain = true)
+            if (workdayEnded()) return
             provider.runtimeSession.evaluate(token, session.getUserId(), session.getCompanyId(), deviceId, evidence, policy)
             val reportedWifiMatch = bssid?.takeUnless { wifiDisconnected }?.takeIf {
                 it.matches(Regex("(?i)([0-9a-f]{2}:){5}[0-9a-f]{2}")) &&
@@ -235,6 +243,7 @@ class AutomaticAttendanceEvaluator(context: Context, private val workDate: Strin
         reviewEvidence.record(location, bssid, wifiDisconnected, office,
             if (inside) "INSIDE" else "OUTSIDE", snapshot.attendanceState?.name ?: "UNKNOWN")
         journal.record(location, office.id, wifiVerified, if (inside) "PRESENT" else "ABSENT_CANDIDATE")
+        if (workdayEnded()) return@withLock
         val result = provider.runtimeSession.evaluate(token, session.getUserId(), session.getCompanyId(),
             deviceId, evidence, policy)
         val after = provider.runtimeSession.getSnapshot()
