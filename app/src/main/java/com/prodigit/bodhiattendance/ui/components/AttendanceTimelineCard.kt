@@ -218,7 +218,17 @@ fun AttendanceTimelineCard(
 
             } else {
 
-                events.forEachIndexed {
+                // A delayed final-departure classification may persist BREAK_START and
+                // CHECK_OUT at the same original departure time. Display a single
+                // checkout row while retaining both immutable audit events in Room/CRM.
+                val displayedEvents = events.filterIndexed { index, item ->
+                    !(item.type == AttendanceTimelineType.BREAK_START &&
+                        events.getOrNull(index + 1)?.let { following ->
+                            following.type == AttendanceTimelineType.CHECK_OUT &&
+                                following.time == item.time
+                        } == true)
+                }
+                displayedEvents.forEachIndexed {
                         index,
                         event ->
 
@@ -229,7 +239,7 @@ fun AttendanceTimelineCard(
 
                         showLine =
                             index !=
-                                    events.lastIndex
+                                    displayedEvents.lastIndex
                     )
                 }
             }
