@@ -82,7 +82,9 @@ class MainActivity : FragmentActivity() {
         // =====================================================
         setContent {
 
-            CRMAttendanceTheme {
+            // Existing surfaces/cards use a light branded palette. Keep text
+            // contrast reliable even when the device is in dark mode.
+            CRMAttendanceTheme(darkTheme = false, dynamicColor = false) {
                 Surface(
                     color = MaterialTheme.colorScheme.background
                 ) {
