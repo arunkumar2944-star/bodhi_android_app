@@ -150,9 +150,9 @@ class AttendancePresenceService : Service() {
             if (worker?.isActive != true) {
                 worker = scope.launch {
                     try {
-                    val day = awaitDailyEligibility() ?: return@launch
-                    if (day.date != workDate || day.monitoringMode == "PAUSED") {
-                    if (day.monitoringMode == "PAUSED") stopHeartbeatIfPolicyPaused()
+                        val day = awaitDailyEligibility() ?: return@launch
+                        if (day.date != workDate || day.monitoringMode == "PAUSED") {
+                            if (day.monitoringMode == "PAUSED") stopHeartbeatIfPolicyPaused()
                         if (day.date != workDate) {
                             workDate?.let { AttendancePrivacyPolicy.pauseAtWorkdayEnd(this@AttendancePresenceService, it) }
                         }
@@ -227,7 +227,14 @@ class AttendancePresenceService : Service() {
 
     /** Transition-only sensor alerts; persisted in Room and uploaded by existing diagnostic sync. */
     private suspend fun reportSensorReadiness() {
-        val locationEnabled = (getSystemService(Context.LOCATION_SERVICE) as LocationManager).isLocationEnabled
+        val locationManager = getSystemService(Context.LOCATION_SERVICE) as LocationManager
+        // isLocationEnabled() was introduced in API 28; minSdk is 26.
+        val locationEnabled = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
+            locationManager.isLocationEnabled
+        } else {
+            locationManager.isProviderEnabled(LocationManager.GPS_PROVIDER) ||
+                locationManager.isProviderEnabled(LocationManager.NETWORK_PROVIDER)
+        }
         val permissionGranted = hasFineLocation()
         val wifiEnabled = (getSystemService(Context.WIFI_SERVICE) as WifiManager).isWifiEnabled
         val issue = when {
@@ -513,7 +520,13 @@ class AttendancePresenceService : Service() {
         var subscribed = false
         var best = initial
         try {
-            fused.requestLocationUpdates(request, callback, mainLooper).awaitResult()
+            if (!hasFineLocation()) return initial
+            try {
+                fused.requestLocationUpdates(request, callback, mainLooper).awaitResult()
+            } catch (e: SecurityException) {
+                Log.w(tag, "Location permission revoked during refinement", e)
+                return initial
+            }
             subscribed = true
             withTimeoutOrNull(REFINE_WINDOW_MS) {
                 while (currentCoroutineContext().isActive) {
@@ -538,7 +551,13 @@ class AttendancePresenceService : Service() {
         } catch (e: Exception) {
             Log.w(tag, "Short fused-location refinement unavailable; retaining original fix", e)
         } finally {
-            if (subscribed) fused.removeLocationUpdates(callback)
+            if (subscribed) {
+                try {
+                    fused.removeLocationUpdates(callback)
+                } catch (e: SecurityException) {
+                    Log.w(tag, "Location permission revoked during cleanup", e)
+                }
+            }
             fixes.close()
         }
         Log.i(tag, "Fused fix refinement: initial=${initial.accuracy}m, best=${best.accuracy}m")
