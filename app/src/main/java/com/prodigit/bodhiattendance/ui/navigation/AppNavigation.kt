@@ -288,7 +288,16 @@ fun AppNavigation() {
         // ====================================================
 
         composable(ROUTE_DEVICE_REPLACEMENT) {
-            com.prodigit.bodhiattendance.ui.devicereplacement.DeviceReplacementScreen()
+            com.prodigit.bodhiattendance.ui.devicereplacement.DeviceReplacementScreen(
+                onRecoveryCompleted = {
+                    // Re-run every normal device, onboarding, trusted-time and
+                    // Room reconciliation gate. Never jump directly to dashboard.
+                    navController.navigate(ROUTE_LAUNCH) {
+                        popUpTo(ROUTE_DEVICE_REPLACEMENT) { inclusive = true }
+                        launchSingleTop = true
+                    }
+                }
+            )
         }
 
         composable(
