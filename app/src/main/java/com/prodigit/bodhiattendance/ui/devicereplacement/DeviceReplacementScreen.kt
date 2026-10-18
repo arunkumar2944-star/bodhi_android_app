@@ -4,6 +4,11 @@ import android.os.Build
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.foundation.background
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.ui.graphics.Color
+import com.prodigit.bodhiattendance.ui.common.AppBackground
+import com.prodigit.bodhiattendance.ui.common.AppMasterHeader
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -153,11 +158,31 @@ fun DeviceReplacementScreen(onRecoveryCompleted: () -> Unit = {}) {
         }
     }
 
-    Column(
-        modifier = Modifier.fillMaxSize().verticalScroll(rememberScrollState())
-            .padding(horizontal = 24.dp, vertical = 28.dp),
-        verticalArrangement = Arrangement.spacedBy(16.dp)
-    ) {
+    // Recovery is outside the normal bottom-navigation graph, but it must
+    // retain the same application branding and background as other pages.
+    // No bottom tabs or notification navigation while registration is blocked.
+    AppBackground {
+        Column(modifier = Modifier.fillMaxSize().imePadding()) {
+            AppMasterHeader()
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .weight(1f)
+                    .verticalScroll(rememberScrollState())
+                    .padding(horizontal = 18.dp, vertical = 12.dp),
+                verticalArrangement = Arrangement.spacedBy(14.dp)
+            ) {
+                Surface(
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = RoundedCornerShape(20.dp),
+                    color = MaterialTheme.colorScheme.surface.copy(alpha = 0.96f),
+                    tonalElevation = 2.dp,
+                    shadowElevation = 3.dp
+                ) {
+                    Column(
+                        modifier = Modifier.fillMaxWidth().padding(18.dp),
+                        verticalArrangement = Arrangement.spacedBy(16.dp)
+                    ) {
         Text("Secure device recovery", style = MaterialTheme.typography.headlineSmall)
         Text(
             "Only a manager-approved installation can access attendance. Clearing app data or changing phones requires verification.",
@@ -284,5 +309,9 @@ fun DeviceReplacementScreen(onRecoveryCompleted: () -> Unit = {}) {
             }
         }
         message?.let { Text(it, color = MaterialTheme.colorScheme.onSurfaceVariant) }
+                    }
+                }
+            }
+        }
     }
 }
