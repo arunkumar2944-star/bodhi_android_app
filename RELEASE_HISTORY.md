@@ -1,0 +1,32 @@
+# Bodhi Attendance — Android release history
+
+This file is kept in Git alongside the Android Studio project. The **source of truth for the build version** is `app/build.gradle.kts` under `defaultConfig`. Release-history entries reflect repository changes, not proof of a published/signed APK.
+
+| Version | versionCode | Date (IST) | Status | Summary |
+| --- | ---: | --- | --- | --- |
+| 2.1.0 | 6 | 2026-10-18 | Prepared; E2E pending | Device-bound JWT compatibility upgrade, approved-device activation/refresh handling, recovery security workflow and monitoring improvements from recent development |
+| 2.0 | 5 | Before 2026-10-18 | Previous configuration | Historical version found in Gradle before this bump; exact distribution date and earlier feature list not established |
+
+## 2.1.0 — 2026-10-18
+
+**Build metadata:** `versionName = "2.1.0"`, `versionCode = 6`.
+
+**Changes:**
+- Detect locally when a stored Android JWT lacks current installation-binding claims.
+- For approved installations, upgrade a legacy access JWT through backend-validated Android session activation when no refresh credential exists.
+- Use refresh rotation when a stored refresh credential exists, rather than continuing to use an incompatible legacy token.
+- Keep revoked-session and replaced-device enforcement on the server; do not clear app data to fix a token mismatch.
+- Includes the recent device-replacement recovery UI and associated security-evidence updates already merged on the development branch.
+
+**Verification at entry:** Earlier compatibility PR #15 passed GitHub Android build and departure engine regression tests. This version bump requires its own build check. Real-device E2E, release signing, publication and store distribution are **not yet confirmed**.
+
+**Backend dependency:** Backend device-bound Android session enforcement in `CRM_TEST_Backend/main` and CRM `testing-branch`. Hosted deployment/version and end-to-end authorization must be verified separately.
+
+## Release management policy
+
+1. For every distributable Android build, increase `versionCode` **strictly above all previously distributed builds**. Never reuse a published code.
+2. Update `versionName` to represent the release (e.g. `2.1.1`, `2.2.0`). A source-only experiment need not trigger a release.
+3. Add a new entry to this file noting IST date, changes, backend compatibility, CI evidence, sign-off status, and migration notes. Preserve older entries.
+4. Keep the release tag and Git SHA after publishing; use an annotated tag such as `android-v2.1.0` **only after** signing and release approval.
+5. In Android Studio, view version metadata in `app/build.gradle.kts`; view historical release notes here. Git history and tags preserve the exact sources associated with each release.
+6. Updating the version does **not** install an APK on devices or guarantee an upgrade: signing certificate and application ID must remain unchanged for an in-place upgrade. Never clear Room data as part of a normal update.

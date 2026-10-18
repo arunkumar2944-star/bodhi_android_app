@@ -48,10 +48,10 @@ android {
             36
 
         versionCode =
-            5
+            6
 
         versionName =
-            "2.0"
+            "2.1.0"
 
         testInstrumentationRunner =
             "androidx.test.runner.AndroidJUnitRunner"
