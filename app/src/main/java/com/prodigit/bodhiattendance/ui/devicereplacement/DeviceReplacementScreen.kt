@@ -121,7 +121,8 @@ fun DeviceReplacementScreen(onRecoveryCompleted: () -> Unit = {}) {
     }
 
     var evidenceSubmitted by remember { mutableStateOf(false) }
-    LaunchedEffect(currentRequest?.id, currentRequest?.status) {
+    var activationRetry by remember { mutableIntStateOf(0) }
+    LaunchedEffect(currentRequest?.id, currentRequest?.status, activationRetry) {
         val request = currentRequest ?: return@LaunchedEffect
         if (request.status == "COMPLETED") {
             onRecoveryCompleted()
@@ -206,8 +207,8 @@ fun DeviceReplacementScreen(onRecoveryCompleted: () -> Unit = {}) {
                         )
                     }
                 }
-                OutlinedButton(onClick = { loading = true; refreshSequence++ }, modifier = Modifier.fillMaxWidth()) {
-                    Text("Refresh request status")
+                OutlinedButton(onClick = { loading = true; refreshSequence++; activationRetry++ }, modifier = Modifier.fillMaxWidth()) {
+                    Text("Refresh / retry activation")
                 }
             }
             else -> {
