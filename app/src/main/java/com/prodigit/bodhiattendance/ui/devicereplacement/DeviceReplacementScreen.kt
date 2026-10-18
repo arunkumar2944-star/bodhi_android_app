@@ -44,6 +44,9 @@ data class ReplacementRequestRecord(
     val new_device_name: String? = null
 )
 
+data class ActivationRequest(val device_id: String)
+data class ActivationResult(val success: Boolean = false, val status: String? = null)
+
 data class ReplacementHistoryResult(
     val success: Boolean = false,
     val requests: List<ReplacementRequestRecord> = emptyList()
@@ -56,12 +59,15 @@ interface DeviceReplacementApi {
         @Body body: ReplacementRequestBody
     ): Response<ReplacementRequestResult>
 
+    @POST("api/v1/device-replacements/activate")
+    suspend fun activate(@Header("Authorization") token: String, @Body body: ActivationRequest): Response<ActivationResult>
+
     @GET("api/v1/device-replacements/requests/mine")
     suspend fun mine(@Header("Authorization") token: String): Response<ReplacementHistoryResult>
 }
 
 @Composable
-fun DeviceReplacementScreen() {
+fun DeviceReplacementScreen(onRecoveryCompleted: () -> Unit = {}) {
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
     val installationId = remember { DeviceIdManager(context).getOrCreateDeviceId() }
@@ -115,11 +121,34 @@ fun DeviceReplacementScreen() {
     }
 
     var evidenceSubmitted by remember { mutableStateOf(false) }
-    LaunchedEffect(currentRequest?.id) {
-        val request = currentRequest
-        if (request != null && request.status in setOf("PENDING", "APPROVED")) {
+    LaunchedEffect(currentRequest?.id, currentRequest?.status) {
+        val request = currentRequest ?: return@LaunchedEffect
+        if (request.status == "COMPLETED") {
+            onRecoveryCompleted()
+            return@LaunchedEffect
+        }
+        if (request.status in setOf("PENDING", "APPROVED")) {
             evidenceSubmitted = com.prodigit.bodhiattendance.core.device.DeviceSecurityEvidence
                 .submitEvidence(context, installationId)
+            if (request.status == "APPROVED" && evidenceSubmitted) {
+                try {
+                    val token = tokenManager.usableAccessToken()
+                    if (!token.isNullOrBlank()) {
+                        val result = RetrofitClient.deviceReplacementApi.activate(
+                            "Bearer $token", ActivationRequest(installationId)
+                        )
+                        if (result.isSuccessful && result.body()?.status == "RECOVERY_COMPLETED") {
+                            onRecoveryCompleted()
+                        } else {
+                            message = "Approved — secure activation pending (HTTP ${result.code()}). Retry after verification."
+                        }
+                    }
+                } catch (e: CancellationException) {
+                    throw e
+                } catch (e: Exception) {
+                    message = "Approved — waiting for CRM secure activation."
+                }
+            }
         }
     }
 
