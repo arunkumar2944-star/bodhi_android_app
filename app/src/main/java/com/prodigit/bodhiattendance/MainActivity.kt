@@ -1,6 +1,9 @@
 package com.prodigit.bodhiattendance
 
 import android.os.Bundle
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.imePadding
+import androidx.compose.ui.Modifier
 import androidx.lifecycle.lifecycleScope
 import kotlinx.coroutines.launch
 import com.prodigit.bodhiattendance.core.monitoring.AttendanceMonitorStartGate
@@ -86,6 +89,7 @@ class MainActivity : FragmentActivity() {
             // contrast reliable even when the device is in dark mode.
             CRMAttendanceTheme(darkTheme = false, dynamicColor = false) {
                 Surface(
+                    modifier = Modifier.fillMaxSize().imePadding(),
                     color = MaterialTheme.colorScheme.background
                 ) {
 
