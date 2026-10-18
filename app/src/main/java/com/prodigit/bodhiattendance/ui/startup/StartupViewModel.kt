@@ -447,6 +447,13 @@ class StartupViewModel(
                     }
 
 
+                    // Collect continuity baseline for this approved installation.
+                    // Failure never permits an unknown device to enter attendance.
+                    viewModelScope.launch {
+                        com.prodigit.bodhiattendance.core.device.DeviceSecurityEvidence
+                            .submitEvidence(appContext, deviceId)
+                    }
+
                     // =============================================
                     // ONBOARDING
                     // =============================================
