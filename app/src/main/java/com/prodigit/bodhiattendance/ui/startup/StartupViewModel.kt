@@ -848,6 +848,12 @@ class StartupViewModel(
                 }
 
 
+                "USER_HAS_ACTIVE_DEVICE" -> {
+                    Log.w("STARTUP_DEBUG", "Account registered to another installation; requesting replacement approval")
+                    _networkError.value = false
+                    _destination.value = StartupDestination.DEVICE_REPLACEMENT
+                }
+
                 // =================================================
                 // DEVICE DISABLED
                 // =================================================
