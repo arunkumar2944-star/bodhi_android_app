@@ -21,7 +21,8 @@ import retrofit2.http.POST
 data class ReplacementRequestBody(
     val device_id: String,
     val device_name: String,
-    val reason: String
+    val reason: String,
+    val request_type: String
 )
 data class ReplacementRequestResult(val status: String? = null, val message: String? = null)
 interface DeviceReplacementApi {
@@ -37,6 +38,7 @@ fun DeviceReplacementScreen() {
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
     var reason by remember { mutableStateOf("") }
+    var requestType by remember { mutableStateOf("APP_DATA_RESET") }
     var submitting by remember { mutableStateOf(false) }
     var message by remember { mutableStateOf<String?>(null) }
     var submitted by remember { mutableStateOf(false) }
@@ -57,12 +59,29 @@ fun DeviceReplacementScreen() {
                 Text("If this is your original phone, explain that in your reason. Your manager or authorized administrator will verify it. The old registration remains active until secure activation is completed.")
             }
         }
+        Text("What happened?", style = MaterialTheme.typography.titleMedium)
+        listOf(
+            "APP_DATA_RESET" to "Same phone — app data cleared or phone reset",
+            "PHONE_REPLACEMENT" to "Different phone — replace registered device"
+        ).forEach { (code, label) ->
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                RadioButton(selected = requestType == code, onClick = { if (!submitted) requestType = code })
+                Text(label, modifier = Modifier.weight(1f))
+            }
+        }
+        Text(
+            if (requestType == "APP_DATA_RESET")
+                "We cannot verify a factory-reset phone from its new app ID alone. An authorized administrator must confirm your identity and recover access securely."
+            else "A manager or authorized administrator must approve the replacement before the old registration is revoked and this new installation is activated.",
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            style = MaterialTheme.typography.bodySmall
+        )
         OutlinedTextField(
             value = reason,
             onValueChange = { if(it.length <= 1000) reason = it },
             modifier = Modifier.fillMaxWidth(),
             minLines = 3,
-            label = { Text("Reason for changing device") },
+            label = { Text(if (requestType == "APP_DATA_RESET") "Describe the reset or data loss" else "Reason for changing phone") },
             supportingText = { Text("Please provide at least 10 characters. Do not include passwords.") },
             enabled = !submitting && !submitted
         )
@@ -81,7 +100,8 @@ fun DeviceReplacementScreen() {
                                 ReplacementRequestBody(
                                     id,
                                     android.os.Build.MANUFACTURER + " " + android.os.Build.MODEL,
-                                    reason.trim()
+                                    reason.trim(),
+                                    requestType
                                 )
                             )
                             if (response.isSuccessful && response.body()?.status == "REPLACEMENT_PENDING_APPROVAL") {
@@ -103,7 +123,7 @@ fun DeviceReplacementScreen() {
                 }
             },
             modifier = Modifier.fillMaxWidth()
-        ) { Text(if (submitting) "Submitting…" else "Request device replacement") }
+        ) { Text(if (submitting) "Submitting…" else if (requestType == "APP_DATA_RESET") "Request access recovery" else "Request device change") }
         message?.let { Text(it, color = MaterialTheme.colorScheme.onSurfaceVariant) }
     }
 }
