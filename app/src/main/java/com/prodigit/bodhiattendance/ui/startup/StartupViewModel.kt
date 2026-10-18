@@ -409,12 +409,11 @@ class StartupViewModel(
 
                         Log.e(
                             "STARTUP_DEBUG",
-                            "Device ID mismatch"
+                            "CRM device identity mismatch; blocking access rather than onboarding"
                         )
 
-
                         _destination.value =
-                            StartupDestination.ONBOARDING
+                            StartupDestination.DEVICE_BLOCKED
 
                         return@onSuccess
                     }
