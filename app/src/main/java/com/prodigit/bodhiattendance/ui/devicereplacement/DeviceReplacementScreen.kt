@@ -1,6 +1,10 @@
 package com.prodigit.bodhiattendance.ui.devicereplacement
 
 import android.os.Build
+import java.time.Instant
+import java.time.ZoneId
+import java.time.format.DateTimeFormatter
+import java.util.Locale
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
@@ -70,6 +74,15 @@ interface DeviceReplacementApi {
     @GET("api/v1/device-replacements/requests/mine")
     suspend fun mine(@Header("Authorization") token: String): Response<ReplacementHistoryResult>
 }
+
+private fun formatSubmittedAt(iso: String): String =
+    try {
+        DateTimeFormatter.ofPattern("dd MMM yyyy, hh:mm a", Locale.ENGLISH)
+            .withZone(ZoneId.of("Asia/Kolkata"))
+            .format(Instant.parse(iso))
+    } catch (_: Exception) {
+        iso
+    }
 
 @Composable
 fun DeviceReplacementScreen(onRecoveryCompleted: () -> Unit = {}) {
@@ -163,13 +176,20 @@ fun DeviceReplacementScreen(onRecoveryCompleted: () -> Unit = {}) {
     // No bottom tabs or notification navigation while registration is blocked.
     AppBackground {
         Column(modifier = Modifier.fillMaxSize()) {
-            AppMasterHeader()
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .statusBarsPadding()
+                    .padding(top = 6.dp)
+            ) {
+                AppMasterHeader()
+            }
             Column(
                 modifier = Modifier
                     .fillMaxWidth()
                     .weight(1f)
                     .verticalScroll(rememberScrollState())
-                    .padding(horizontal = 18.dp, vertical = 12.dp),
+                    .padding(horizontal = 18.dp, vertical = 8.dp),
                 verticalArrangement = Arrangement.spacedBy(14.dp)
             ) {
                 Surface(
@@ -181,7 +201,7 @@ fun DeviceReplacementScreen(onRecoveryCompleted: () -> Unit = {}) {
                 ) {
                     Column(
                         modifier = Modifier.fillMaxWidth().padding(18.dp),
-                        verticalArrangement = Arrangement.spacedBy(16.dp)
+                        verticalArrangement = Arrangement.spacedBy(12.dp)
                     ) {
         Text("Secure device recovery", style = MaterialTheme.typography.headlineSmall)
         Text(
@@ -213,13 +233,16 @@ fun DeviceReplacementScreen(onRecoveryCompleted: () -> Unit = {}) {
                     "COMPLETED" -> "Recovery completed"
                     else -> "Recovery status"
                 }
-                Card(colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.primaryContainer)) {
+                Card(
+                    shape = RoundedCornerShape(18.dp),
+                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.85f))
+                ) {
                     Column(Modifier.padding(18.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
                         Text(title, style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
                         Text("Request #${request.id}")
                         Text(if (evidenceSubmitted) "Device security evidence submitted for CRM verification" else "Device security evidence pending", style = MaterialTheme.typography.bodySmall)
                         Text(if (request.request_type == "APP_DATA_RESET") "Same phone — app data cleared" else "Different phone — replacement")
-                        request.created_at?.let { Text("Submitted: $it", style = MaterialTheme.typography.bodySmall) }
+                        request.created_at?.let { Text("Submitted: ${formatSubmittedAt(it)}", style = MaterialTheme.typography.bodySmall) }
                         request.reason?.let { Text("Reason: $it") }
                         request.review_remarks?.takeIf { it.isNotBlank() }?.let { Text("Manager remarks: $it") }
                         Text(
@@ -232,7 +255,11 @@ fun DeviceReplacementScreen(onRecoveryCompleted: () -> Unit = {}) {
                         )
                     }
                 }
-                OutlinedButton(onClick = { loading = true; refreshSequence++; activationRetry++ }, modifier = Modifier.fillMaxWidth()) {
+                OutlinedButton(
+                    onClick = { loading = true; refreshSequence++; activationRetry++ },
+                    modifier = Modifier.fillMaxWidth().heightIn(min = 52.dp),
+                    shape = RoundedCornerShape(14.dp)
+                ) {
                     Text("Refresh / retry activation")
                 }
             }
