@@ -114,6 +114,15 @@ fun DeviceReplacementScreen() {
         }
     }
 
+    var evidenceSubmitted by remember { mutableStateOf(false) }
+    LaunchedEffect(currentRequest?.id) {
+        val request = currentRequest
+        if (request != null && request.status in setOf("PENDING", "APPROVED")) {
+            evidenceSubmitted = com.prodigit.bodhiattendance.core.device.DeviceSecurityEvidence
+                .submitEvidence(context, installationId)
+        }
+    }
+
     Column(
         modifier = Modifier.fillMaxSize().verticalScroll(rememberScrollState())
             .padding(horizontal = 24.dp, vertical = 28.dp),
@@ -153,6 +162,7 @@ fun DeviceReplacementScreen() {
                     Column(Modifier.padding(18.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
                         Text(title, style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
                         Text("Request #${request.id}")
+                        Text(if (evidenceSubmitted) "Device security evidence submitted for CRM verification" else "Device security evidence pending", style = MaterialTheme.typography.bodySmall)
                         Text(if (request.request_type == "APP_DATA_RESET") "Same phone — app data cleared" else "Different phone — replacement")
                         request.created_at?.let { Text("Submitted: $it", style = MaterialTheme.typography.bodySmall) }
                         request.reason?.let { Text("Reason: $it") }
