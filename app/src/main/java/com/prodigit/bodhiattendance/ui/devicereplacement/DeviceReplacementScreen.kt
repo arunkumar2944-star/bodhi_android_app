@@ -1,5 +1,6 @@
 package com.prodigit.bodhiattendance.ui.devicereplacement
 
+import android.os.Build
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
@@ -7,14 +8,18 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.platform.LocalContext
 import com.prodigit.bodhiattendance.core.device.DeviceIdManager
 import com.prodigit.bodhiattendance.core.network.RetrofitClient
 import com.prodigit.bodhiattendance.core.session.AndroidTokenManager
+import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import retrofit2.Response
 import retrofit2.http.Body
+import retrofit2.http.GET
 import retrofit2.http.Header
 import retrofit2.http.POST
 
@@ -24,106 +29,220 @@ data class ReplacementRequestBody(
     val reason: String,
     val request_type: String
 )
+
 data class ReplacementRequestResult(val status: String? = null, val message: String? = null)
+
+data class ReplacementRequestRecord(
+    val id: Long,
+    val status: String,
+    val request_type: String,
+    val reason: String? = null,
+    val review_remarks: String? = null,
+    val created_at: String? = null,
+    val reviewed_at: String? = null,
+    val new_device_id: String? = null,
+    val new_device_name: String? = null
+)
+
+data class ReplacementHistoryResult(
+    val success: Boolean = false,
+    val requests: List<ReplacementRequestRecord> = emptyList()
+)
+
 interface DeviceReplacementApi {
     @POST("api/v1/device-replacements/requests")
     suspend fun request(
         @Header("Authorization") token: String,
         @Body body: ReplacementRequestBody
-    ): retrofit2.Response<ReplacementRequestResult>
+    ): Response<ReplacementRequestResult>
+
+    @GET("api/v1/device-replacements/requests/mine")
+    suspend fun mine(@Header("Authorization") token: String): Response<ReplacementHistoryResult>
 }
 
 @Composable
 fun DeviceReplacementScreen() {
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
+    val installationId = remember { DeviceIdManager(context).getOrCreateDeviceId() }
+    val tokenManager = remember { AndroidTokenManager(context) }
+
     var reason by remember { mutableStateOf("") }
     var requestType by remember { mutableStateOf("APP_DATA_RESET") }
     var submitting by remember { mutableStateOf(false) }
+    var loading by remember { mutableStateOf(true) }
+    var verified by remember { mutableStateOf(false) }
+    var refreshSequence by remember { mutableIntStateOf(0) }
     var message by remember { mutableStateOf<String?>(null) }
-    var submitted by remember { mutableStateOf(false) }
-    val id = remember { DeviceIdManager(context).getOrCreateDeviceId() }
+    var currentRequest by remember { mutableStateOf<ReplacementRequestRecord?>(null) }
+
+    // The server, not local UI state, decides whether the employee may submit.
+    // Re-check periodically so a manager decision is shown without app restart.
+    LaunchedEffect(installationId, refreshSequence) {
+        while (true) {
+            try {
+                val token = tokenManager.usableAccessToken()
+                if (token.isNullOrBlank()) {
+                    verified = false
+                    message = "Session unavailable. Sign in again to check your request."
+                } else {
+                    val response = RetrofitClient.deviceReplacementApi.mine("Bearer $token")
+                    if (response.isSuccessful && response.body()?.success == true) {
+                        val requests = response.body()!!.requests
+                        // Backend returns only the current employee's requests, newest first.
+                        // Never unlock a different installation based on an older request.
+                        currentRequest = requests.firstOrNull {
+                            it.new_device_id == installationId &&
+                                it.status in setOf("PENDING", "APPROVED", "COMPLETED")
+                        }
+                        verified = true
+                        message = null
+                    } else {
+                        verified = false
+                        message = "Could not verify request status (HTTP ${response.code()})."
+                    }
+                }
+            } catch (e: CancellationException) {
+                throw e
+            } catch (e: Exception) {
+                verified = false
+                message = "Network unavailable. Your previous request remains saved in CRM."
+            } finally {
+                loading = false
+            }
+            delay(20_000)
+        }
+    }
 
     Column(
         modifier = Modifier.fillMaxSize().verticalScroll(rememberScrollState())
-            .padding(horizontal = 24.dp, vertical = 32.dp),
+            .padding(horizontal = 24.dp, vertical = 28.dp),
         verticalArrangement = Arrangement.spacedBy(16.dp)
     ) {
-        Text("Device already registered", style = MaterialTheme.typography.headlineSmall)
-        Text("Your account has another active app installation. If this is the same physical phone after reinstalling, switching between release and debug builds, or clearing app data, the stored installation identity may have changed. For security, the old identity cannot be copied automatically.",
-            color = MaterialTheme.colorScheme.onSurfaceVariant)
-        Card(colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.primaryContainer)) {
-            Column(Modifier.padding(16.dp)) {
-                Text("Request secure registration recovery or replacement", fontWeight = FontWeight.SemiBold)
-                Spacer(Modifier.height(8.dp))
-                Text("If this is your original phone, explain that in your reason. Your manager or authorized administrator will verify it. The old registration remains active until secure activation is completed.")
-            }
-        }
-        Text("What happened?", style = MaterialTheme.typography.titleMedium)
-        listOf(
-            "APP_DATA_RESET" to "Same phone — app data cleared or phone reset",
-            "PHONE_REPLACEMENT" to "Different phone — replace registered device"
-        ).forEach { (code, label) ->
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                RadioButton(selected = requestType == code, onClick = { if (!submitted) requestType = code })
-                Text(label, modifier = Modifier.weight(1f))
-            }
-        }
+        Text("Secure device recovery", style = MaterialTheme.typography.headlineSmall)
         Text(
-            if (requestType == "APP_DATA_RESET")
-                "We cannot verify a factory-reset phone from its new app ID alone. An authorized administrator must confirm your identity and recover access securely."
-            else "A manager or authorized administrator must approve the replacement before the old registration is revoked and this new installation is activated.",
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-            style = MaterialTheme.typography.bodySmall
+            "Only a manager-approved installation can access attendance. Clearing app data or changing phones requires verification.",
+            color = MaterialTheme.colorScheme.onSurfaceVariant
         )
-        OutlinedTextField(
-            value = reason,
-            onValueChange = { if(it.length <= 1000) reason = it },
-            modifier = Modifier.fillMaxWidth(),
-            minLines = 3,
-            label = { Text(if (requestType == "APP_DATA_RESET") "Describe the reset or data loss" else "Reason for changing phone") },
-            supportingText = { Text("Please provide at least 10 characters. Do not include passwords.") },
-            enabled = !submitting && !submitted
-        )
-        Button(
-            enabled = reason.trim().length >= 10 && !submitting && !submitted,
-            onClick = {
-                submitting = true
-                scope.launch {
-                    try {
-                        val token = AndroidTokenManager(context).usableAccessToken()
-                        if (token.isNullOrBlank()) {
-                            message = "Your session is unavailable. Sign in again."
-                        } else {
-                            val response = RetrofitClient.deviceReplacementApi.request(
-                                "Bearer $token",
-                                ReplacementRequestBody(
-                                    id,
-                                    android.os.Build.MANUFACTURER + " " + android.os.Build.MODEL,
-                                    reason.trim(),
-                                    requestType
-                                )
-                            )
-                            if (response.isSuccessful && response.body()?.status == "REPLACEMENT_PENDING_APPROVAL") {
-                                submitted = true
-                                message = "Request submitted. Contact your administrator for approval."
-                            } else {
-                                message = when(response.code()) {
-                                    409 -> "A replacement may already be pending, or the device is already assigned. Contact your administrator."
-                                    403 -> "Device replacement is not available for this account."
-                                    else -> "Could not submit the request (HTTP ${response.code()}). Please retry."
+
+        when {
+            loading -> {
+                LinearProgressIndicator(modifier = Modifier.fillMaxWidth())
+                Text("Checking your existing request…")
+            }
+            !verified -> {
+                Card {
+                    Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                        Text("Status verification unavailable", fontWeight = FontWeight.SemiBold)
+                        Text("For your security, a new request cannot be submitted until CRM confirms whether one already exists.")
+                    }
+                }
+                Button(onClick = { loading = true; refreshSequence++ }, modifier = Modifier.fillMaxWidth()) {
+                    Text("Retry status check")
+                }
+            }
+            currentRequest != null -> {
+                val request = currentRequest!!
+                val title = when (request.status) {
+                    "PENDING" -> "Waiting for manager approval"
+                    "APPROVED" -> "Manager approved — activation pending"
+                    "COMPLETED" -> "Recovery completed"
+                    else -> "Recovery status"
+                }
+                Card(colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.primaryContainer)) {
+                    Column(Modifier.padding(18.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                        Text(title, style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
+                        Text("Request #${request.id}")
+                        Text(if (request.request_type == "APP_DATA_RESET") "Same phone — app data cleared" else "Different phone — replacement")
+                        request.created_at?.let { Text("Submitted: $it", style = MaterialTheme.typography.bodySmall) }
+                        request.reason?.let { Text("Reason: $it") }
+                        request.review_remarks?.takeIf { it.isNotBlank() }?.let { Text("Manager remarks: $it") }
+                        Text(
+                            when (request.status) {
+                                "PENDING" -> "Your request is recorded in CRM. Editing and duplicate submissions are disabled. This screen checks for updates automatically."
+                                "APPROVED" -> "Your manager has approved the request. Attendance remains blocked until CRM securely revokes the previous binding and activates this installation. Approval alone does not restore credentials."
+                                "COMPLETED" -> "The recovery was completed on the server. Restart the app to pass through registered-device validation and restore attendance state. Do not reuse the old installation identity."
+                                else -> "Check with your manager."
+                            }
+                        )
+                    }
+                }
+                OutlinedButton(onClick = { loading = true; refreshSequence++ }, modifier = Modifier.fillMaxWidth()) {
+                    Text("Refresh request status")
+                }
+            }
+            else -> {
+                Card(colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)) {
+                    Text(
+                        "If you already submitted a request on another installation, contact your manager. Only one pending request per employee is allowed.",
+                        modifier = Modifier.padding(16.dp)
+                    )
+                }
+                Text("What happened?", style = MaterialTheme.typography.titleMedium)
+                listOf(
+                    "APP_DATA_RESET" to "Same phone — app data cleared or phone reset",
+                    "PHONE_REPLACEMENT" to "Different phone — replace registered device"
+                ).forEach { (code, label) ->
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        RadioButton(selected = requestType == code, enabled = !submitting, onClick = { requestType = code })
+                        Text(label, modifier = Modifier.weight(1f))
+                    }
+                }
+                OutlinedTextField(
+                    value = reason,
+                    onValueChange = { if (it.length <= 1000) reason = it },
+                    modifier = Modifier.fillMaxWidth(),
+                    minLines = 3,
+                    label = { Text("Reason for recovery") },
+                    supportingText = { Text("At least 10 characters. Never include your password.") },
+                    enabled = !submitting
+                )
+                Button(
+                    enabled = reason.trim().length >= 10 && !submitting,
+                    modifier = Modifier.fillMaxWidth(),
+                    onClick = {
+                        submitting = true
+                        scope.launch {
+                            try {
+                                val token = tokenManager.usableAccessToken()
+                                if (token.isNullOrBlank()) {
+                                    message = "Session unavailable. Sign in again."
+                                } else {
+                                    val response = RetrofitClient.deviceReplacementApi.request(
+                                        "Bearer $token",
+                                        ReplacementRequestBody(
+                                            installationId,
+                                            "${Build.MANUFACTURER} ${Build.MODEL}",
+                                            reason.trim(),
+                                            requestType
+                                        )
+                                    )
+                                    message = if (response.isSuccessful) {
+                                        "Request submitted. Waiting for manager review."
+                                    } else if (response.code() == 409) {
+                                        "A request may already be pending. Checking CRM status."
+                                    } else {
+                                        "Request failed (HTTP ${response.code()})."
+                                    }
+                                    // Refresh immediately after submit, including HTTP 409.
+                                    refreshSequence++
                                 }
+                            } catch (e: CancellationException) {
+                                throw e
+                            } catch (e: Exception) {
+                                message = "Network unavailable. Checking CRM before allowing another request."
+                                verified = false
+                                refreshSequence++
+                            } finally {
+                                submitting = false
                             }
                         }
-                    } catch (e: kotlinx.coroutines.CancellationException) {
-                        throw e
-                    } catch (e: Exception) {
-                        message = "Network unavailable. Please retry when connected."
-                    } finally { submitting = false }
+                    }
+                ) {
+                    Text(if (submitting) "Submitting…" else "Submit recovery request")
                 }
-            },
-            modifier = Modifier.fillMaxWidth()
-        ) { Text(if (submitting) "Submitting…" else if (requestType == "APP_DATA_RESET") "Request access recovery" else "Request device change") }
+            }
+        }
         message?.let { Text(it, color = MaterialTheme.colorScheme.onSurfaceVariant) }
     }
 }
