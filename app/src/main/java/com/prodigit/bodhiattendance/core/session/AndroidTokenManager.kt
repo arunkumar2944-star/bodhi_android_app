@@ -28,9 +28,19 @@ class AndroidTokenManager(context: Context) {
     suspend fun usableAccessToken(): String? = rotationLock.withLock {
         lastHttpStatus = null
         val current = sessions.getToken() ?: return@withLock null
-        if (!JwtUtils.expiresWithin(current)) return@withLock current
-        val refresh = credentials.get() ?: return@withLock null
         val deviceId = deviceIds.getDeviceId() ?: return@withLock null
+        val bound = JwtUtils.isDeviceBound(current, deviceId)
+        if (bound && !JwtUtils.expiresWithin(current)) return@withLock current
+        val refresh = credentials.get()
+        if (refresh == null) {
+            // One-time compatibility upgrade for an approved device that still
+            // has a valid legacy login JWT but no refresh credential.
+            // The server validates registration and issues a bound session.
+            if (!bound && !JwtUtils.isTokenExpired(current)) {
+                return@withLock activateApprovedSession(current, deviceId)
+            }
+            return@withLock null
+        }
         try {
             val reply = RetrofitClient.androidSessionApi.refresh(AndroidRefreshRequest(deviceId, refresh))
             lastHttpStatus = reply.code()
@@ -59,26 +69,37 @@ class AndroidTokenManager(context: Context) {
 
     suspend fun activateOnApprovedDevice(): Boolean = rotationLock.withLock {
         lastHttpStatus = null
-        if (credentials.get() != null) return@withLock true
         val token = sessions.getToken()?.takeUnless(JwtUtils::isTokenExpired) ?: return@withLock false
         val id = deviceIds.getDeviceId() ?: return@withLock false
+        if (credentials.get() != null && JwtUtils.isDeviceBound(token, id)) return@withLock true
+        if (credentials.get() != null) return@withLock false // Never bypass an existing refresh family.
+        activateApprovedSession(token, id) != null
+    }
+
+    // Called only while rotationLock is held. No recursive mutex acquisition.
+    // A failed upgrade does not erase the legacy session or create fake evidence.
+    private suspend fun activateApprovedSession(token: String, id: String): String? {
         try {
-            val response = RetrofitClient.androidSessionApi.activate("Bearer $token", AndroidDeviceSessionRequest(id))
+            val response = RetrofitClient.androidSessionApi.activate(
+                "Bearer $token", AndroidDeviceSessionRequest(id)
+            )
             lastHttpStatus = response.code()
             val body = response.body()
-            if (response.isSuccessful && body?.success == true && !body.refreshToken.isNullOrBlank()
-                && !body.token.isNullOrBlank()) {
+            if (response.isSuccessful && body?.success == true &&
+                !body.token.isNullOrBlank() && !body.refreshToken.isNullOrBlank() &&
+                JwtUtils.isDeviceBound(body.token, id)) {
                 credentials.put(body.refreshToken)
                 sessions.updateAccessToken(body.token)
-                return@withLock true
+                Log.i("BODHI_SESSION", "Approved installation upgraded to device-bound session")
+                return body.token
             }
-            Log.w("BODHI_SESSION", "Activation failed: HTTP ${response.code()}")
+            Log.w("BODHI_SESSION", "Device session upgrade deferred: HTTP ${response.code()}")
         } catch (error: CancellationException) {
             throw error
         } catch (error: Exception) {
-            Log.w("BODHI_SESSION", "Activation failed: ${error.javaClass.simpleName}")
+            Log.w("BODHI_SESSION", "Device session upgrade deferred: ${error.javaClass.simpleName}")
         }
-        false
+        return null
     }
 
     /** Explicit sign-out: revoke on server before clearing local credentials.
