@@ -48,13 +48,13 @@ fun DeviceReplacementScreen() {
         verticalArrangement = Arrangement.spacedBy(16.dp)
     ) {
         Text("Device already registered", style = MaterialTheme.typography.headlineSmall)
-        Text("Your account is linked to another app installation. For your security, your existing device cannot be copied to this phone.",
+        Text("Your account has another active app installation. If this is the same physical phone after reinstalling, switching between release and debug builds, or clearing app data, the stored installation identity may have changed. For security, the old identity cannot be copied automatically.",
             color = MaterialTheme.colorScheme.onSurfaceVariant)
         Card(colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.primaryContainer)) {
             Column(Modifier.padding(16.dp)) {
-                Text("Request an approved device change", fontWeight = FontWeight.SemiBold)
+                Text("Request secure registration recovery or replacement", fontWeight = FontWeight.SemiBold)
                 Spacer(Modifier.height(8.dp))
-                Text("Your manager or authorized administrator will review the request. The old registration remains active until the replacement is securely activated.")
+                Text("If this is your original phone, explain that in your reason. Your manager or authorized administrator will verify it. The old registration remains active until secure activation is completed.")
             }
         }
         OutlinedTextField(
