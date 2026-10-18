@@ -5,6 +5,20 @@ import org.json.JSONObject
 
 object JwtUtils {
 
+    /** Claims are only a local routing hint; the backend verifies JWT signatures. */
+    fun isDeviceBound(token: String, installationId: String): Boolean {
+        return try {
+        val part = token.split(".").getOrNull(1) ?: return false
+        val bytes = Base64.decode(part, Base64.URL_SAFE or Base64.NO_PADDING or Base64.NO_WRAP)
+        val claims = JSONObject(String(bytes, Charsets.UTF_8))
+        claims.optString("token_type") == "android_device" &&
+            claims.optString("android_device_id") == installationId &&
+            claims.optString("android_session_family").isNotBlank()
+        } catch (_: Exception) {
+            false
+        }
+    }
+
     /** True for expired, invalid, or nearly-expired access tokens. */
     fun expiresWithin(token: String, seconds: Long = 300L): Boolean {
         return try {
