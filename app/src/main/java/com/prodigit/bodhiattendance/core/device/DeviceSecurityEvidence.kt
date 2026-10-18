@@ -30,7 +30,8 @@ data class DeviceEvidenceRequest(
     val challenge: String,
     val public_key_spki: String,
     val signature: String,
-    val android_id: String
+    val android_id: String,
+    val attestation_cert_chain: List<String>? = null
 )
 data class DeviceEvidenceResponse(val success: Boolean = false, val status: String? = null)
 
@@ -51,7 +52,7 @@ interface DeviceEvidenceApi {
 object DeviceSecurityEvidence {
     private const val KEYSTORE = "AndroidKeyStore"
 
-    private fun pair(installationId: String): KeyPair {
+    private fun pair(installationId: String, attestationChallenge: ByteArray): KeyPair {
         val alias = "bodhi-device-proof-${installationId}"
         val store = KeyStore.getInstance(KEYSTORE).apply { load(null) }
         val existing = store.getKey(alias, null)
@@ -65,6 +66,7 @@ object DeviceSecurityEvidence {
             .setAlgorithmParameterSpec(ECGenParameterSpec("secp256r1"))
             .setDigests(KeyProperties.DIGEST_SHA256)
             .setUserAuthenticationRequired(false)
+            .setAttestationChallenge(attestationChallenge)
             .build()
         generator.initialize(spec)
         return generator.generateKeyPair()
@@ -85,10 +87,14 @@ object DeviceSecurityEvidence {
             val androidId = Settings.Secure.getString(
                 context.contentResolver, Settings.Secure.ANDROID_ID
             ) ?: return false
-            val keyPair = pair(installationId)
             val userId = com.prodigit.bodhiattendance.core.session.SessionManager(context).getUserId()
             if (userId <= 0) return false
             val payload = "bodhi-device-proof:v1:$id:$nonce:$installationId:$userId"
+            val keyPair = pair(installationId, payload.toByteArray(Charsets.UTF_8))
+            val store = KeyStore.getInstance(KEYSTORE).apply { load(null) }
+            val chain = store.getCertificateChain("bodhi-device-proof-${installationId}")
+                ?.map { Base64.encodeToString(it.encoded, Base64.NO_WRAP) }
+                ?.takeIf { it.size > 1 }
             val signer = Signature.getInstance("SHA256withECDSA")
             signer.initSign(keyPair.private)
             signer.update(payload.toByteArray(Charsets.UTF_8))
@@ -96,7 +102,7 @@ object DeviceSecurityEvidence {
             val publicKey = Base64.encodeToString(keyPair.public.encoded, Base64.NO_WRAP)
             val response = api.prove(
                 "Bearer $token",
-                DeviceEvidenceRequest(installationId, id, nonce, publicKey, signature, androidId)
+                DeviceEvidenceRequest(installationId, id, nonce, publicKey, signature, androidId, chain)
             )
             return response.isSuccessful && response.body()?.status == "KEY_PROOF_VERIFIED"
         } catch (e: CancellationException) {
