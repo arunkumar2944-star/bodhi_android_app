@@ -162,7 +162,7 @@ fun DeviceReplacementScreen(onRecoveryCompleted: () -> Unit = {}) {
     // retain the same application branding and background as other pages.
     // No bottom tabs or notification navigation while registration is blocked.
     AppBackground {
-        Column(modifier = Modifier.fillMaxSize().imePadding()) {
+        Column(modifier = Modifier.fillMaxSize()) {
             AppMasterHeader()
             Column(
                 modifier = Modifier
