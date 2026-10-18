@@ -10,7 +10,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.platform.LocalContext
-import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.prodigit.bodhiattendance.core.device.DeviceIdManager
 import com.prodigit.bodhiattendance.core.network.RetrofitClient
 import com.prodigit.bodhiattendance.core.session.AndroidTokenManager
