@@ -44,6 +44,9 @@ data class ReplacementRequestRecord(
     val new_device_name: String? = null
 )
 
+data class ActivationRequest(val device_id: String)
+data class ActivationResult(val success: Boolean = false, val status: String? = null)
+
 data class ReplacementHistoryResult(
     val success: Boolean = false,
     val requests: List<ReplacementRequestRecord> = emptyList()
@@ -56,12 +59,15 @@ interface DeviceReplacementApi {
         @Body body: ReplacementRequestBody
     ): Response<ReplacementRequestResult>
 
+    @POST("api/v1/device-replacements/activate")
+    suspend fun activate(@Header("Authorization") token: String, @Body body: ActivationRequest): Response<ActivationResult>
+
     @GET("api/v1/device-replacements/requests/mine")
     suspend fun mine(@Header("Authorization") token: String): Response<ReplacementHistoryResult>
 }
 
 @Composable
-fun DeviceReplacementScreen() {
+fun DeviceReplacementScreen(onRecoveryCompleted: () -> Unit = {}) {
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
     val installationId = remember { DeviceIdManager(context).getOrCreateDeviceId() }
@@ -114,6 +120,39 @@ fun DeviceReplacementScreen() {
         }
     }
 
+    var evidenceSubmitted by remember { mutableStateOf(false) }
+    var activationRetry by remember { mutableIntStateOf(0) }
+    LaunchedEffect(currentRequest?.id, currentRequest?.status, activationRetry) {
+        val request = currentRequest ?: return@LaunchedEffect
+        if (request.status == "COMPLETED") {
+            onRecoveryCompleted()
+            return@LaunchedEffect
+        }
+        if (request.status in setOf("PENDING", "APPROVED")) {
+            evidenceSubmitted = com.prodigit.bodhiattendance.core.device.DeviceSecurityEvidence
+                .submitEvidence(context, installationId)
+            if (request.status == "APPROVED" && evidenceSubmitted) {
+                try {
+                    val token = tokenManager.usableAccessToken()
+                    if (!token.isNullOrBlank()) {
+                        val result = RetrofitClient.deviceReplacementApi.activate(
+                            "Bearer $token", ActivationRequest(installationId)
+                        )
+                        if (result.isSuccessful && result.body()?.status == "RECOVERY_COMPLETED") {
+                            onRecoveryCompleted()
+                        } else {
+                            message = "Approved — secure activation pending (HTTP ${result.code()}). Retry after verification."
+                        }
+                    }
+                } catch (e: CancellationException) {
+                    throw e
+                } catch (e: Exception) {
+                    message = "Approved — waiting for CRM secure activation."
+                }
+            }
+        }
+    }
+
     Column(
         modifier = Modifier.fillMaxSize().verticalScroll(rememberScrollState())
             .padding(horizontal = 24.dp, vertical = 28.dp),
@@ -153,6 +192,7 @@ fun DeviceReplacementScreen() {
                     Column(Modifier.padding(18.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
                         Text(title, style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
                         Text("Request #${request.id}")
+                        Text(if (evidenceSubmitted) "Device security evidence submitted for CRM verification" else "Device security evidence pending", style = MaterialTheme.typography.bodySmall)
                         Text(if (request.request_type == "APP_DATA_RESET") "Same phone — app data cleared" else "Different phone — replacement")
                         request.created_at?.let { Text("Submitted: $it", style = MaterialTheme.typography.bodySmall) }
                         request.reason?.let { Text("Reason: $it") }
@@ -167,8 +207,8 @@ fun DeviceReplacementScreen() {
                         )
                     }
                 }
-                OutlinedButton(onClick = { loading = true; refreshSequence++ }, modifier = Modifier.fillMaxWidth()) {
-                    Text("Refresh request status")
+                OutlinedButton(onClick = { loading = true; refreshSequence++; activationRetry++ }, modifier = Modifier.fillMaxWidth()) {
+                    Text("Refresh / retry activation")
                 }
             }
             else -> {
