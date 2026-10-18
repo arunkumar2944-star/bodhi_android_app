@@ -109,6 +109,8 @@ object RetrofitClient {
         )
     }
 
+    val deviceReplacementApi by lazy { retrofit.create(com.prodigit.bodhiattendance.ui.devicereplacement.DeviceReplacementApi::class.java) }
+
     // ============================================================
     // ATTENDANCE API
     // ============================================================
