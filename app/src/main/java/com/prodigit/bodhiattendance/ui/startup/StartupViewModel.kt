@@ -409,12 +409,11 @@ class StartupViewModel(
 
                         Log.e(
                             "STARTUP_DEBUG",
-                            "Device ID mismatch"
+                            "CRM device identity mismatch; blocking access rather than onboarding"
                         )
 
-
                         _destination.value =
-                            StartupDestination.ONBOARDING
+                            StartupDestination.DEVICE_BLOCKED
 
                         return@onSuccess
                     }
@@ -847,6 +846,12 @@ class StartupViewModel(
                         StartupDestination.ONBOARDING
                 }
 
+
+                "USER_HAS_ACTIVE_DEVICE" -> {
+                    Log.w("STARTUP_DEBUG", "Account registered to another installation; requesting replacement approval")
+                    _networkError.value = false
+                    _destination.value = StartupDestination.DEVICE_REPLACEMENT
+                }
 
                 // =================================================
                 // DEVICE DISABLED

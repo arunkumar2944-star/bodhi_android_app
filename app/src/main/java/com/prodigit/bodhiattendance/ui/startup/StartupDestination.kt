@@ -11,5 +11,7 @@ enum class StartupDestination {
 
     DASHBOARD,
 
+    DEVICE_REPLACEMENT,
+
     DEVICE_BLOCKED
 }

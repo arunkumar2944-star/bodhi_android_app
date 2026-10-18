@@ -89,6 +89,8 @@ private const val ROUTE_ONBOARDING =
 private const val ROUTE_MAIN =
     "main"
 
+private const val ROUTE_DEVICE_REPLACEMENT = "device_replacement"
+
 private const val ROUTE_DEVICE_BLOCKED =
     "device_blocked"
 private const val ROUTE_NOTIFICATIONS = "notifications"
@@ -284,6 +286,10 @@ fun AppNavigation() {
         // ====================================================
         // DEVICE BLOCKED
         // ====================================================
+
+        composable(ROUTE_DEVICE_REPLACEMENT) {
+            com.prodigit.bodhiattendance.ui.devicereplacement.DeviceReplacementScreen()
+        }
 
         composable(
             ROUTE_DEVICE_BLOCKED
@@ -1273,6 +1279,13 @@ private fun StartupRoute(
             // =================================================
             // DEVICE BLOCKED
             // =================================================
+
+            StartupDestination.DEVICE_REPLACEMENT -> {
+                navController.navigate(ROUTE_DEVICE_REPLACEMENT) {
+                    popUpTo(ROUTE_LAUNCH) { inclusive = true }
+                    launchSingleTop = true
+                }
+            }
 
             StartupDestination.DEVICE_BLOCKED -> {
 
