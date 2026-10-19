@@ -57,7 +57,8 @@ fun DashboardScreen(
 
     onRequestsClick: () -> Unit = {},
 
-    onSystemHealthClick: () -> Unit = {}
+    onSystemHealthClick: () -> Unit = {},
+    showOnDuty: Boolean = false
 
 ) {
 
@@ -156,7 +157,8 @@ fun DashboardScreen(
                 onRequestsClick,
 
             onSystemHealthClick =
-                onSystemHealthClick
+                onSystemHealthClick,
+            showOnDuty = showOnDuty
         )
     }
 }
@@ -179,7 +181,8 @@ private fun DashboardContent(
 
     onRequestsClick: () -> Unit,
 
-    onSystemHealthClick: () -> Unit
+    onSystemHealthClick: () -> Unit,
+    showOnDuty: Boolean
 
 ) {
 
@@ -319,7 +322,8 @@ private fun DashboardContent(
                     onRequestsClick,
 
                 onSystemHealthClick =
-                    onSystemHealthClick
+                    onSystemHealthClick,
+                showOnDuty = showOnDuty
             )
         }
 
