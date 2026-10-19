@@ -164,20 +164,21 @@ fun ViewScreen(
     }
 
 
-    var selectedDate by remember { mutableStateOf(attendanceList.firstOrNull()?.date) }
+    val todayKey = remember(live.attendance.today) { com.prodigit.bodhiattendance.ui.live.displayDate(live.attendance.today) }
+    var selectedDate by remember(todayKey) { mutableStateOf<String?>(todayKey) }
     var visibleWeekOffset by remember { mutableStateOf(0) }
     val parser = remember { SimpleDateFormat("dd MMM yyyy", Locale.ENGLISH) }
     val baseSunday = remember {
         Calendar.getInstance().apply {
-            time = parser.parse(attendanceList.firstOrNull()?.date ?: SimpleDateFormat("dd MMM yyyy", Locale.ENGLISH).format(java.util.Date())) ?: java.util.Date()
+            time = parser.parse(todayKey) ?: java.util.Date()
             add(Calendar.DAY_OF_MONTH, -(get(Calendar.DAY_OF_WEEK) - Calendar.SUNDAY))
         }
     }
     var displayedMonth by remember { mutableStateOf(baseSunday.get(Calendar.MONTH)) }
     var displayedYear by remember { mutableStateOf(baseSunday.get(Calendar.YEAR)) }
-    // Start with the month containing the latest attendance, not the preceding Sunday.
+    // Always open the actual current month/week, even when no attendance event exists today.
     val firstRecord = remember { Calendar.getInstance().apply {
-        time = parser.parse(attendanceList.firstOrNull()?.date ?: SimpleDateFormat("dd MMM yyyy", Locale.ENGLISH).format(java.util.Date())) ?: java.util.Date()
+        time = parser.parse(todayKey) ?: java.util.Date()
     } }
     var monthInitialized by remember { mutableStateOf(false) }
     if (!monthInitialized) {
@@ -533,7 +534,7 @@ private fun AttendanceWeekStrip(
     val dayFormat = remember { SimpleDateFormat("EEE", Locale.ENGLISH) }
     val reference = remember {
         Calendar.getInstance().apply {
-            time = parser.parse(attendanceList.firstOrNull()?.date ?: SimpleDateFormat("dd MMM yyyy", Locale.ENGLISH).format(java.util.Date()))
+            time = parser.parse(todayKey)
                 ?: java.util.Date()
             // Anchor every page to Sunday.
             add(Calendar.DAY_OF_MONTH, -(get(Calendar.DAY_OF_WEEK) - Calendar.SUNDAY))
