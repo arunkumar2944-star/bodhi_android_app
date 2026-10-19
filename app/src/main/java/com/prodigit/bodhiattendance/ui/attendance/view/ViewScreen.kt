@@ -543,7 +543,7 @@ private fun AttendanceHistoryHeader() {
         Text(
 
             text =
-                "Browse your latest 90 attendance records and company holidays",
+                "View attendance records and holidays for the past 90 calendar days",
 
             color =
                 Color(
@@ -682,7 +682,12 @@ private fun WeekDayItem(
 private fun MonthlySummarySection(year: Int, month: Int) {
     val live = com.prodigit.bodhiattendance.ui.live.liveUiState()
     val monthKey = "%04d-%02d".format(year, month + 1)
-    val days = live.attendance?.days?.filter { it.date.startsWith(monthKey) }
+    val today = live.attendance?.today?.let { runCatching { java.time.LocalDate.parse(it) }.getOrNull() }
+    val days = live.attendance?.days?.filter { row ->
+        row.date.startsWith(monthKey) && today?.let { todayDate ->
+            runCatching { java.time.LocalDate.parse(row.date).let { !it.isBefore(todayDate.minusDays(89)) && !it.isAfter(todayDate) } }.getOrDefault(false)
+        } == true
+    }
 
     Column(
 
