@@ -199,7 +199,8 @@ fun ViewScreen(
     fun chooseMonth(year: Int, month: Int) {
         val requested = java.time.YearMonth.of(year, month + 1)
         val todayMonth = java.time.YearMonth.parse(live.attendance.today.substring(0, 7))
-        if (requested.isAfter(todayMonth)) return
+        val oldestMonth = todayMonth.atDay(1).let { java.time.LocalDate.parse(live.attendance.today).minusDays(89).withDayOfMonth(1) }
+        if (requested.isAfter(todayMonth) || requested.isBefore(java.time.YearMonth.from(oldestMonth))) return
         displayedYear = year
         displayedMonth = month
         val sunday = Calendar.getInstance().apply {
@@ -242,6 +243,10 @@ fun ViewScreen(
             weekOffset = visibleWeekOffset,
             onWeekOffsetChange = { newOffset ->
                 if (newOffset > 0) return@AttendanceHistoryScreenContent
+                val oldestAllowed = java.time.LocalDate.parse(live.attendance.today).minusDays(89)
+                val targetSunday = (baseSunday.clone() as Calendar).apply { add(Calendar.DAY_OF_MONTH, newOffset * 7) }
+                val targetSaturday = (targetSunday.clone() as Calendar).apply { add(Calendar.DAY_OF_MONTH, 6) }
+                if (targetSaturday.time.before(java.sql.Date.valueOf(oldestAllowed))) return@AttendanceHistoryScreenContent
                 val goingForward = newOffset > visibleWeekOffset
                 visibleWeekOffset = newOffset
                 val edge = (baseSunday.clone() as Calendar).apply {
@@ -313,9 +318,10 @@ private fun AttendanceHistoryScreenContent(
 ) {
 
 
+    val oldestAllowed = java.time.LocalDate.parse(todayKey, java.time.format.DateTimeFormatter.ofPattern("dd MMM yyyy", Locale.ENGLISH)).minusDays(89)
     val monthKey = "%04d-%02d".format(Locale.ENGLISH, displayedYear, displayedMonth + 1)
     val monthRecords = attendanceList.filter { item ->
-        runCatching { java.time.LocalDate.parse(item.date, java.time.format.DateTimeFormatter.ofPattern("dd MMM yyyy", Locale.ENGLISH)).toString().startsWith(monthKey) }.getOrDefault(false)
+        runCatching { java.time.LocalDate.parse(item.date, java.time.format.DateTimeFormatter.ofPattern("dd MMM yyyy", Locale.ENGLISH)).let { !it.isBefore(oldestAllowed) && it.toString().startsWith(monthKey) } }.getOrDefault(false)
     }
 
     var expandedDate by
@@ -589,11 +595,15 @@ private fun AttendanceWeekStrip(
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(2.dp)
         ) {
-            WeekNavigationButton(Icons.Outlined.KeyboardArrowLeft) { onWeekOffsetChange(weekOffset - 1) }
+            val earliestDate = java.time.LocalDate.parse(todayKey, java.time.format.DateTimeFormatter.ofPattern("dd MMM yyyy", Locale.ENGLISH)).minusDays(89)
+            val previousWeekSaturday = java.time.LocalDate.parse(parser.format((reference.clone() as Calendar).apply { add(Calendar.DAY_OF_MONTH, (weekOffset - 1) * 7 + 6) }.time), java.time.format.DateTimeFormatter.ofPattern("dd MMM yyyy", Locale.ENGLISH))
+            if (!previousWeekSaturday.isBefore(earliestDate)) WeekNavigationButton(Icons.Outlined.KeyboardArrowLeft) { onWeekOffsetChange(weekOffset - 1) }
             days.forEach { calendar ->
                 val key = parser.format(calendar.time)
                 val status = holidayInfo(java.time.LocalDate.parse(key, java.time.format.DateTimeFormatter.ofPattern("dd MMM yyyy", Locale.ENGLISH)).toString())?.let { "HOLIDAY" } ?: attendanceList.firstOrNull { it.date == key }?.status
-                val active = calendar.get(Calendar.MONTH) == displayedMonth && calendar.get(Calendar.YEAR) == displayedYear && !calendar.time.after(parser.parse(todayKey) ?: java.util.Date())
+                val calendarDate = java.time.LocalDate.parse(key, java.time.format.DateTimeFormatter.ofPattern("dd MMM yyyy", Locale.ENGLISH))
+                val oldestAllowed = java.time.LocalDate.parse(todayKey, java.time.format.DateTimeFormatter.ofPattern("dd MMM yyyy", Locale.ENGLISH)).minusDays(89)
+                val active = calendar.get(Calendar.MONTH) == displayedMonth && calendar.get(Calendar.YEAR) == displayedYear && !calendarDate.isAfter(oldestAllowed.plusDays(89)) && !calendarDate.isBefore(oldestAllowed)
                 WeekDayItem(
                     modifier = Modifier.weight(1f),
                     day = dayFormat.format(calendar.time),
@@ -2848,11 +2858,8 @@ private fun AttendanceFilterCard(
     var showPicker by remember { mutableStateOf(false) }
     var pickerYear by remember(displayedYear) { mutableStateOf(displayedYear) }
     val currentMonth = java.time.YearMonth.parse(todayKey.let { java.time.LocalDate.parse(it, java.time.format.DateTimeFormatter.ofPattern("dd MMM yyyy", Locale.ENGLISH)).toString().substring(0, 7) })
-    val recordYears = attendanceList.mapNotNull { item ->
-        runCatching { java.time.LocalDate.parse(item.date, java.time.format.DateTimeFormatter.ofPattern("dd MMM yyyy", Locale.ENGLISH)).year }.getOrNull()
-    }
-    val holidayYears = confirmedHolidays.mapNotNull { date -> runCatching { java.time.LocalDate.parse(date).year }.getOrNull() }
-    val earliestYear = (recordYears + holidayYears + currentMonth.year).minOrNull() ?: currentMonth.year
+    val earliestMonth = java.time.YearMonth.from(currentMonth.atDay(1).plusMonths(0).let { java.time.LocalDate.parse(todayKey, java.time.format.DateTimeFormatter.ofPattern("dd MMM yyyy", Locale.ENGLISH)).minusDays(89) })
+    val earliestYear = earliestMonth.year
     if (showPicker) {
         AlertDialog(
             onDismissRequest = { showPicker = false },
@@ -2871,7 +2878,7 @@ private fun AttendanceFilterCard(
                     FlowRow(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
                         val months = java.text.DateFormatSymbols(Locale.ENGLISH).shortMonths
                         (0..11).forEach { month ->
-                            TextButton(enabled = !java.time.YearMonth.of(pickerYear, month + 1).isAfter(currentMonth), onClick = {
+                            TextButton(enabled = java.time.YearMonth.of(pickerYear, month + 1).let { !it.isAfter(currentMonth) && !it.isBefore(earliestMonth) }, onClick = {
                                 onMonthSelected(pickerYear, month)
                                 showPicker = false
                             }) { Text(months[month]) }
