@@ -1775,7 +1775,7 @@ private fun AttendanceDetailsScreenContent(
 
 ) {
 
-    if (attendance.status == "No Record") {
+    if (attendance.status == "No Record" || attendance.status == "HOLIDAY") {
         Column(
             modifier = modifier.fillMaxSize().padding(16.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp)
@@ -1785,7 +1785,7 @@ private fun AttendanceDetailsScreenContent(
             }
             Text("Attendance Details", fontSize = 22.sp, fontWeight = FontWeight.Bold)
             Text(attendance.date, fontSize = 16.sp)
-            Text("No attendance record available for this date.", color = Color(0xFF68718C))
+            Text(if (attendance.status == "HOLIDAY") "HOLIDAY — Company holiday. No attendance required." else "No attendance record available for this date.", color = Color(0xFF68718C))
         }
         return
     }
