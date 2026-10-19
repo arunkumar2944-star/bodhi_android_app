@@ -218,6 +218,7 @@ fun ViewScreen(
 
             attendanceList =
                 attendanceList,
+            todayKey = todayKey,
 
             selectedDate = selectedDate,
             displayedMonth = displayedMonth,
@@ -278,6 +279,7 @@ private fun AttendanceHistoryScreenContent(
     modifier: Modifier,
 
     attendanceList: List<AttendanceViewItem>,
+    todayKey: String,
 
     selectedDate: String?,
     displayedMonth: Int,
@@ -360,6 +362,7 @@ private fun AttendanceHistoryScreenContent(
 
             AttendanceWeekStrip(
                 attendanceList = attendanceList,
+                todayKey = todayKey,
                 selectedDate = selectedDate,
                 displayedMonth = displayedMonth,
                 displayedYear = displayedYear,
@@ -523,6 +526,7 @@ private fun AttendanceHistoryHeader() {
 @Composable
 private fun AttendanceWeekStrip(
     attendanceList: List<AttendanceViewItem>,
+    todayKey: String,
     selectedDate: String?,
     displayedMonth: Int,
     displayedYear: Int,
@@ -532,7 +536,7 @@ private fun AttendanceWeekStrip(
 ) {
     val parser = remember { SimpleDateFormat("dd MMM yyyy", Locale.ENGLISH) }
     val dayFormat = remember { SimpleDateFormat("EEE", Locale.ENGLISH) }
-    val reference = remember {
+    val reference = remember(todayKey) {
         Calendar.getInstance().apply {
             time = parser.parse(todayKey)
                 ?: java.util.Date()
