@@ -138,24 +138,27 @@ fun ViewScreen(
         com.prodigit.bodhiattendance.ui.live.DataUnavailable("Attendance", live.errors["attendance"] ?: live.errors["all"], live.loading)
         return
     }
+    val holidayInfo: (String) -> com.prodigit.bodhiattendance.ui.live.HolidayPresentation? = { date ->
+        com.prodigit.bodhiattendance.ui.live.holidayPresentation(date, live.attendance, live.onDuty)
+    }
     val attendanceList = live.attendance.days.map { day ->
+        val holiday = holidayInfo(day.date)
         AttendanceViewItem(
             date = com.prodigit.bodhiattendance.ui.live.displayDate(day.date),
             day = java.time.LocalDate.parse(day.date).dayOfWeek.toString().lowercase().replaceFirstChar { it.uppercase() },
             checkIn = com.prodigit.bodhiattendance.ui.live.displayTime(day.checkInTimeMs),
             checkOut = if (day.requiresReview) "Day-end closure" else com.prodigit.bodhiattendance.ui.live.displayTime(day.checkOutTimeMs),
             workDuration = com.prodigit.bodhiattendance.ui.live.durationText(day.workMinutes),
-            status = if (day.requiresReview) "Needs review" else when(day.state) { "WORKING" -> "Working"; "ON_BREAK" -> "On Break"; "CHECKED_OUT" -> "Checked Out"; else -> day.state.replace('_',' ') },
+            status = if (day.requiresReview) "Needs review" else if (holiday != null) "HOLIDAY" else when(day.state) { "WORKING" -> "Working"; "ON_BREAK" -> "On Break"; "CHECKED_OUT" -> "Checked Out"; else -> day.state.replace('_',' ') },
             officeName = day.officeName ?: "Office unavailable",
             totalBreak = com.prodigit.bodhiattendance.ui.live.durationText(day.breakMinutes),
             events = day.events,
-            closureReason = day.closureReason
+            closureReason = day.closureReason,
+            holidayTitle = holiday?.title,
+            holidayMessage = holiday?.message
         )
     }
 
-    val holidayInfo: (String) -> com.prodigit.bodhiattendance.ui.live.HolidayPresentation? = { date ->
-        com.prodigit.bodhiattendance.ui.live.holidayPresentation(date, live.attendance, live.onDuty)
-    }
     val confirmedHolidays = live.attendance.holidays.toSet()
 
     // ========================================================
