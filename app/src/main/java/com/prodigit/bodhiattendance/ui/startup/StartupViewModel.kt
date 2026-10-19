@@ -274,8 +274,12 @@ class StartupViewModel(
         // A new installation has a valid login JWT but no registered device
         // or rotating refresh credential yet. Use it for device lookup and
         // onboarding only; runtime still requires device-bound activation.
-        val deviceSessionToken = tokenManager.usableAccessToken()
-        val setupToken = sessionManager.getToken()?.takeUnless {
+        val savedToken = sessionManager.getToken()
+        val deviceSessionToken = if (tokenManager.hasRefreshCredential() ||
+            (savedToken != null && com.prodigit.bodhiattendance.core.session.JwtUtils.isDeviceBound(
+                savedToken, deviceIdManager.getOrCreateDeviceId()
+            ))) tokenManager.usableAccessToken() else null
+        val setupToken = savedToken?.takeUnless {
             com.prodigit.bodhiattendance.core.session.JwtUtils.isTokenExpired(it)
         }?.takeIf { !tokenManager.hasRefreshCredential() }
         val token = deviceSessionToken ?: setupToken
