@@ -101,7 +101,9 @@ data class AttendanceViewItem(
     val lunchBreakEnd: String = "--",
 
     val events: List<com.prodigit.bodhiattendance.data.remote.MobileEvent> = emptyList(),
-    val closureReason: String? = null
+    val closureReason: String? = null,
+    val holidayTitle: String? = null,
+    val holidayMessage: String? = null
 )
 
 
@@ -136,18 +138,24 @@ fun ViewScreen(
         com.prodigit.bodhiattendance.ui.live.DataUnavailable("Attendance", live.errors["attendance"] ?: live.errors["all"], live.loading)
         return
     }
+    val holidayInfo: (String) -> com.prodigit.bodhiattendance.ui.live.HolidayPresentation? = { date ->
+        com.prodigit.bodhiattendance.ui.live.holidayPresentation(date, live.attendance, live.onDuty)
+    }
     val attendanceList = live.attendance.days.map { day ->
+        val holiday = holidayInfo(day.date)
         AttendanceViewItem(
             date = com.prodigit.bodhiattendance.ui.live.displayDate(day.date),
             day = java.time.LocalDate.parse(day.date).dayOfWeek.toString().lowercase().replaceFirstChar { it.uppercase() },
             checkIn = com.prodigit.bodhiattendance.ui.live.displayTime(day.checkInTimeMs),
             checkOut = if (day.requiresReview) "Day-end closure" else com.prodigit.bodhiattendance.ui.live.displayTime(day.checkOutTimeMs),
             workDuration = com.prodigit.bodhiattendance.ui.live.durationText(day.workMinutes),
-            status = if (day.requiresReview) "Needs review" else when(day.state) { "WORKING" -> "Working"; "ON_BREAK" -> "On Break"; "CHECKED_OUT" -> "Checked Out"; else -> day.state.replace('_',' ') },
+            status = if (day.requiresReview) "Needs review" else if (holiday != null) "HOLIDAY" else when(day.state) { "WORKING" -> "Working"; "ON_BREAK" -> "On Break"; "CHECKED_OUT" -> "Checked Out"; else -> day.state.replace('_',' ') },
             officeName = day.officeName ?: "Office unavailable",
             totalBreak = com.prodigit.bodhiattendance.ui.live.durationText(day.breakMinutes),
             events = day.events,
-            closureReason = day.closureReason
+            closureReason = day.closureReason,
+            holidayTitle = holiday?.title,
+            holidayMessage = holiday?.message?.replace("Today is", "This date is")
         )
     }
 
@@ -222,6 +230,7 @@ fun ViewScreen(
                 attendanceList,
             todayKey = todayKey,
             confirmedHolidays = confirmedHolidays,
+            holidayInfo = holidayInfo,
 
             selectedDate = selectedDate,
             displayedMonth = displayedMonth,
@@ -247,7 +256,9 @@ fun ViewScreen(
                             SimpleDateFormat("dd MMM yyyy", Locale.ENGLISH).parse(date)!!
                         ),
                         checkIn = "--", checkOut = "--", workDuration = "--",
-                        status = if (confirmedHolidays.contains(java.time.LocalDate.parse(date, java.time.format.DateTimeFormatter.ofPattern("dd MMM yyyy", Locale.ENGLISH)).toString())) "HOLIDAY" else "No Record", officeName = "--", totalBreak = "--"
+                        status = holidayInfo(java.time.LocalDate.parse(date, java.time.format.DateTimeFormatter.ofPattern("dd MMM yyyy", Locale.ENGLISH)).toString())?.let { "HOLIDAY" } ?: "No Record", officeName = "--", totalBreak = "--",
+                        holidayTitle = holidayInfo(java.time.LocalDate.parse(date, java.time.format.DateTimeFormatter.ofPattern("dd MMM yyyy", Locale.ENGLISH)).toString())?.title,
+                        holidayMessage = holidayInfo(java.time.LocalDate.parse(date, java.time.format.DateTimeFormatter.ofPattern("dd MMM yyyy", Locale.ENGLISH)).toString())?.message?.replace("Today is", "This date is")
                     )
             }
         )
@@ -284,6 +295,7 @@ private fun AttendanceHistoryScreenContent(
     attendanceList: List<AttendanceViewItem>,
     todayKey: String,
     confirmedHolidays: Set<String>,
+    holidayInfo: (String) -> com.prodigit.bodhiattendance.ui.live.HolidayPresentation?,
 
     selectedDate: String?,
     displayedMonth: Int,
@@ -368,6 +380,7 @@ private fun AttendanceHistoryScreenContent(
                 attendanceList = attendanceList,
                 todayKey = todayKey,
                 confirmedHolidays = confirmedHolidays,
+                holidayInfo = holidayInfo,
                 selectedDate = selectedDate,
                 displayedMonth = displayedMonth,
                 displayedYear = displayedYear,
@@ -533,6 +546,7 @@ private fun AttendanceWeekStrip(
     attendanceList: List<AttendanceViewItem>,
     todayKey: String,
     confirmedHolidays: Set<String>,
+    holidayInfo: (String) -> com.prodigit.bodhiattendance.ui.live.HolidayPresentation?,
     selectedDate: String?,
     displayedMonth: Int,
     displayedYear: Int,
@@ -564,7 +578,7 @@ private fun AttendanceWeekStrip(
             WeekNavigationButton(Icons.Outlined.KeyboardArrowLeft) { onWeekOffsetChange(weekOffset - 1) }
             days.forEach { calendar ->
                 val key = parser.format(calendar.time)
-                val status = if (confirmedHolidays.contains(java.time.LocalDate.parse(key, java.time.format.DateTimeFormatter.ofPattern("dd MMM yyyy", Locale.ENGLISH)).toString())) "HOLIDAY" else attendanceList.firstOrNull { it.date == key }?.status
+                val status = holidayInfo(java.time.LocalDate.parse(key, java.time.format.DateTimeFormatter.ofPattern("dd MMM yyyy", Locale.ENGLISH)).toString())?.let { "HOLIDAY" } ?: attendanceList.firstOrNull { it.date == key }?.status
                 val active = calendar.get(Calendar.MONTH) == displayedMonth && calendar.get(Calendar.YEAR) == displayedYear
                 WeekDayItem(
                     modifier = Modifier.weight(1f),
@@ -1785,7 +1799,11 @@ private fun AttendanceDetailsScreenContent(
             }
             Text("Attendance Details", fontSize = 22.sp, fontWeight = FontWeight.Bold)
             Text(attendance.date, fontSize = 16.sp)
-            Text(if (attendance.status == "HOLIDAY") "HOLIDAY — Company holiday. No attendance required." else "No attendance record available for this date.", color = Color(0xFF68718C))
+            if (attendance.status == "HOLIDAY") {
+                Text(attendance.holidayTitle ?: "Company Holiday", fontWeight = FontWeight.Bold, fontSize = 19.sp)
+                Text(attendance.holidayMessage ?: "Regular attendance is not required.", color = Color(0xFF68718C))
+                Text("Attendance status: Holiday — No attendance required", color = Color(0xFF68718C))
+            } else Text("No attendance record available for this date.", color = Color(0xFF68718C))
         }
         return
     }
