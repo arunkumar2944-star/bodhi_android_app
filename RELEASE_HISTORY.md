@@ -1,3 +1,10 @@
+## 2.1.5 — 2026-10-19
+
+- Sync Status now distinguishes queued/retryable/rejected and CRM-acknowledged Room records.
+- Added network-constrained upload retry request and display refresh; requesting a retry does not mark any attendance as accepted.
+- Added production-readiness and consolidated physical E2E checklist at `docs/production-readiness-checklist.md`.
+- Automatic event creation and CRM-authoritative attendance rules unchanged.
+
 ## 2.1.4 — 2026-10-19
 
 - Phase 1: departure confirmation now requires two separately observed accurate, unambiguous outside GPS fixes at least 15 seconds apart and no more than 90 seconds apart.
