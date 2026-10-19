@@ -151,6 +151,8 @@ fun ViewScreen(
         )
     }
 
+    val confirmedHolidays = live.attendance.holidays.toSet()
+
     // ========================================================
     // SELECTED ATTENDANCE
     // ========================================================
@@ -219,6 +221,7 @@ fun ViewScreen(
             attendanceList =
                 attendanceList,
             todayKey = todayKey,
+            confirmedHolidays = confirmedHolidays,
 
             selectedDate = selectedDate,
             displayedMonth = displayedMonth,
@@ -244,7 +247,7 @@ fun ViewScreen(
                             SimpleDateFormat("dd MMM yyyy", Locale.ENGLISH).parse(date)!!
                         ),
                         checkIn = "--", checkOut = "--", workDuration = "--",
-                        status = "No Record", officeName = "--", totalBreak = "--"
+                        status = if (confirmedHolidays.contains(java.time.LocalDate.parse(date, java.time.format.DateTimeFormatter.ofPattern("dd MMM yyyy", Locale.ENGLISH)).toString())) "HOLIDAY" else "No Record", officeName = "--", totalBreak = "--"
                     )
             }
         )
@@ -280,6 +283,7 @@ private fun AttendanceHistoryScreenContent(
 
     attendanceList: List<AttendanceViewItem>,
     todayKey: String,
+    confirmedHolidays: Set<String>,
 
     selectedDate: String?,
     displayedMonth: Int,
@@ -363,6 +367,7 @@ private fun AttendanceHistoryScreenContent(
             AttendanceWeekStrip(
                 attendanceList = attendanceList,
                 todayKey = todayKey,
+                confirmedHolidays = confirmedHolidays,
                 selectedDate = selectedDate,
                 displayedMonth = displayedMonth,
                 displayedYear = displayedYear,
@@ -527,6 +532,7 @@ private fun AttendanceHistoryHeader() {
 private fun AttendanceWeekStrip(
     attendanceList: List<AttendanceViewItem>,
     todayKey: String,
+    confirmedHolidays: Set<String>,
     selectedDate: String?,
     displayedMonth: Int,
     displayedYear: Int,
@@ -558,7 +564,7 @@ private fun AttendanceWeekStrip(
             WeekNavigationButton(Icons.Outlined.KeyboardArrowLeft) { onWeekOffsetChange(weekOffset - 1) }
             days.forEach { calendar ->
                 val key = parser.format(calendar.time)
-                val status = attendanceList.firstOrNull { it.date == key }?.status
+                val status = if (confirmedHolidays.contains(java.time.LocalDate.parse(key, java.time.format.DateTimeFormatter.ofPattern("dd MMM yyyy", Locale.ENGLISH)).toString())) "HOLIDAY" else attendanceList.firstOrNull { it.date == key }?.status
                 val active = calendar.get(Calendar.MONTH) == displayedMonth && calendar.get(Calendar.YEAR) == displayedYear
                 WeekDayItem(
                     modifier = Modifier.weight(1f),
@@ -567,6 +573,7 @@ private fun AttendanceWeekStrip(
                     statusColor = when (status) {
                         "Present", "Working" -> Color(0xFF1AB455)
                         "Absent" -> Color(0xFFF03649)
+                        "HOLIDAY" -> Color(0xFF2563EB)
                         else -> Color(0xFF98A1BB)
                     },
                     selected = active && selectedDate == key,
