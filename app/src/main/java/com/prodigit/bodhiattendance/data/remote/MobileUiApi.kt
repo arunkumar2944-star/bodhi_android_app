@@ -18,7 +18,7 @@ interface MobileUiApi {
 data class MobileReply<T>(val success: Boolean, val data: T?, val message: String?, val unreadCount: Int? = null)
 data class ProfileReply(val success: Boolean, val user: MobileProfile?)
 data class MobileProfile(val id: Int, val first_name: String?, val last_name: String?, val email: String?, val phone: String?, val role: String?)
-data class AttendanceReadModel(val today: String, val serverTimeMs: Long, val days: List<MobileAttendanceDay>)
+data class AttendanceReadModel(val today: String, val serverTimeMs: Long, val days: List<MobileAttendanceDay>, val holidays: List<String> = emptyList())
 data class MobileAttendanceDay(val date: String, val officeName: String?, val officeId: Long?, val state: String, val checkInTimeMs: Long?, val checkOutTimeMs: Long?, val workMinutes: Int?, val breakMinutes: Int?, val events: List<MobileEvent>, val requiresReview: Boolean = false, val closureReason: String? = null)
 data class MobileEvent(val uuid: String, val type: String, val timeMs: Long)
 data class MobileRequest(val id: String, val type: String, val status: String, val requestDate: String, val description: String, val durationMinutes: Int?, val reviewedBy: String?, val reviewedAt: String?, val reviewRemarks: String?)
