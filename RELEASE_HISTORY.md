@@ -4,8 +4,18 @@ This file is kept in Git alongside the Android Studio project. The **source of t
 
 | Version | versionCode | Date (IST) | Status | Summary |
 | --- | ---: | --- | --- | --- |
+| 2.1.1 | 7 | 2026-10-19 | Prepared; E2E pending | Holiday-aware attendance history/dashboard, current-week default, matching On Duty quick access, clearer office policy health state |
 | 2.1.0 | 6 | 2026-10-18 | Prepared; E2E pending | Device-bound JWT compatibility upgrade, approved-device activation/refresh handling, recovery security workflow and monitoring improvements from recent development |
 | 2.0 | 5 | Before 2026-10-18 | Previous configuration | Historical version found in Gradle before this bump; exact distribution date and earlier feature list not established |
+
+## 2.1.1 — 2026-10-19
+
+- History calendar initially selects the CRM current day and week.
+- CRM-confirmed holidays are displayed explicitly in details and Dashboard, including dates without attendance events.
+- Dashboard On Duty quick access shares the bottom-navigation visibility rule.
+- System Health distinguishes unknown office assignment from failed Wi-Fi/BLE, and marks office-specific checks not required on confirmed holidays.
+- Companion backend change: CRM_TEST_Backend PR #19 provides company holiday dates in the mobile attendance read model.
+- Tests and device validation remain required before distributing signed APK.
 
 ## 2.1.0 — 2026-10-18
 
