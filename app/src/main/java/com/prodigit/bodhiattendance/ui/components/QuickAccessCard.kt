@@ -46,7 +46,8 @@ fun QuickAccessCard(
 
     onRequestsClick: () -> Unit = {},
 
-    onSystemHealthClick: () -> Unit = {}
+    onSystemHealthClick: () -> Unit = {},
+    showOnDuty: Boolean = false
 
 ) {
 
@@ -139,7 +140,7 @@ fun QuickAccessCard(
                 )
 
 
-                QuickAccessItem(
+                if (showOnDuty) QuickAccessItem(
                     modifier =
                         Modifier.weight(1f),
 
