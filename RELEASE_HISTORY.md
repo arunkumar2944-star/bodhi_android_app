@@ -1,3 +1,10 @@
+## 2.1.6 — 2026-10-19
+
+- Attendance History now uses an exact rolling 90-calendar-day display window (today plus 89 preceding days).
+- Month picker, weekly navigation, individual date controls, records and monthly presence counts respect the same range.
+- Months outside the range remain visible but disabled; valid months across year boundaries remain selectable.
+- No CRM attendance event, Room data or backend changes.
+
 ## 2.1.5 — 2026-10-19
 
 - Sync Status now distinguishes queued/retryable/rejected and CRM-acknowledged Room records.
