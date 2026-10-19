@@ -155,7 +155,7 @@ fun ViewScreen(
             events = day.events,
             closureReason = day.closureReason,
             holidayTitle = holiday?.title,
-            holidayMessage = holiday?.message
+            holidayMessage = holiday?.message?.replace("Today is", "This date is")
         )
     }
 
@@ -258,7 +258,7 @@ fun ViewScreen(
                         checkIn = "--", checkOut = "--", workDuration = "--",
                         status = holidayInfo(java.time.LocalDate.parse(date, java.time.format.DateTimeFormatter.ofPattern("dd MMM yyyy", Locale.ENGLISH)).toString())?.let { "HOLIDAY" } ?: "No Record", officeName = "--", totalBreak = "--",
                         holidayTitle = holidayInfo(java.time.LocalDate.parse(date, java.time.format.DateTimeFormatter.ofPattern("dd MMM yyyy", Locale.ENGLISH)).toString())?.title,
-                        holidayMessage = holidayInfo(java.time.LocalDate.parse(date, java.time.format.DateTimeFormatter.ofPattern("dd MMM yyyy", Locale.ENGLISH)).toString())?.message
+                        holidayMessage = holidayInfo(java.time.LocalDate.parse(date, java.time.format.DateTimeFormatter.ofPattern("dd MMM yyyy", Locale.ENGLISH)).toString())?.message?.replace("Today is", "This date is")
                     )
             }
         )
