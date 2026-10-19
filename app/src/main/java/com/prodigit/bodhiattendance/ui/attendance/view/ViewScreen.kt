@@ -176,9 +176,9 @@ fun ViewScreen(
 
     val todayKey = remember(live.attendance.today) { com.prodigit.bodhiattendance.ui.live.displayDate(live.attendance.today) }
     var selectedDate by remember(todayKey) { mutableStateOf<String?>(todayKey) }
-    var visibleWeekOffset by remember { mutableStateOf(0) }
+    var visibleWeekOffset by remember(todayKey) { mutableStateOf(0) }
     val parser = remember { SimpleDateFormat("dd MMM yyyy", Locale.ENGLISH) }
-    val baseSunday = remember {
+    val baseSunday = remember(todayKey) {
         Calendar.getInstance().apply {
             time = parser.parse(todayKey) ?: java.util.Date()
             add(Calendar.DAY_OF_MONTH, -(get(Calendar.DAY_OF_WEEK) - Calendar.SUNDAY))
@@ -187,16 +187,19 @@ fun ViewScreen(
     var displayedMonth by remember { mutableStateOf(baseSunday.get(Calendar.MONTH)) }
     var displayedYear by remember { mutableStateOf(baseSunday.get(Calendar.YEAR)) }
     // Always open the actual current month/week, even when no attendance event exists today.
-    val firstRecord = remember { Calendar.getInstance().apply {
+    val firstRecord = remember(todayKey) { Calendar.getInstance().apply {
         time = parser.parse(todayKey) ?: java.util.Date()
     } }
-    var monthInitialized by remember { mutableStateOf(false) }
+    var monthInitialized by remember(todayKey) { mutableStateOf(false) }
     if (!monthInitialized) {
         displayedMonth = firstRecord.get(Calendar.MONTH)
         displayedYear = firstRecord.get(Calendar.YEAR)
         monthInitialized = true
     }
     fun chooseMonth(year: Int, month: Int) {
+        val requested = java.time.YearMonth.of(year, month + 1)
+        val todayMonth = java.time.YearMonth.parse(live.attendance.today.substring(0, 7))
+        if (requested.isAfter(todayMonth)) return
         displayedYear = year
         displayedMonth = month
         val sunday = Calendar.getInstance().apply {
@@ -238,6 +241,7 @@ fun ViewScreen(
             onMonthSelected = ::chooseMonth,
             weekOffset = visibleWeekOffset,
             onWeekOffsetChange = { newOffset ->
+                if (newOffset > 0) return@AttendanceHistoryScreenContent
                 val goingForward = newOffset > visibleWeekOffset
                 visibleWeekOffset = newOffset
                 val edge = (baseSunday.clone() as Calendar).apply {
@@ -309,6 +313,11 @@ private fun AttendanceHistoryScreenContent(
 ) {
 
 
+    val monthKey = "%04d-%02d".format(Locale.ENGLISH, displayedYear, displayedMonth + 1)
+    val monthRecords = attendanceList.filter { item ->
+        runCatching { java.time.LocalDate.parse(item.date, java.time.format.DateTimeFormatter.ofPattern("dd MMM yyyy", Locale.ENGLISH)).toString().startsWith(monthKey) }.getOrDefault(false)
+    }
+
     var expandedDate by
     remember {
 
@@ -366,7 +375,7 @@ private fun AttendanceHistoryScreenContent(
 
         item {
 
-            AttendanceFilterCard(displayedYear, displayedMonth, onMonthSelected)
+            AttendanceFilterCard(displayedYear, displayedMonth, todayKey, attendanceList, confirmedHolidays, onMonthSelected)
         }
 
 
@@ -430,8 +439,13 @@ private fun AttendanceHistoryScreenContent(
         // RECORDS
         // ====================================================
 
+        if (monthRecords.isEmpty()) item {
+            Text("No attendance records returned for this month. This does not mean you were absent.",
+                fontSize = 13.sp, color = Color(0xFF68718C))
+        }
+
         items(
-            attendanceList
+            monthRecords
         ) { attendance ->
 
 
@@ -523,7 +537,7 @@ private fun AttendanceHistoryHeader() {
         Text(
 
             text =
-                "View your latest 90 recorded attendance days",
+                "Browse your latest 90 attendance records and company holidays",
 
             color =
                 Color(
@@ -579,7 +593,7 @@ private fun AttendanceWeekStrip(
             days.forEach { calendar ->
                 val key = parser.format(calendar.time)
                 val status = holidayInfo(java.time.LocalDate.parse(key, java.time.format.DateTimeFormatter.ofPattern("dd MMM yyyy", Locale.ENGLISH)).toString())?.let { "HOLIDAY" } ?: attendanceList.firstOrNull { it.date == key }?.status
-                val active = calendar.get(Calendar.MONTH) == displayedMonth && calendar.get(Calendar.YEAR) == displayedYear
+                val active = calendar.get(Calendar.MONTH) == displayedMonth && calendar.get(Calendar.YEAR) == displayedYear && !calendar.time.after(parser.parse(todayKey) ?: java.util.Date())
                 WeekDayItem(
                     modifier = Modifier.weight(1f),
                     day = dayFormat.format(calendar.time),
@@ -595,7 +609,7 @@ private fun AttendanceWeekStrip(
                     onClick = { if (active) onDateClick(key) }
                 )
             }
-            WeekNavigationButton(Icons.Outlined.KeyboardArrowRight) { onWeekOffsetChange(weekOffset + 1) }
+            if (weekOffset < 0) WeekNavigationButton(Icons.Outlined.KeyboardArrowRight) { onWeekOffsetChange(weekOffset + 1) }
         }
     }
 }
@@ -2826,10 +2840,19 @@ private fun AttendanceBaseCard(
 private fun AttendanceFilterCard(
     displayedYear: Int,
     displayedMonth: Int,
+    todayKey: String,
+    attendanceList: List<AttendanceViewItem>,
+    confirmedHolidays: Set<String>,
     onMonthSelected: (Int, Int) -> Unit
 ) {
     var showPicker by remember { mutableStateOf(false) }
-    var pickerYear by remember { mutableStateOf(displayedYear) }
+    var pickerYear by remember(displayedYear) { mutableStateOf(displayedYear) }
+    val currentMonth = java.time.YearMonth.parse(todayKey.let { java.time.LocalDate.parse(it, java.time.format.DateTimeFormatter.ofPattern("dd MMM yyyy", Locale.ENGLISH)).toString().substring(0, 7) })
+    val recordYears = attendanceList.mapNotNull { item ->
+        runCatching { java.time.LocalDate.parse(item.date, java.time.format.DateTimeFormatter.ofPattern("dd MMM yyyy", Locale.ENGLISH)).year }.getOrNull()
+    }
+    val holidayYears = confirmedHolidays.mapNotNull { date -> runCatching { java.time.LocalDate.parse(date).year }.getOrNull() }
+    val earliestYear = (recordYears + holidayYears + currentMonth.year).minOrNull() ?: currentMonth.year
     if (showPicker) {
         AlertDialog(
             onDismissRequest = { showPicker = false },
@@ -2841,14 +2864,14 @@ private fun AttendanceFilterCard(
                         horizontalArrangement = Arrangement.SpaceBetween,
                         verticalAlignment = Alignment.CenterVertically
                     ) {
-                        TextButton(onClick = { pickerYear-- }) { Text("‹") }
+                        TextButton(onClick = { pickerYear-- }, enabled = pickerYear > earliestYear) { Text("‹") }
                         Text(pickerYear.toString(), fontWeight = FontWeight.Bold)
-                        TextButton(onClick = { pickerYear++ }) { Text("›") }
+                        TextButton(onClick = { pickerYear++ }, enabled = pickerYear < currentMonth.year) { Text("›") }
                     }
                     FlowRow(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
                         val months = java.text.DateFormatSymbols(Locale.ENGLISH).shortMonths
                         (0..11).forEach { month ->
-                            TextButton(onClick = {
+                            TextButton(enabled = !java.time.YearMonth.of(pickerYear, month + 1).isAfter(currentMonth), onClick = {
                                 onMonthSelected(pickerYear, month)
                                 showPicker = false
                             }) { Text(months[month]) }

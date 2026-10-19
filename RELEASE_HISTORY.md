@@ -1,3 +1,11 @@
+## 2.1.3 — 2026-10-19
+
+- Attendance History lists only records from the selected month, not all loaded months.
+- Month chooser restricts future months and uses actual loaded record/calendar years rather than an arbitrary 90-calendar-day cutoff.
+- Week strip prevents future-week navigation and future-date selection.
+- Clarifies that unloaded/no-record months do not mean an employee was absent; monthly absence count remains unavailable until CRM supplies an absence roster.
+- No attendance engine, security, or persistence changes.
+
 ## 2.1.2 — 2026-10-19
 
 - Professional named CRM company holiday, unnamed company holiday, and Sunday weekly holiday notices in Attendance History and Dashboard.
