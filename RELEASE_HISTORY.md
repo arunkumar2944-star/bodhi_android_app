@@ -1,3 +1,9 @@
+## 2.1.2 — 2026-10-19
+
+- Professional named CRM company holiday, unnamed company holiday, and Sunday weekly holiday notices in Attendance History and Dashboard.
+- Existing attendance and approved On Duty remain authoritative over day-off notices.
+- Uses backward-compatible CRM holiday detail metadata; no attendance-writing changes.
+
 # Bodhi Attendance — Android release history
 
 This file is kept in Git alongside the Android Studio project. The **source of truth for the build version** is `app/build.gradle.kts` under `defaultConfig`. Release-history entries reflect repository changes, not proof of a published/signed APK.
