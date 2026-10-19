@@ -26,10 +26,19 @@ class DepartureEvidenceTrackerTest {
         assertTrue(tracker.confirmOutside(61000L))
     }
 
+    @Test fun rapidRepeatedOutsideFixesDoNotConfirmDeparture() {
+        val tracker = DepartureEvidenceTracker()
+        assertFalse(tracker.confirmOutside(1000L))
+        assertFalse(tracker.confirmOutside(2000L))
+        assertFalse(tracker.confirmOutside(14999L))
+        assertTrue(tracker.confirmOutside(16000L))
+    }
+
     @Test fun duplicateAndReversedObservationsDoNotConfirmDeparture() {
         val tracker = DepartureEvidenceTracker()
         tracker.confirmOutside(31000L)
         assertFalse(tracker.confirmOutside(31000L))
         assertFalse(tracker.confirmOutside(1000L))
+        assertTrue(tracker.confirmOutside(61000L))
     }
 }

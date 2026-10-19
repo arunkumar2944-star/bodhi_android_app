@@ -1,3 +1,10 @@
+## 2.1.4 — 2026-10-19
+
+- Phase 1: departure confirmation now requires two separately observed accurate, unambiguous outside GPS fixes at least 15 seconds apart and no more than 90 seconds apart.
+- Duplicate, very rapid, and reversed elapsed-time observations cannot establish a departure; interrupted observation gaps require a fresh pair.
+- Existing CRM-defined grace/maximum absence, office Wi-Fi verification, Room evidence retention, and actual attendance event rules remain unchanged.
+- Regression tests cover rapid fix repeats, time reversal, fresh confirmation and recovery.
+
 ## 2.1.3 — 2026-10-19
 
 - Attendance History lists only records from the selected month, not all loaded months.

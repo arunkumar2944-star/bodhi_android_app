@@ -1,6 +1,6 @@
 # Departure timing and monitoring recovery
 
-An observation gap is uncertainty, not verified office presence. Preserve the existing Room AbsenceGrace/BreakActive timestamp while uncertain; do not emit an event. After a gap, require two fresh, accurate, unambiguous outside fixes no more than 90 seconds apart. Their confirmation permits the engine to use the retained original timestamp. Verified office presence still cancels grace or ends a break. Missing GPS alone never marks absence or checkout.
+An observation gap is uncertainty, not verified office presence. Preserve the existing Room AbsenceGrace/BreakActive timestamp while uncertain; do not emit an event. After a gap, require two fresh, accurate, unambiguous outside fixes 15–90 seconds apart. Rapid repeat/duplicate or reversed timestamps do not qualify. Their confirmation permits the engine to use the retained original timestamp. Verified office presence still cancels grace or ends a break. Missing GPS alone never marks absence or checkout.
 
 The service requests another bounded burst promptly after the first outside observation. Checkout no longer requires a separate, in-memory 90-minute uninterrupted GPS sequence in addition to the CRM maximum-absence policy. Current authentication, daily eligibility, CRM configuration and evidence checks still apply.
 
