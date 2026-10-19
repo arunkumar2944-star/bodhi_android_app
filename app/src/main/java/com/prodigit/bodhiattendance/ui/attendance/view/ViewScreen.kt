@@ -199,8 +199,8 @@ fun ViewScreen(
     fun chooseMonth(year: Int, month: Int) {
         val requested = java.time.YearMonth.of(year, month + 1)
         val todayMonth = java.time.YearMonth.parse(live.attendance.today.substring(0, 7))
-        val oldestMonth = todayMonth.atDay(1).let { java.time.LocalDate.parse(live.attendance.today).minusDays(89).withDayOfMonth(1) }
-        if (requested.isAfter(todayMonth) || requested.isBefore(java.time.YearMonth.from(oldestMonth))) return
+        val oldestMonth = java.time.YearMonth.from(java.time.LocalDate.parse(live.attendance.today).minusDays(89))
+        if (requested.isAfter(todayMonth) || requested.isBefore(oldestMonth)) return
         displayedYear = year
         displayedMonth = month
         val sunday = Calendar.getInstance().apply {
@@ -246,7 +246,7 @@ fun ViewScreen(
                 val oldestAllowed = java.time.LocalDate.parse(live.attendance.today).minusDays(89)
                 val targetSunday = (baseSunday.clone() as Calendar).apply { add(Calendar.DAY_OF_MONTH, newOffset * 7) }
                 val targetSaturday = (targetSunday.clone() as Calendar).apply { add(Calendar.DAY_OF_MONTH, 6) }
-                if (targetSaturday.time.before(java.sql.Date.valueOf(oldestAllowed))) return@AttendanceHistoryScreenContent
+                if (java.time.LocalDate.parse(parser.format(targetSaturday.time), java.time.format.DateTimeFormatter.ofPattern("dd MMM yyyy", Locale.ENGLISH)).isBefore(oldestAllowed)) return@AttendanceHistoryScreenContent
                 val goingForward = newOffset > visibleWeekOffset
                 visibleWeekOffset = newOffset
                 val edge = (baseSunday.clone() as Calendar).apply {
@@ -2858,7 +2858,7 @@ private fun AttendanceFilterCard(
     var showPicker by remember { mutableStateOf(false) }
     var pickerYear by remember(displayedYear) { mutableStateOf(displayedYear) }
     val currentMonth = java.time.YearMonth.parse(todayKey.let { java.time.LocalDate.parse(it, java.time.format.DateTimeFormatter.ofPattern("dd MMM yyyy", Locale.ENGLISH)).toString().substring(0, 7) })
-    val earliestMonth = java.time.YearMonth.from(currentMonth.atDay(1).plusMonths(0).let { java.time.LocalDate.parse(todayKey, java.time.format.DateTimeFormatter.ofPattern("dd MMM yyyy", Locale.ENGLISH)).minusDays(89) })
+    val earliestMonth = java.time.YearMonth.from(java.time.LocalDate.parse(todayKey, java.time.format.DateTimeFormatter.ofPattern("dd MMM yyyy", Locale.ENGLISH)).minusDays(89))
     val earliestYear = earliestMonth.year
     if (showPicker) {
         AlertDialog(
