@@ -1,6 +1,7 @@
 package com.prodigit.bodhiattendance.ui.settings
 
 import androidx.compose.runtime.*
+import kotlinx.coroutines.launch
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.CloudSync
 import androidx.compose.material3.Text
@@ -17,6 +18,7 @@ fun SyncStatusScreen(onBack: () -> Unit) {
     val context = LocalContext.current.applicationContext
     val live = liveUiState()
     val model = liveUiViewModel()
+    val scope = rememberCoroutineScope()
     val rows = live.localEvents
     var retryMessage by remember { mutableStateOf<String?>(null) }
     val queued = rows?.count { it.syncStatus in setOf("PENDING", "SYNCING", "FAILED_RETRYABLE") } ?: 0
@@ -30,13 +32,13 @@ fun SyncStatusScreen(onBack: () -> Unit) {
             PrototypeDetail("Acknowledged by CRM", rows?.count { it.syncStatus == "SYNCED" }?.toString() ?: "Loading")
         }
         if (rows != null && queued == 0) PrototypeInfo("No attendance uploads are currently queued. Rejected records, if any, still require review.")
-        PrototypeAction("Request background upload retry", enabled = rows != null && queued > 0) {
+        PrototypeAction("Request background upload retry", onClick = {
             runCatching { AttendanceBackgroundSync.schedule(context) }
                 .onSuccess { retryMessage = "Network-constrained upload requested. This does not confirm delivery; wait for CRM acknowledgment." }
                 .onFailure { retryMessage = "Could not schedule the upload: ${it.message ?: "unknown error"}" }
-        }
+        }, enabled = rows != null && queued > 0)
         retryMessage?.let { Text(it) }
-        PrototypeAction("Refresh displayed status") { model.refresh() }
+        PrototypeAction("Refresh displayed status", onClick = { scope.launch { model.refresh() } })
         PrototypeInfo("Only CRM acknowledgment marks an event SYNCED. Background uploads depend on network, Android scheduling, and current device authorization. Rejected records remain in local audit history.")
     }
 }
