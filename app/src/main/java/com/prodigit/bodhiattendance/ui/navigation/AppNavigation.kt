@@ -442,12 +442,14 @@ private fun MainApplication(onSignedOut: () -> Unit) {
     // MASTER APPLICATION LAYOUT
     // ========================================================
 
-    MainAppLayout(
-        hasUpcomingOnDuty = live.onDuty?.any { assignment ->
+    val hasUpcomingOnDuty = live.onDuty?.any { assignment ->
             val today = live.attendance?.today?.let { runCatching { java.time.LocalDate.parse(it) }.getOrNull() }
                 ?: java.time.LocalDate.now(java.time.ZoneId.of("Asia/Kolkata"))
             com.prodigit.bodhiattendance.domain.attendance.OnDutyWindow.isVisible(assignment.date, assignment.status, today)
-        } == true,
+        } == true
+
+    MainAppLayout(
+        hasUpcomingOnDuty = hasUpcomingOnDuty,
 
         selectedDestination =
             selectedDestination,
@@ -655,6 +657,7 @@ private fun MainApplication(onSignedOut: () -> Unit) {
             ) {
 
                 DashboardScreen(
+                    showOnDuty = hasUpcomingOnDuty,
 
 
                     // =========================================

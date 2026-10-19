@@ -112,14 +112,14 @@ fun SystemHealthSummaryCard(
     }
     val statusTitle = when {
         attentionCount > 0 -> "Attention Required"
-        policyPending -> "Office Policy Pending"
+        policyPending -> "Office Not Verified"
         pendingCount > 0 -> "Verification Pending"
         else -> "Checks Ready"
     }
     val statusMessage = buildString {
         append("$attentionCount action required • $pendingCount pending")
-        if (policyPending) append(" • Office assignment not verified")
-        append(if (uiState.officeBleRequirement == true) " • BLE required by CRM" else if (uiState.officeBleRequirement == false) " • BLE not required by CRM" else " • BLE policy pending")
+        if (policyPending) append(" • No verified office today; Wi-Fi/BLE policy unknown")
+        append(if (uiState.officeBleRequirement == true) " • BLE required by CRM" else if (uiState.officeBleRequirement == false) " • BLE not required by CRM" else " • BLE policy unknown")
     }
 
     // ========================================================

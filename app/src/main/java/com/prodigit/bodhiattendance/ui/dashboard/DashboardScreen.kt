@@ -7,6 +7,7 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 
 import androidx.compose.material3.Button
@@ -57,7 +58,8 @@ fun DashboardScreen(
 
     onRequestsClick: () -> Unit = {},
 
-    onSystemHealthClick: () -> Unit = {}
+    onSystemHealthClick: () -> Unit = {},
+    showOnDuty: Boolean = false
 
 ) {
 
@@ -67,6 +69,7 @@ fun DashboardScreen(
 
     val live = com.prodigit.bodhiattendance.ui.live.liveUiState()
     val day = live.attendance?.let { read -> read.days.firstOrNull { it.date == read.today } }
+    val holidayToday = live.attendance?.let { read -> read.today in read.holidays } == true
     val uiState = DashboardUiState(
         isLoading = live.loading,
         employeeName = listOfNotNull(live.profile?.first_name, live.profile?.last_name).joinToString(" "),
@@ -80,7 +83,7 @@ fun DashboardScreen(
             day?.state == "ON_DUTY" -> AttendanceWorkStatus.ON_DUTY
             else -> AttendanceWorkStatus.NOT_CHECKED_IN
         },
-        officeName = day?.officeName ?: if (live.attendance == null) "Office unavailable" else "No verified attendance today",
+        officeName = day?.officeName ?: if (holidayToday) "Company holiday — attendance not required" else if (live.attendance == null) "Office unavailable" else "No verified attendance today",
         statusSince = day?.events?.lastOrNull()?.timeMs?.let { com.prodigit.bodhiattendance.ui.live.displayTime(it) },
         syncReady = live.localEvents?.let { rows -> rows.none { it.syncStatus != "SYNCED" } } ?: false,
         checkInTime = day?.checkInTimeMs?.let { com.prodigit.bodhiattendance.ui.live.displayTime(it) },
@@ -145,6 +148,7 @@ fun DashboardScreen(
 
             uiState =
                 uiState,
+            holidayToday = holidayToday,
 
             onAttendanceClick =
                 onAttendanceClick,
@@ -156,7 +160,8 @@ fun DashboardScreen(
                 onRequestsClick,
 
             onSystemHealthClick =
-                onSystemHealthClick
+                onSystemHealthClick,
+            showOnDuty = showOnDuty
         )
     }
 }
@@ -172,6 +177,7 @@ private fun DashboardContent(
     modifier: Modifier = Modifier,
 
     uiState: DashboardUiState,
+    holidayToday: Boolean,
 
     onAttendanceClick: () -> Unit,
 
@@ -179,7 +185,8 @@ private fun DashboardContent(
 
     onRequestsClick: () -> Unit,
 
-    onSystemHealthClick: () -> Unit
+    onSystemHealthClick: () -> Unit,
+    showOnDuty: Boolean
 
 ) {
 
@@ -204,6 +211,15 @@ private fun DashboardContent(
 
     ) {
 
+        if (holidayToday) item {
+            androidx.compose.material3.Card(
+                colors = androidx.compose.material3.CardDefaults.cardColors(containerColor = androidx.compose.ui.graphics.Color(0xFFEBF4FF)),
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Text("HOLIDAY — Today is a company holiday. Regular attendance is not required.",
+                    modifier = Modifier.padding(16.dp), color = androidx.compose.ui.graphics.Color(0xFF174E9C))
+            }
+        }
 
         // ====================================================
         // CURRENT EMPLOYEE STATUS
@@ -319,7 +335,8 @@ private fun DashboardContent(
                     onRequestsClick,
 
                 onSystemHealthClick =
-                    onSystemHealthClick
+                    onSystemHealthClick,
+                showOnDuty = showOnDuty
             )
         }
 

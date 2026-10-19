@@ -74,20 +74,23 @@ fun SystemHealthScreen(
     val live = com.prodigit.bodhiattendance.ui.live.liveUiState()
     val day = live.attendance?.let { read -> read.days.firstOrNull { it.date == read.today } }
     val office = live.configuration?.locations?.firstOrNull { it.id == day?.officeId }
+    val holidayToday = live.attendance?.let { read -> read.today in read.holidays } == true
+    val wifiRequired = if (holidayToday) false else office?.wifiRequired
+    val bleRequired = if (holidayToday) false else office?.bleRequired
     val uiState = diagnostics.copy(
         attendanceConfiguration = HealthItemState(
             status = if (live.configuration == null || live.configuration.locations.isEmpty()) HealthStatus.NOT_CONFIGURED else HealthStatus.READY,
             title = "Attendance Configuration", message = live.configuration?.let { "${it.locations.size} CRM offices loaded" } ?: "Configuration unavailable"),
-        officeWifiRequirement = office?.wifiRequired,
-        officeBleRequirement = office?.bleRequired,
-        officeWifi = officeWifiHealth(office?.wifiRequired, office?.wifi.orEmpty().map { it.bssid }, diagnostics.detectedBssid, diagnostics.wifiEnabled),
-        officeBeacon = officeBeaconHealth(office?.bleRequired),
-        bluetoothPermission = when (office?.bleRequired) {
+        officeWifiRequirement = wifiRequired,
+        officeBleRequirement = bleRequired,
+        officeWifi = if (holidayToday) HealthItemState(HealthStatus.NOT_REQUIRED, "Office Wi-Fi Router", "Company holiday: office router check not required today") else officeWifiHealth(wifiRequired, office?.wifi.orEmpty().map { it.bssid }, diagnostics.detectedBssid, diagnostics.wifiEnabled),
+        officeBeacon = if (holidayToday) HealthItemState(HealthStatus.NOT_REQUIRED, "Office BLE", "Company holiday: office beacon check not required today") else officeBeaconHealth(bleRequired),
+        bluetoothPermission = when (bleRequired) {
             true -> diagnostics.bluetoothPermission
             false -> HealthItemState(HealthStatus.NOT_REQUIRED, "Bluetooth Permission", "Not required by this CRM office policy")
             null -> HealthItemState(HealthStatus.NOT_CONFIGURED, "Bluetooth Permission", "Current office policy unavailable")
         },
-        bluetoothService = when (office?.bleRequired) {
+        bluetoothService = when (bleRequired) {
             true -> diagnostics.bluetoothService
             false -> HealthItemState(HealthStatus.NOT_REQUIRED, "Bluetooth", "Not required by this CRM office policy")
             null -> HealthItemState(HealthStatus.NOT_CONFIGURED, "Bluetooth", "Current office policy unavailable")

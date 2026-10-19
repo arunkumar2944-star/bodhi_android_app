@@ -151,6 +151,8 @@ fun ViewScreen(
         )
     }
 
+    val confirmedHolidays = live.attendance.holidays.toSet()
+
     // ========================================================
     // SELECTED ATTENDANCE
     // ========================================================
@@ -164,20 +166,21 @@ fun ViewScreen(
     }
 
 
-    var selectedDate by remember { mutableStateOf(attendanceList.firstOrNull()?.date) }
+    val todayKey = remember(live.attendance.today) { com.prodigit.bodhiattendance.ui.live.displayDate(live.attendance.today) }
+    var selectedDate by remember(todayKey) { mutableStateOf<String?>(todayKey) }
     var visibleWeekOffset by remember { mutableStateOf(0) }
     val parser = remember { SimpleDateFormat("dd MMM yyyy", Locale.ENGLISH) }
     val baseSunday = remember {
         Calendar.getInstance().apply {
-            time = parser.parse(attendanceList.firstOrNull()?.date ?: SimpleDateFormat("dd MMM yyyy", Locale.ENGLISH).format(java.util.Date())) ?: java.util.Date()
+            time = parser.parse(todayKey) ?: java.util.Date()
             add(Calendar.DAY_OF_MONTH, -(get(Calendar.DAY_OF_WEEK) - Calendar.SUNDAY))
         }
     }
     var displayedMonth by remember { mutableStateOf(baseSunday.get(Calendar.MONTH)) }
     var displayedYear by remember { mutableStateOf(baseSunday.get(Calendar.YEAR)) }
-    // Start with the month containing the latest attendance, not the preceding Sunday.
+    // Always open the actual current month/week, even when no attendance event exists today.
     val firstRecord = remember { Calendar.getInstance().apply {
-        time = parser.parse(attendanceList.firstOrNull()?.date ?: SimpleDateFormat("dd MMM yyyy", Locale.ENGLISH).format(java.util.Date())) ?: java.util.Date()
+        time = parser.parse(todayKey) ?: java.util.Date()
     } }
     var monthInitialized by remember { mutableStateOf(false) }
     if (!monthInitialized) {
@@ -217,6 +220,8 @@ fun ViewScreen(
 
             attendanceList =
                 attendanceList,
+            todayKey = todayKey,
+            confirmedHolidays = confirmedHolidays,
 
             selectedDate = selectedDate,
             displayedMonth = displayedMonth,
@@ -242,7 +247,7 @@ fun ViewScreen(
                             SimpleDateFormat("dd MMM yyyy", Locale.ENGLISH).parse(date)!!
                         ),
                         checkIn = "--", checkOut = "--", workDuration = "--",
-                        status = "No Record", officeName = "--", totalBreak = "--"
+                        status = if (confirmedHolidays.contains(java.time.LocalDate.parse(date, java.time.format.DateTimeFormatter.ofPattern("dd MMM yyyy", Locale.ENGLISH)).toString())) "HOLIDAY" else "No Record", officeName = "--", totalBreak = "--"
                     )
             }
         )
@@ -277,6 +282,8 @@ private fun AttendanceHistoryScreenContent(
     modifier: Modifier,
 
     attendanceList: List<AttendanceViewItem>,
+    todayKey: String,
+    confirmedHolidays: Set<String>,
 
     selectedDate: String?,
     displayedMonth: Int,
@@ -359,6 +366,8 @@ private fun AttendanceHistoryScreenContent(
 
             AttendanceWeekStrip(
                 attendanceList = attendanceList,
+                todayKey = todayKey,
+                confirmedHolidays = confirmedHolidays,
                 selectedDate = selectedDate,
                 displayedMonth = displayedMonth,
                 displayedYear = displayedYear,
@@ -522,6 +531,8 @@ private fun AttendanceHistoryHeader() {
 @Composable
 private fun AttendanceWeekStrip(
     attendanceList: List<AttendanceViewItem>,
+    todayKey: String,
+    confirmedHolidays: Set<String>,
     selectedDate: String?,
     displayedMonth: Int,
     displayedYear: Int,
@@ -531,9 +542,9 @@ private fun AttendanceWeekStrip(
 ) {
     val parser = remember { SimpleDateFormat("dd MMM yyyy", Locale.ENGLISH) }
     val dayFormat = remember { SimpleDateFormat("EEE", Locale.ENGLISH) }
-    val reference = remember {
+    val reference = remember(todayKey) {
         Calendar.getInstance().apply {
-            time = parser.parse(attendanceList.firstOrNull()?.date ?: SimpleDateFormat("dd MMM yyyy", Locale.ENGLISH).format(java.util.Date()))
+            time = parser.parse(todayKey)
                 ?: java.util.Date()
             // Anchor every page to Sunday.
             add(Calendar.DAY_OF_MONTH, -(get(Calendar.DAY_OF_WEEK) - Calendar.SUNDAY))
@@ -553,7 +564,7 @@ private fun AttendanceWeekStrip(
             WeekNavigationButton(Icons.Outlined.KeyboardArrowLeft) { onWeekOffsetChange(weekOffset - 1) }
             days.forEach { calendar ->
                 val key = parser.format(calendar.time)
-                val status = attendanceList.firstOrNull { it.date == key }?.status
+                val status = if (confirmedHolidays.contains(java.time.LocalDate.parse(key, java.time.format.DateTimeFormatter.ofPattern("dd MMM yyyy", Locale.ENGLISH)).toString())) "HOLIDAY" else attendanceList.firstOrNull { it.date == key }?.status
                 val active = calendar.get(Calendar.MONTH) == displayedMonth && calendar.get(Calendar.YEAR) == displayedYear
                 WeekDayItem(
                     modifier = Modifier.weight(1f),
@@ -562,6 +573,7 @@ private fun AttendanceWeekStrip(
                     statusColor = when (status) {
                         "Present", "Working" -> Color(0xFF1AB455)
                         "Absent" -> Color(0xFFF03649)
+                        "HOLIDAY" -> Color(0xFF2563EB)
                         else -> Color(0xFF98A1BB)
                     },
                     selected = active && selectedDate == key,
@@ -1763,7 +1775,7 @@ private fun AttendanceDetailsScreenContent(
 
 ) {
 
-    if (attendance.status == "No Record") {
+    if (attendance.status == "No Record" || attendance.status == "HOLIDAY") {
         Column(
             modifier = modifier.fillMaxSize().padding(16.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp)
@@ -1773,7 +1785,7 @@ private fun AttendanceDetailsScreenContent(
             }
             Text("Attendance Details", fontSize = 22.sp, fontWeight = FontWeight.Bold)
             Text(attendance.date, fontSize = 16.sp)
-            Text("No attendance record available for this date.", color = Color(0xFF68718C))
+            Text(if (attendance.status == "HOLIDAY") "HOLIDAY — Company holiday. No attendance required." else "No attendance record available for this date.", color = Color(0xFF68718C))
         }
         return
     }
