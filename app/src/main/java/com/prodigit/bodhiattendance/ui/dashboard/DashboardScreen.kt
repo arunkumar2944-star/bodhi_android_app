@@ -69,7 +69,8 @@ fun DashboardScreen(
 
     val live = com.prodigit.bodhiattendance.ui.live.liveUiState()
     val day = live.attendance?.let { read -> read.days.firstOrNull { it.date == read.today } }
-    val holidayToday = live.attendance?.let { read -> read.today in read.holidays } == true
+    val holiday = live.attendance?.let { read -> com.prodigit.bodhiattendance.ui.live.holidayPresentation(read.today, read, live.onDuty) }
+    val holidayToday = holiday != null
     val uiState = DashboardUiState(
         isLoading = live.loading,
         employeeName = listOfNotNull(live.profile?.first_name, live.profile?.last_name).joinToString(" "),
@@ -149,6 +150,8 @@ fun DashboardScreen(
             uiState =
                 uiState,
             holidayToday = holidayToday,
+            holidayTitle = holiday?.title,
+            holidayMessage = holiday?.message,
 
             onAttendanceClick =
                 onAttendanceClick,
@@ -178,6 +181,8 @@ private fun DashboardContent(
 
     uiState: DashboardUiState,
     holidayToday: Boolean,
+    holidayTitle: String?,
+    holidayMessage: String?,
 
     onAttendanceClick: () -> Unit,
 
@@ -216,8 +221,10 @@ private fun DashboardContent(
                 colors = androidx.compose.material3.CardDefaults.cardColors(containerColor = androidx.compose.ui.graphics.Color(0xFFEBF4FF)),
                 modifier = Modifier.fillMaxWidth()
             ) {
-                Text("HOLIDAY — Today is a company holiday. Regular attendance is not required.",
-                    modifier = Modifier.padding(16.dp), color = androidx.compose.ui.graphics.Color(0xFF174E9C))
+                Column(modifier = Modifier.padding(16.dp)) {
+                    Text(holidayTitle ?: "Company Holiday", fontWeight = androidx.compose.ui.text.font.FontWeight.Bold, color = androidx.compose.ui.graphics.Color(0xFF174E9C))
+                    Text(holidayMessage ?: "Regular attendance is not required today.", color = androidx.compose.ui.graphics.Color(0xFF174E9C))
+                }
             }
         }
 
