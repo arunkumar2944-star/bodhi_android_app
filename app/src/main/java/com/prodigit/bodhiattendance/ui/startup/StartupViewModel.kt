@@ -495,9 +495,24 @@ class StartupViewModel(
                             .getUserId()
 
 
-                    val companyId =
-                        sessionManager
-                            .getCompanyId()
+                    val savedCompanyId = sessionManager.getCompanyId()
+                    val verifiedCompanyId = device.companyId
+                    // This device response was checked against the signed-in
+                    // user and this installation above. Never invent a tenant ID.
+                    if (savedCompanyId > 0 && verifiedCompanyId != null &&
+                        verifiedCompanyId > 0 && savedCompanyId != verifiedCompanyId
+                    ) {
+                        Log.e("STARTUP_DEBUG", "Authenticated company and registered device company mismatch")
+                        _startupError.value = "Account and registered device company mismatch. Contact your administrator."
+                        _destination.value = StartupDestination.DEVICE_BLOCKED
+                        return@onSuccess
+                    }
+
+                    val companyId = if (savedCompanyId > 0) {
+                        savedCompanyId
+                    } else {
+                        verifiedCompanyId?.takeIf { it > 0 } ?: -1
+                    }
 
 
                     if (
@@ -531,16 +546,25 @@ class StartupViewModel(
                         )
 
 
-                        sessionManager
-                            .clearSession()
-
-
-                        _destination.value =
-                            StartupDestination.LOGIN
-
+                        // Missing tenant context is a configuration failure,
+                        // not proof that the authentication token is invalid.
+                        // Preserve the session and device registration for recovery.
+                        _startupError.value = "Company information unavailable. Contact your administrator."
+                        _destination.value = StartupDestination.LOADING
                         return@onSuccess
                     }
 
+                    if (savedCompanyId <= 0) {
+                        try {
+                            sessionManager.updateCompanyId(companyId)
+                            Log.d("STARTUP_DEBUG", "Company context restored from verified device registration")
+                        } catch (error: IllegalStateException) {
+                            Log.e("STARTUP_DEBUG", "Could not persist verified company context", error)
+                            _startupError.value = "Unable to save company information. Retry app startup."
+                            _destination.value = StartupDestination.LOADING
+                            return@onSuccess
+                        }
+                    }
 
                     // Cache only CRM-confirmed registration data.
                     registeredDeviceStore.saveVerified(
