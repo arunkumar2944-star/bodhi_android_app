@@ -100,7 +100,10 @@ class PresenceEvidenceJournal(context: Context) {
               device_id TEXT NOT NULL, boot_id TEXT NOT NULL, office_id INTEGER NOT NULL,
               first_observed_elapsed_ms INTEGER NOT NULL, status TEXT NOT NULL,
               updated_wall_ms INTEGER NOT NULL)""")
-            db.execSQL("""CREATE UNIQUE INDEX IF NOT EXISTS idx_departure_candidates_active\n               ON departure_candidates(user_id,device_id,boot_id,office_id) WHERE status=\'UNCONFIRMED\'""")\n            db.execSQL("""CREATE INDEX IF NOT EXISTS idx_departure_candidates_device
+            db.execSQL("""CREATE UNIQUE INDEX IF NOT EXISTS idx_departure_candidates_active
+               ON departure_candidates(user_id,device_id,boot_id,office_id)
+               WHERE status='UNCONFIRMED'""")
+            db.execSQL("""CREATE INDEX IF NOT EXISTS idx_departure_candidates_device
                ON departure_candidates(user_id,device_id,boot_id,status)""")
         }
 
