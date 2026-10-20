@@ -175,6 +175,13 @@ class AutomaticAttendanceEvaluator(context: Context, private val workDate: Strin
             reviewEvidence.record(location, bssid, wifiDisconnected, office, "UNCERTAIN", snapshot.attendanceState?.name ?: "UNKNOWN")
             departureEvidence.reset()
             needsBetterGps = true
+            // Keep recovery checks prompt while an observation is uncertain.
+            // This is a retry hint, NOT permission to infer absence or backdate a break.
+            // Do not change CRM-managed grace/accuracy thresholds.
+            if (snapshot.attendanceState in setOf(AttendanceState.WORKING, AttendanceState.ON_BREAK)) {
+                needsContinuityChecks = true
+                nextVerificationElapsedMs = android.os.SystemClock.elapsedRealtime() + 20_000L
+            }
             val evidence = AttendanceEngineEvidence(latitude = location.latitude, longitude = location.longitude,
                 accuracyMeters = location.accuracy.toDouble(), capturedAtElapsedRealtimeMs = location.elapsedRealtimeNanos / 1_000_000L,
                 observationUncertain = true)
@@ -199,6 +206,14 @@ class AutomaticAttendanceEvaluator(context: Context, private val workDate: Strin
         }
         val readableBssid = bssid?.takeIf { it.matches(Regex("(?i)([0-9a-f]{2}:){5}[0-9a-f]{2}")) &&
             it != "02:00:00:00:00:00" && it != "00:00:00:00:00:00" }
+        // Wi-Fi loss is only a provisional departure time, never proof of absence.
+        if (snapshot.attendanceState == AttendanceState.WORKING && wifiDisconnected && boundOfficeId == office.id) {
+            journal.markDepartureCandidate(
+                session.getUserId(), session.getCompanyId(), deviceId,
+                boot.getBootId(), office.id, location.elapsedRealtimeNanos / 1_000_000L,
+                "UNCONFIRMED"
+            )
+        }
         val distanceMeters = distance(office).toDouble()
         val inside = distanceMeters <= office.geofenceRadiusMeters
         val wifiVerified = !wifiDisconnected && readableBssid != null && office.wifiAccessPoints.any { it.bssid.equals(readableBssid, true) }
@@ -225,6 +240,9 @@ class AutomaticAttendanceEvaluator(context: Context, private val workDate: Strin
             }
         } else {
             departureEvidence.reset()
+            if (wifiVerified && inside && snapshot.attendanceState == AttendanceState.WORKING) {
+                journal.resolveDepartureCandidate(session.getUserId(), deviceId, boot.getBootId(), "RETURNED_UNCONFIRMED")
+            }
         }
         if (boundOfficeId == null && (!inside || (policy.wifiRequired == true && !wifiVerified))) {
             diagnostics.record("ENGINE", "Waiting for CRM office presence verification")
@@ -247,6 +265,9 @@ class AutomaticAttendanceEvaluator(context: Context, private val workDate: Strin
         val result = provider.runtimeSession.evaluate(token, session.getUserId(), session.getCompanyId(),
             deviceId, evidence, policy)
         val after = provider.runtimeSession.getSnapshot()
+        if (!inside && after.attendanceState == AttendanceState.ON_BREAK) {
+            journal.resolveDepartureCandidate(session.getUserId(), deviceId, boot.getBootId(), "BREAK_CONFIRMED")
+        }
         if (inside && after.attendanceState == AttendanceState.WORKING) {
             boundOfficeId = office.id
             officeContext.save(session.getUserId(), session.getCompanyId(), deviceId, workDate, boot.getBootId(), office.id)
