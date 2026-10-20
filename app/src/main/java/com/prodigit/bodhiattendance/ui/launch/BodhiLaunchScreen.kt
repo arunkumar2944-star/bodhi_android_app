@@ -483,11 +483,10 @@ fun BodhiLaunchScreen(
 
                     modifier =
                         Modifier
-                            .width(380.dp)
-                            .height(315.dp)
-                            .offset(
-                                y = (-25).dp
-                            ),
+                            // Do not reserve most of a compact phone's height
+                            // for the transparent loading animation canvas.
+                            .width(144.dp)
+                            .height(100.dp),
 
                     contentScale =
                         ContentScale.Fit,
