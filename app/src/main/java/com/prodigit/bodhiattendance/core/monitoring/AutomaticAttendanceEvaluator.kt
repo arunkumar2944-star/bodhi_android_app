@@ -207,7 +207,7 @@ class AutomaticAttendanceEvaluator(context: Context, private val workDate: Strin
         val readableBssid = bssid?.takeIf { it.matches(Regex("(?i)([0-9a-f]{2}:){5}[0-9a-f]{2}")) &&
             it != "02:00:00:00:00:00" && it != "00:00:00:00:00:00" }
         // Wi-Fi loss is only a provisional departure time, never proof of absence.
-        if (snapshot.attendanceState == AttendanceState.WORKING && wifiDisconnected) {
+        if (snapshot.attendanceState == AttendanceState.WORKING && wifiDisconnected && boundOfficeId == office.id) {
             journal.markDepartureCandidate(
                 session.getUserId(), session.getCompanyId(), deviceId,
                 boot.getBootId(), office.id, location.elapsedRealtimeNanos / 1_000_000L,
@@ -240,7 +240,7 @@ class AutomaticAttendanceEvaluator(context: Context, private val workDate: Strin
             }
         } else {
             departureEvidence.reset()
-            if (wifiVerified && snapshot.attendanceState == AttendanceState.WORKING) {
+            if (wifiVerified && inside && snapshot.attendanceState == AttendanceState.WORKING) {
                 journal.resolveDepartureCandidate(session.getUserId(), deviceId, boot.getBootId(), "RETURNED_UNCONFIRMED")
             }
         }
