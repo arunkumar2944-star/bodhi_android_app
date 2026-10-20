@@ -31,6 +31,33 @@ class PresenceEvidenceJournal(context: Context) {
         return result
     }
 
+    /**
+     * Durable audit candidate, not an attendance event. Kept over process death
+     * to support review/reconciliation without assuming Wi-Fi loss = departure.
+     * elapsedRealtime values are valid only within their originating boot.
+     */
+    fun markDepartureCandidate(
+        userId: Int, companyId: Int, deviceId: String, bootId: String,
+        officeId: Long, elapsedMs: Long, status: String
+    ) {
+        val db = helper.writableDatabase
+        db.execSQL(
+            """INSERT OR IGNORE INTO departure_candidates
+               (id,user_id,company_id,device_id,boot_id,office_id,first_observed_elapsed_ms,status,updated_wall_ms)
+               VALUES (?,?,?,?,?,?,?,?,?)""",
+            arrayOf<Any>(UUID.randomUUID().toString(), userId, companyId,
+                deviceId, bootId, officeId, elapsedMs, status, System.currentTimeMillis())
+        )
+    }
+
+    fun resolveDepartureCandidate(userId: Int, deviceId: String, bootId: String, status: String) {
+        helper.writableDatabase.execSQL(
+            """UPDATE departure_candidates SET status=?, updated_wall_ms=?
+               WHERE user_id=? AND device_id=? AND boot_id=? AND status='UNCONFIRMED'""",
+            arrayOf<Any>(status, System.currentTimeMillis(), userId, deviceId, bootId)
+        )
+    }
+
     fun markUploaded(ids: List<String>) {
         val db=helper.writableDatabase
         db.beginTransaction()
@@ -66,8 +93,19 @@ class PresenceEvidenceJournal(context: Context) {
             (SELECT id FROM presence_evidence WHERE uploaded=1 ORDER BY rowid DESC LIMIT -1 OFFSET 2000)""")
     }
 
-    private class Helper(context: Context) : SQLiteOpenHelper(context, "presence_evidence.db", null, 2) {
+    private class Helper(context: Context) : SQLiteOpenHelper(context, "presence_evidence.db", null, 3) {
+        private fun createDepartureCandidates(db: SQLiteDatabase) {
+            db.execSQL("""CREATE TABLE IF NOT EXISTS departure_candidates (
+              id TEXT PRIMARY KEY, user_id INTEGER NOT NULL, company_id INTEGER NOT NULL,
+              device_id TEXT NOT NULL, boot_id TEXT NOT NULL, office_id INTEGER NOT NULL,
+              first_observed_elapsed_ms INTEGER NOT NULL, status TEXT NOT NULL,
+              updated_wall_ms INTEGER NOT NULL)""")
+            db.execSQL("""CREATE INDEX IF NOT EXISTS idx_departure_candidates_device
+               ON departure_candidates(user_id,device_id,boot_id,status)""")
+        }
+
         override fun onCreate(db: SQLiteDatabase) {
+            createDepartureCandidates(db)
             db.execSQL("""CREATE TABLE presence_evidence (
               id TEXT PRIMARY KEY, office_id INTEGER, observed_elapsed_ms INTEGER NOT NULL,
               recorded_wall_ms INTEGER NOT NULL, latitude REAL NOT NULL, longitude REAL NOT NULL,
@@ -76,6 +114,7 @@ class PresenceEvidenceJournal(context: Context) {
         }
         override fun onUpgrade(db: SQLiteDatabase, oldVersion: Int, newVersion: Int) {
             if (oldVersion < 2) db.execSQL("ALTER TABLE presence_evidence ADD COLUMN uploaded INTEGER NOT NULL DEFAULT 0")
+            if (oldVersion < 3) createDepartureCandidates(db)
         }
     }
 }
