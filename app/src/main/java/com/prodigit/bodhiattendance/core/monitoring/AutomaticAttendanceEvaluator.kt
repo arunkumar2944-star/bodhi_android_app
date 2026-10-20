@@ -175,6 +175,13 @@ class AutomaticAttendanceEvaluator(context: Context, private val workDate: Strin
             reviewEvidence.record(location, bssid, wifiDisconnected, office, "UNCERTAIN", snapshot.attendanceState?.name ?: "UNKNOWN")
             departureEvidence.reset()
             needsBetterGps = true
+            // Keep recovery checks prompt while an observation is uncertain.
+            // This is a retry hint, NOT permission to infer absence or backdate a break.
+            // Do not change CRM-managed grace/accuracy thresholds.
+            if (snapshot.attendanceState in setOf(AttendanceState.WORKING, AttendanceState.ON_BREAK)) {
+                needsContinuityChecks = true
+                nextVerificationElapsedMs = android.os.SystemClock.elapsedRealtime() + 20_000L
+            }
             val evidence = AttendanceEngineEvidence(latitude = location.latitude, longitude = location.longitude,
                 accuracyMeters = location.accuracy.toDouble(), capturedAtElapsedRealtimeMs = location.elapsedRealtimeNanos / 1_000_000L,
                 observationUncertain = true)
