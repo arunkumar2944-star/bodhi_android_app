@@ -140,6 +140,14 @@ class SessionManager(
             -1
         )
     }
+
+    /** Persist only a positive company ID verified by the authenticated device API. */
+    fun updateCompanyId(companyId: Int) {
+        require(companyId > 0) { "Invalid company ID" }
+        check(preferences.edit().putInt(KEY_COMPANY_ID, companyId).commit()) {
+            "Company ID persistence failed"
+        }
+    }
     //===================================================================
     //                              Session Validation
     //===================================================================
