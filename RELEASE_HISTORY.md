@@ -104,3 +104,11 @@ This file is kept in Git alongside the Android Studio project. The **source of t
 - Light continues to use the existing Bodhi launch background and established light palette.
 - This is a UI-only remediation: it does not modify check-in, break, geofencing, or API confirmation behavior.
 - Still required: Kotlin compile, visual audit of **every** screen and component in Light / Dark / Follow device, and employee upgrade verification; no APK or release approval yet.
+
+### v1.0.1 appearance follow-up: centralized UI palette (pending verification)
+
+- Added `ui/theme/BodhiPalette.kt` for reusable Material semantic colors; Light/Dark/System preference remains controlled centrally by `MainActivity.kt` and `AppearancePreference.kt`.
+- Updated authenticated app background, shared navigation, status-card surface/gradient, Today/History views, and Dashboard holiday colors to respond to the selected theme.
+- Prior light branding remains the target when Light is selected. Dark now uses theme surfaces instead of the fixed light launch image in the authenticated shell.
+- **Not a verified full-screen migration yet**: visual audit and replacement of remaining literal light colors across screens are required; compiling and emulator/phone testing are pending.
+- The theme switch must not change device authorization, attendance evidence, monitoring, or CRM synchronization.
