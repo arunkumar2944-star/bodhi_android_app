@@ -219,12 +219,12 @@ private fun DashboardContent(
 
         if (holidayToday) item {
             androidx.compose.material3.Card(
-                colors = androidx.compose.material3.CardDefaults.cardColors(containerColor = androidx.compose.ui.graphics.Color(0xFFEBF4FF)),
+                colors = androidx.compose.material3.CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.primaryContainer),
                 modifier = Modifier.fillMaxWidth()
             ) {
                 Column(modifier = Modifier.padding(16.dp)) {
-                    Text(holidayTitle ?: "Company Holiday", fontWeight = androidx.compose.ui.text.font.FontWeight.Bold, color = androidx.compose.ui.graphics.Color(0xFF174E9C))
-                    Text(holidayMessage ?: "Regular attendance is not required today.", color = androidx.compose.ui.graphics.Color(0xFF174E9C))
+                    Text(holidayTitle ?: "Company Holiday", fontWeight = androidx.compose.ui.text.font.FontWeight.Bold, color = MaterialTheme.colorScheme.onPrimaryContainer)
+                    Text(holidayMessage ?: "Regular attendance is not required today.", color = MaterialTheme.colorScheme.onPrimaryContainer)
                 }
             }
         }
