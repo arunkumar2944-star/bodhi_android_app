@@ -1,6 +1,8 @@
 
 package com.prodigit.bodhiattendance.ui.requests
 
+import androidx.compose.material3.MaterialTheme
+
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -197,7 +199,7 @@ fun RequestHistoryScreen(
                     Card(
                         modifier = Modifier.fillMaxWidth(),
                         colors = CardDefaults.cardColors(
-                            containerColor = Color.White
+                            containerColor = MaterialTheme.colorScheme.surface
                         ),
                         shape = RoundedCornerShape(18.dp)
                     ) {
@@ -260,7 +262,7 @@ private fun RequestHistoryCard(
         modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(18.dp),
         colors = CardDefaults.cardColors(
-            containerColor = Color.White
+            containerColor = MaterialTheme.colorScheme.surface
         ),
         border = BorderStroke(1.dp, Stroke),
         elevation = CardDefaults.cardElevation(
