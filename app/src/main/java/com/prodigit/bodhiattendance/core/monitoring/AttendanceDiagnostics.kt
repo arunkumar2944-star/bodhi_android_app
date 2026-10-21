@@ -44,6 +44,24 @@ class AttendanceDiagnostics(context: Context) {
             return false
         }
     }
+    /** Read-only local persistence summary; sent via the existing authenticated diagnostic outbox. */
+    suspend fun auditLocalPersistence(): Boolean {
+        val user = SessionManager(app).getUserId()
+        val company = SessionManager(app).getCompanyId()
+        val device = DeviceIdManager(app).getDeviceId() ?: return false
+        if (user <= 0 || company <= 0) return false
+        return try {
+            val events = AttendanceDatabase.getInstance(app).attendanceEventDao()
+            val counts = PresenceEvidenceJournal(app).candidateCounts(user, company, device)
+            val starts = events.countLocalBreakStarts(user, device)
+            val ends = events.countLocalBreakEnds(user, device)
+            val unsettled = events.countUnsettledEvents(user, device)
+            recordPersisted("LOCAL_EVIDENCE_AUDIT",
+                "roomBreakStarts=$starts; roomBreakEnds=$ends; roomUnsettled=$unsettled; sqliteCandidates=${counts.first}; sqliteActiveCandidates=${counts.second}")
+        } catch (e: CancellationException) { throw e }
+        catch (_: Exception) { false }
+    }
+
     suspend fun hasPending(): Boolean {
         val user = SessionManager(app).getUserId()
         val device = DeviceIdManager(app).getDeviceId() ?: return false
