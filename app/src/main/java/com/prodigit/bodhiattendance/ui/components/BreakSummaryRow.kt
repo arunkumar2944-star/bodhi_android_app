@@ -230,9 +230,7 @@ private fun SummaryItem(
         colors =
             CardDefaults.cardColors(
                 containerColor =
-                    Color.White.copy(
-                        alpha = 0.94f
-                    )
+                    MaterialTheme.colorScheme.surface
             ),
 
         elevation =
