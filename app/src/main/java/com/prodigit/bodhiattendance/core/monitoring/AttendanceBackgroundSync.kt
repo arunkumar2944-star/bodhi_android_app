@@ -33,8 +33,20 @@ object AttendanceBackgroundSync {
         // Diagnostic evidence has its own authenticated/device-scoped endpoint. It must
         // not wait for attendance eligibility, GPS or event-sync success.
         val diagnosticsComplete = if (diagnostics) {
-            try { AttendanceDiagnostics(context).upload() }
-            catch (e: CancellationException) { throw e }
+            try {
+                val reporter = AttendanceDiagnostics(context)
+                // Avoid spamming the diagnostic endpoint when jobs retry.
+                val prefs = context.getSharedPreferences("local_evidence_audit", Context.MODE_PRIVATE)
+                val key = "last_audit_" + user + "_" + device
+                val now = android.os.SystemClock.elapsedRealtime()
+                val previous = prefs.getLong(key, 0L)
+                if (previous == 0L || now < previous || now - previous >= 300_000L) {
+                    if (reporter.auditLocalPersistence()) {
+                        prefs.edit().putLong(key, now).apply()
+                    }
+                }
+                reporter.upload()
+            } catch (e: CancellationException) { throw e }
             catch (_: Exception) { false }
         } else true
         // Historical supporting evidence is independent of today's monitoring eligibility.
