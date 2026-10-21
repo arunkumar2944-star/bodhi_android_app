@@ -252,9 +252,7 @@ fun RequestScreen(
                     ),
 
                 lightAccent =
-                    Color(
-                        0xFFEAF3FF
-                    ),
+                    MaterialTheme.colorScheme.surfaceVariant,
 
                 onClick =
                     onRegularizationClick
@@ -288,9 +286,7 @@ fun RequestScreen(
                     ),
 
                 lightAccent =
-                    Color(
-                        0xFFFFF3DF
-                    ),
+                    MaterialTheme.colorScheme.surfaceVariant,
 
                 onClick =
                     onPermissionClick
@@ -324,9 +320,7 @@ fun RequestScreen(
                     ),
 
                 lightAccent =
-                    Color(
-                        0xFFE8F9F0
-                    ),
+                    MaterialTheme.colorScheme.surfaceVariant,
 
                 onClick =
                     onAttendanceIssueClick
@@ -365,9 +359,7 @@ fun RequestScreen(
                             "My Requests",
 
                         color =
-                            Color(
-                                0xFF101A45
-                            ),
+                            MaterialTheme.colorScheme.onSurface,
 
                         fontSize =
                             18.sp,
@@ -405,9 +397,7 @@ fun RequestScreen(
                         ),
 
                     color =
-                        Color(
-                            0xFFEAF3FF
-                        )
+                        MaterialTheme.colorScheme.surfaceVariant
 
                 ) {
 
@@ -559,9 +549,7 @@ private fun RequestHeader() {
                 "Requests",
 
             color =
-                Color(
-                    0xFF0D1743
-                ),
+                MaterialTheme.colorScheme.onSurface,
 
             fontSize =
                 26.sp,
@@ -585,9 +573,7 @@ private fun RequestHeader() {
                 "Manage attendance corrections and exceptions",
 
             color =
-                Color(
-                    0xFF6C7591
-                ),
+                MaterialTheme.colorScheme.onSurfaceVariant,
 
             fontSize =
                 14.sp
@@ -943,9 +929,7 @@ private fun RequestHeroCard(
                         ),
 
                     background =
-                        Color(
-                            0xFFEAF3FF
-                        )
+                        MaterialTheme.colorScheme.surfaceVariant
                 )
 
 
@@ -968,9 +952,7 @@ private fun RequestHeroCard(
                         ),
 
                     background =
-                        Color(
-                            0xFFFFF3DF
-                        )
+                        MaterialTheme.colorScheme.surfaceVariant
                 )
             }
         }
@@ -1171,9 +1153,7 @@ private fun PremiumRequestCard(
         border =
             BorderStroke(
                 1.dp,
-                Color(
-                    0xFFE1E8F4
-                )
+                MaterialTheme.colorScheme.outlineVariant
             ),
 
         elevation =
@@ -1438,9 +1418,7 @@ private fun RequestAnalyticsCard(
         border =
             BorderStroke(
                 1.dp,
-                Color(
-                    0xFFE1E8F4
-                )
+                MaterialTheme.colorScheme.outlineVariant
             ),
 
         elevation =
@@ -1466,9 +1444,7 @@ private fun RequestAnalyticsCard(
                     "Request Status",
 
                 color =
-                    Color(
-                        0xFF172049
-                    ),
+                    MaterialTheme.colorScheme.onSurface,
 
                 fontSize =
                     13.sp,
@@ -2147,9 +2123,7 @@ private fun requestVisual(
                         0xFF156FE8
                     ),
                 background =
-                    Color(
-                        0xFFEAF3FF
-                    )
+                    MaterialTheme.colorScheme.surfaceVariant
             )
 
 
@@ -2163,9 +2137,7 @@ private fun requestVisual(
                         0xFFF09318
                     ),
                 background =
-                    Color(
-                        0xFFFFF3DF
-                    )
+                    MaterialTheme.colorScheme.surfaceVariant
             )
 
 
@@ -2179,9 +2151,7 @@ private fun requestVisual(
                         0xFF0A9F5A
                     ),
                 background =
-                    Color(
-                        0xFFE8F9F0
-                    )
+                    MaterialTheme.colorScheme.surfaceVariant
             )
     }
 }

@@ -1,5 +1,7 @@
 package com.prodigit.bodhiattendance.ui.systemhealth
 
+import androidx.compose.material3.MaterialTheme
+
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
@@ -18,9 +20,9 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 
 private val PolicyBlue = Color(0xFF1769E8)
-private val PolicyInk = Color(0xFF142343)
-private val PolicyMuted = Color(0xFF718098)
-private val PolicyBorder = Color(0xFFDEE8F5)
+private val PolicyInk = MaterialTheme.colorScheme.onSurface
+private val PolicyMuted = MaterialTheme.colorScheme.onSurfaceVariant
+private val PolicyBorder = MaterialTheme.colorScheme.outlineVariant
 
 /** Displays CRM configuration verbatim; never changes attendance policy. */
 @Composable
@@ -63,7 +65,7 @@ private fun PolicyPanel(content: @Composable ColumnScope.() -> Unit) {
     Card(
         modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(19.dp),
-        colors = CardDefaults.cardColors(containerColor = Color.White),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
         border = BorderStroke(1.dp, PolicyBorder)
     ) { Column(Modifier.fillMaxWidth().padding(15.dp), content = content) }
 }

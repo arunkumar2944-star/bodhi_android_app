@@ -25,10 +25,10 @@ import androidx.compose.ui.unit.sp
 
 // Shared, presentation-only UI components. No persistence or attendance writes.
 // UI prototype for the MD presentation. No backend, credential persistence, or attendance mutation.
-internal val ProtoNavy = Color(0xFF142343)
+internal val ProtoNavy = MaterialTheme.colorScheme.onSurface
 internal val ProtoBlue = Color(0xFF1769E8)
-internal val ProtoMuted = Color(0xFF75839B)
-internal val ProtoBorder = Color(0xFFDEE8F5)
+internal val ProtoMuted = MaterialTheme.colorScheme.onSurfaceVariant
+internal val ProtoBorder = MaterialTheme.colorScheme.outlineVariant
 internal val ProtoPurple = Color(0xFF7650DC)
 internal val ProtoGreen = Color(0xFF138968)
 
@@ -86,7 +86,7 @@ internal fun PrototypeHeading(icon: ImageVector, title: String, description: Str
 
 @Composable
 internal fun PrototypeNotice(text: String) {
-    Surface(color = Color(0xFFEBF4FF), shape = RoundedCornerShape(15.dp), border = BorderStroke(1.dp, Color(0xFFD5E6FC))) {
+    Surface(color = MaterialTheme.colorScheme.surfaceVariant, shape = RoundedCornerShape(15.dp), border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant)) {
         Row(Modifier.padding(14.dp), horizontalArrangement = Arrangement.spacedBy(9.dp)) {
             Icon(Icons.Outlined.Info, null, tint = ProtoBlue, modifier = Modifier.size(19.dp))
             Text(text, color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 12.sp, lineHeight = 18.sp)
