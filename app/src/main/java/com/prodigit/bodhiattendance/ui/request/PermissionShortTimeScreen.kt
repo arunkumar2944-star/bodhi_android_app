@@ -1,6 +1,8 @@
 
 package com.crm.attendance.ui.screens.request
 
+import androidx.compose.material3.MaterialTheme
+
 import android.app.DatePickerDialog
 import android.widget.Toast
 import androidx.compose.foundation.BorderStroke
@@ -548,7 +550,7 @@ private fun PermissionHeader(
 
                 Text(
                     "Late arrival or early leave request",
-                    color = Color.White.copy(alpha = 0.85f),
+                    color = MaterialTheme.colorScheme.surface,
                     fontSize = 12.sp
                 )
             }
@@ -706,7 +708,7 @@ private fun PermissionInfoField(
         modifier = cardModifier,
         shape = RoundedCornerShape(16.dp),
         colors = CardDefaults.cardColors(
-            containerColor = Color.White
+            containerColor = MaterialTheme.colorScheme.surface
         ),
         border = BorderStroke(1.dp, BorderColor),
         elevation = CardDefaults.cardElevation(
