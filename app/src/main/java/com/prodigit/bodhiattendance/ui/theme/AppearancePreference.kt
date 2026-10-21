@@ -11,15 +11,15 @@ import kotlinx.coroutines.flow.StateFlow
 object AppearancePreference {
     private const val FILE = "bodhi_appearance"
     private const val KEY = "theme_mode"
-    private val mode = MutableStateFlow("SYSTEM")
+    private val mode = MutableStateFlow("LIGHT")
     private var loaded = false
 
     @Synchronized
     fun observe(context: Context): StateFlow<String> {
         if (!loaded) {
             val saved = context.applicationContext.getSharedPreferences(FILE, Context.MODE_PRIVATE)
-                .getString(KEY, "SYSTEM")
-            mode.value = if (saved in listOf("LIGHT", "DARK", "SYSTEM")) saved!! else "SYSTEM"
+                .getString(KEY, "LIGHT")
+            mode.value = if (saved in listOf("LIGHT", "DARK", "SYSTEM")) saved!! else "LIGHT"
             loaded = true
         }
         return mode
