@@ -127,7 +127,7 @@ fun EmployeeStatusCard(
                                 colors =
                                     listOf(
                                         statusInfo.backgroundColor,
-                                        Color.White
+                                        MaterialTheme.colorScheme.surface
                                     )
                             )
                     )
