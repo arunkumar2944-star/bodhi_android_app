@@ -1,5 +1,7 @@
 package com.prodigit.bodhiattendance.ui.settings
 
+import androidx.compose.material3.MaterialTheme
+
 import android.app.ActivityManager
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
@@ -242,7 +244,7 @@ fun BatteryOptimizationScreen(
 private fun BatteryPanel(content: @Composable ColumnScope.() -> Unit) {
     Card(
         modifier = Modifier.fillMaxWidth(),
-        colors = CardDefaults.cardColors(containerColor = Color.White),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
         shape = RoundedCornerShape(21.dp),
         border = BorderStroke(1.dp, BatteryBorder),
         elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)
