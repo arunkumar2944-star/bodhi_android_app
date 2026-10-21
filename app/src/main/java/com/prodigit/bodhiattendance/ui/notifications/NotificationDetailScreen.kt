@@ -1,5 +1,7 @@
 package com.prodigit.bodhiattendance.ui.notifications
 
+import androidx.compose.material3.MaterialTheme
+
 import androidx.compose.runtime.*
 import androidx.compose.material3.*
 import com.prodigit.bodhiattendance.data.remote.MobileNotification
