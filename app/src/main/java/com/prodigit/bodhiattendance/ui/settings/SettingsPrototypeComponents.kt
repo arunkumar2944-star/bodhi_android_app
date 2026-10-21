@@ -89,7 +89,7 @@ internal fun PrototypeNotice(text: String) {
     Surface(color = Color(0xFFEBF4FF), shape = RoundedCornerShape(15.dp), border = BorderStroke(1.dp, Color(0xFFD5E6FC))) {
         Row(Modifier.padding(14.dp), horizontalArrangement = Arrangement.spacedBy(9.dp)) {
             Icon(Icons.Outlined.Info, null, tint = ProtoBlue, modifier = Modifier.size(19.dp))
-            Text(text, color = Color(0xFF536985), fontSize = 12.sp, lineHeight = 18.sp)
+            Text(text, color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 12.sp, lineHeight = 18.sp)
         }
     }
 }
