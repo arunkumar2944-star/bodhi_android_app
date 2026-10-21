@@ -231,7 +231,7 @@ fun BatteryOptimizationScreen(
                         Spacer(Modifier.height(5.dp))
                         Text(
                             "Doze exemption, Battery Saver status and manufacturer-specific background restrictions are different. This page cannot detect or override every manufacturer restriction. Always use System Health to review the full attendance environment.",
-                            color = Color(0xFF536985), fontSize = 11.sp, lineHeight = 17.sp
+                            color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 11.sp, lineHeight = 17.sp
                         )
                     }
                 }
