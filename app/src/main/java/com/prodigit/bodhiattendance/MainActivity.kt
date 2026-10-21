@@ -1,6 +1,8 @@
 package com.prodigit.bodhiattendance
 
 import android.os.Bundle
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.collectAsState
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.imePadding
 import androidx.compose.ui.Modifier
@@ -87,7 +89,15 @@ class MainActivity : FragmentActivity() {
 
             // Existing surfaces/cards use a light branded palette. Keep text
             // contrast reliable even when the device is in dark mode.
-            CRMAttendanceTheme(darkTheme = false, dynamicColor = false) {
+            val context = androidx.compose.ui.platform.LocalContext.current
+            val appearance by com.prodigit.bodhiattendance.ui.theme.AppearancePreference
+                .observe(context).collectAsState()
+            val isDark = when (appearance) {
+                "DARK" -> true
+                "LIGHT" -> false
+                else -> androidx.compose.foundation.isSystemInDarkTheme()
+            }
+            CRMAttendanceTheme(darkTheme = isDark, dynamicColor = false) {
                 Surface(
                     modifier = Modifier.fillMaxSize().imePadding(),
                     color = MaterialTheme.colorScheme.background
