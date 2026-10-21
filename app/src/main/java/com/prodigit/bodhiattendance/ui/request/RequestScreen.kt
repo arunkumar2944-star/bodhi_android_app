@@ -1,5 +1,7 @@
 package com.prodigit.bodhiattendance.ui.requests
 
+import androidx.compose.material3.MaterialTheme
+
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -381,9 +383,7 @@ fun RequestScreen(
                             "Track request progress and decisions",
 
                         color =
-                            Color(
-                                0xFF737C96
-                            ),
+                            MaterialTheme.colorScheme.onSurfaceVariant,
 
                         fontSize =
                             11.sp
@@ -622,8 +622,7 @@ private fun RequestHeroCard(
         colors =
             CardDefaults.cardColors(
 
-                containerColor =
-                    Color.White.copy(
+                containerColor = MaterialTheme.colorScheme.surface.copy(
                         alpha = 0.88f
                     )
             ),
@@ -760,9 +759,7 @@ private fun RequestHeroCard(
                             "Employee Request Centre",
 
                         color =
-                            Color(
-                                0xFF101B46
-                            ),
+                            MaterialTheme.colorScheme.onSurface,
 
                         fontSize =
                             16.sp,
@@ -1165,8 +1162,7 @@ private fun PremiumRequestCard(
         colors =
             CardDefaults.cardColors(
 
-                containerColor =
-                    Color.White.copy(
+                containerColor = MaterialTheme.colorScheme.surface.copy(
                         alpha =
                             0.96f
                     )
@@ -1304,9 +1300,7 @@ private fun PremiumRequestCard(
                         subtitle,
 
                     color =
-                        Color(
-                            0xFF626C88
-                        ),
+                        MaterialTheme.colorScheme.onSurfaceVariant,
 
                     fontSize =
                         11.sp
@@ -1435,8 +1429,7 @@ private fun RequestAnalyticsCard(
         colors =
             CardDefaults.cardColors(
 
-                containerColor =
-                    Color.White.copy(
+                containerColor = MaterialTheme.colorScheme.surface.copy(
                         alpha =
                             0.95f
                     )
@@ -1739,8 +1732,7 @@ private fun ModernRecentRequestCard(
         colors =
             CardDefaults.cardColors(
 
-                containerColor =
-                    Color.White.copy(
+                containerColor = MaterialTheme.colorScheme.surface.copy(
                         alpha =
                             0.96f
                     )
@@ -1978,9 +1970,7 @@ private fun ModernRecentRequestCard(
                         ),
 
                     color =
-                        Color(
-                            0xFF69728C
-                        ),
+                        MaterialTheme.colorScheme.onSurfaceVariant,
 
                     fontSize =
                         10.sp
