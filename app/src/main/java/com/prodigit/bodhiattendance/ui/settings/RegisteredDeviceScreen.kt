@@ -1,6 +1,8 @@
 
 package com.prodigit.bodhiattendance.ui.settings
 
+import androidx.compose.material3.MaterialTheme
+
 import android.os.Build
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
@@ -106,7 +108,7 @@ fun RegisteredDeviceScreen(
                 modifier = Modifier.fillMaxWidth(),
                 shape = RoundedCornerShape(22.dp),
                 colors = CardDefaults.cardColors(
-                    containerColor = Color.White
+                    containerColor = MaterialTheme.colorScheme.surface
                 ),
                 border = BorderStroke(
                     1.dp, DeviceBorder
@@ -190,7 +192,7 @@ fun RegisteredDeviceScreen(
                 modifier = Modifier.fillMaxWidth(),
                 shape = RoundedCornerShape(18.dp),
                 colors = CardDefaults.cardColors(
-                    containerColor = Color.White
+                    containerColor = MaterialTheme.colorScheme.surface
                 ),
                 border = BorderStroke(
                     1.dp, DeviceBorder
