@@ -1,0 +1,26 @@
+{
+  "schemaVersion": 1,
+  "application": "Bodhi Attendance Android",
+  "versionName": "1.0.1",
+  "versionCode": 14,
+  "releaseChannel": "production",
+  "releaseStatus": "PREPARING_NOT_PUBLISHED",
+  "releaseDate": null,
+  "gitCommit": null,
+  "apkSha256": null,
+  "signingCertificateSha256": null,
+  "downloadUrl": null,
+  "notes": {
+    "en": "Appearance: Light, Dark or Follow device. Manual Refresh on authenticated pages and foreground CRM display updates every 30 seconds on Dashboard/Attendance. Network errors preserve previously received display data. Display refresh does not create attendance events."
+  },
+  "knownIssues": [
+    "Missing BREAK_START recovery for Giri and Sanjay not yet verified"
+  ],
+  "firebase": {
+    "planned": true,
+    "appDistributionConfigured": false,
+    "remoteConfigConfigured": false,
+    "forcedUpgradeEnabled": false,
+    "minimumSupportedVersionCode": null
+  }
+}

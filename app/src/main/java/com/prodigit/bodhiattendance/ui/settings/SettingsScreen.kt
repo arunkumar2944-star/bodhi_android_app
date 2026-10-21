@@ -10,6 +10,8 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.collectAsState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -44,7 +46,7 @@ fun SettingsScreen(
     onEventLogClick: () -> Unit = {},
     onPersonalInformationClick: () -> Unit = {}
 ) {
-    val blue = Color(0xFF1769E8)
+    val blue = MaterialTheme.colorScheme.primary
     val green = Color(0xFF15976D)
     val orange = Color(0xFFE49A29)
     LazyColumn(
@@ -54,20 +56,57 @@ fun SettingsScreen(
     ) {
         item {
             Column {
-                Text("Settings", fontSize = 26.sp, fontWeight = FontWeight.Bold, color = Color(0xFF122044))
+                Text("Settings", fontSize = 26.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSurface)
                 Spacer(Modifier.height(3.dp))
-                Text("Security, device access and application preferences", fontSize = 12.sp, color = Color(0xFF77849A))
+                Text("Security, device access and application preferences", fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
             }
         }
         item {
             SettingsPanel {
                 SettingsLine(Icons.Outlined.Security, "App & Attendance Health", "Check actual readiness and required actions", blue, onSystemHealthClick)
-                HorizontalDivider(color = Color(0xFFEAF0F8))
+                HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
                 Text(
                     "Readiness is calculated on the System Health page — not assumed here.",
                     modifier = Modifier.padding(horizontal = 16.dp, vertical = 10.dp),
-                    fontSize = 11.sp, color = Color(0xFF68788F)
+                    fontSize = 11.sp, color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
+            }
+        }
+        item { SettingsHeading("Appearance", "Choose a comfortable display theme") }
+        item {
+            val context = androidx.compose.ui.platform.LocalContext.current
+            val selected by com.prodigit.bodhiattendance.ui.theme.AppearancePreference
+                .observe(context).collectAsState()
+            SettingsPanel {
+                Column(modifier = Modifier.padding(16.dp)) {
+                    Text("App Theme", style = MaterialTheme.typography.titleSmall,
+                        color = MaterialTheme.colorScheme.onSurface)
+                    Spacer(Modifier.height(8.dp))
+                    listOf(
+                        "SYSTEM" to "Follow device",
+                        "LIGHT" to "Light mode",
+                        "DARK" to "Dark mode"
+                    ).forEach { (value, title) ->
+                        Row(
+                            modifier = Modifier.fillMaxWidth()
+                                .clickable {
+                                    com.prodigit.bodhiattendance.ui.theme.AppearancePreference
+                                        .set(context, value)
+                                }.padding(vertical = 5.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            RadioButton(
+                                selected = selected == value,
+                                onClick = {
+                                    com.prodigit.bodhiattendance.ui.theme.AppearancePreference
+                                        .set(context, value)
+                                }
+                            )
+                            Spacer(Modifier.width(8.dp))
+                            Text(title, color = MaterialTheme.colorScheme.onSurface)
+                        }
+                    }
+                }
             }
         }
         item { SettingsHeading("Security", "Protect local app access; CRM manages login passwords") }
@@ -101,11 +140,11 @@ fun SettingsScreen(
                     .clickable { onSystemHealthClick() },
                 shape = RoundedCornerShape(20.dp),
                 colors = CardDefaults.cardColors(
-                    containerColor = Color.White.copy(alpha = 0.96f)
+                    containerColor = MaterialTheme.colorScheme.surface
                 ),
                 border = BorderStroke(
                     1.dp,
-                    Color(0xFFDEE8F5)
+                    MaterialTheme.colorScheme.outlineVariant
                 )
             ) {
                 Column {
@@ -144,7 +183,7 @@ fun SettingsScreen(
                             end = 13.dp,
                             bottom = 10.dp
                         ),
-                        color = Color(0xFF77849A),
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
                         fontSize = 11.sp
                     )
 
@@ -157,7 +196,7 @@ fun SettingsScreen(
                     ) {
                         Text(
                             "View Detailed System Health",
-                            color = Color(0xFF1769E8),
+                            color = MaterialTheme.colorScheme.primary,
                             fontWeight = FontWeight.SemiBold
                         )
 
@@ -166,7 +205,7 @@ fun SettingsScreen(
                         Icon(
                             Icons.Outlined.ChevronRight,
                             contentDescription = null,
-                            tint = Color(0xFF1769E8)
+                            tint = MaterialTheme.colorScheme.primary
                         )
                     }
                 }
@@ -190,7 +229,7 @@ fun SettingsScreen(
         item {
             SettingsPanel {
                 SettingsLine(Icons.Outlined.HelpOutline, "Help & Support", "Attendance and device troubleshooting", blue, onHelpSupportClick)
-                SettingsLine(Icons.Outlined.Info, "About App", "Version and privacy information", Color(0xFF77849A), onAboutClick, divider = false)
+                SettingsLine(Icons.Outlined.Info, "About App", "Version and privacy information", MaterialTheme.colorScheme.onSurfaceVariant, onAboutClick, divider = false)
             }
         }
         item { SettingsHeading("Session", "Manage your signed-in session") }
@@ -205,8 +244,8 @@ fun SettingsScreen(
 @Composable
 private fun SettingsHeading(title: String, subtitle: String) {
     Column(verticalArrangement = Arrangement.spacedBy(3.dp)) {
-        Text(title, fontWeight = FontWeight.Bold, fontSize = 16.sp, color = Color(0xFF142343))
-        Text(subtitle, fontSize = 11.sp, color = Color(0xFF7D899C))
+        Text(title, fontWeight = FontWeight.Bold, fontSize = 16.sp, color = MaterialTheme.colorScheme.onSurface)
+        Text(subtitle, fontSize = 11.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
     }
 }
 
@@ -215,8 +254,8 @@ private fun SettingsPanel(content: @Composable ColumnScope.() -> Unit) {
     Card(
         modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(20.dp),
-        colors = CardDefaults.cardColors(containerColor = Color.White.copy(alpha = .96f)),
-        border = BorderStroke(1.dp, Color(0xFFDEE8F5)),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
         elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
     ) { Column(content = content) }
 }
@@ -234,24 +273,24 @@ private fun SettingsLine(icon: ImageVector, title: String, description: String, 
         }
         Spacer(Modifier.width(12.dp))
         Column(modifier = Modifier.weight(1f)) {
-            Text(title, fontSize = 13.sp, color = Color(0xFF142343), fontWeight = FontWeight.SemiBold)
+            Text(title, fontSize = 13.sp, color = MaterialTheme.colorScheme.onSurface, fontWeight = FontWeight.SemiBold)
             Spacer(Modifier.height(3.dp))
-            Text(description, fontSize = 11.sp, color = Color(0xFF738197))
+            Text(description, fontSize = 11.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
         }
-        Icon(Icons.Outlined.ChevronRight, contentDescription = null, tint = Color(0xFF95A1B3), modifier = Modifier.size(19.dp))
+        Icon(Icons.Outlined.ChevronRight, contentDescription = null, tint = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.size(19.dp))
     }
-    if (divider) HorizontalDivider(modifier = Modifier.padding(start = 68.dp), color = Color(0xFFF0F3F8))
+    if (divider) HorizontalDivider(modifier = Modifier.padding(start = 68.dp), color = MaterialTheme.colorScheme.outlineVariant)
 }
 
 @Composable
 private fun ReadinessTile(icon: ImageVector, label: String, modifier: Modifier = Modifier) {
     Column(
-        modifier = modifier.background(Color(0xFFF0F6FF), RoundedCornerShape(13.dp)).padding(vertical = 12.dp, horizontal = 2.dp),
+        modifier = modifier.background(MaterialTheme.colorScheme.surfaceVariant, RoundedCornerShape(13.dp)).padding(vertical = 12.dp, horizontal = 2.dp),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        Icon(icon, contentDescription = null, tint = Color(0xFF1769E8), modifier = Modifier.size(20.dp))
+        Icon(icon, contentDescription = null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(20.dp))
         Spacer(Modifier.height(6.dp))
-        Text(label, fontSize = 10.sp, fontWeight = FontWeight.SemiBold, color = Color(0xFF243555))
-        Text("View", fontSize = 9.sp, color = Color(0xFF7C8CA4))
+        Text(label, fontSize = 10.sp, fontWeight = FontWeight.SemiBold, color = MaterialTheme.colorScheme.onSurface)
+        Text("View", fontSize = 9.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
     }
 }

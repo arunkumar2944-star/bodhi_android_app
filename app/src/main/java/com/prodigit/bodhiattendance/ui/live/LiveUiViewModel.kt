@@ -73,7 +73,7 @@ class LiveUiViewModel(application: Application) : AndroidViewModel(application) 
                 }
                 _state.update { if (generation != currentGeneration) it else save(it, body.data).copy(errors = it.errors - key - "all") }
             } catch (cancelled: CancellationException) { throw cancelled }
-            catch (error: Exception) { _state.update { if (generation != currentGeneration) it else save(it, null).copy(errors = it.errors + (key to (error.message ?: "$key unavailable"))) } }
+            catch (error: Exception) { _state.update { if (generation != currentGeneration) it else it.copy(errors = it.errors + (key to (error.message ?: "$key unavailable"))) } }
         }
         coroutineScope {
             launch {
@@ -83,7 +83,7 @@ class LiveUiViewModel(application: Application) : AndroidViewModel(application) 
                     check(response.isSuccessful && body != null && body.success && body.data != null) { "Attendance configuration unavailable (HTTP ${response.code()})" }
                     _state.update { if (generation != currentGeneration) it else it.copy(configuration = body!!.data, errors = it.errors - "configuration") }
                 } catch (cancelled: CancellationException) { throw cancelled }
-                catch (error: Exception) { _state.update { if (generation != currentGeneration) it else it.copy(configuration = null, errors = it.errors + ("configuration" to (error.message ?: "Configuration unavailable"))) } }
+                catch (error: Exception) { _state.update { if (generation != currentGeneration) it else it.copy(errors = it.errors + ("configuration" to (error.message ?: "Configuration unavailable"))) } }
             }
 
             launch { load("attendance", { api.attendance(authorization) }) { s, v -> s.copy(attendance = v) } }
@@ -108,7 +108,7 @@ class LiveUiViewModel(application: Application) : AndroidViewModel(application) 
                     check(response.isSuccessful && body != null && body.success && body.user != null) { "Profile unavailable (HTTP ${response.code()})" }
                     _state.update { if (generation != currentGeneration) it else it.copy(profile = body!!.user, errors = it.errors - "profile") }
                 } catch (cancelled: CancellationException) { throw cancelled }
-                catch (error: Exception) { _state.update { if (generation != currentGeneration) it else it.copy(profile = null, errors = it.errors + ("profile" to (error.message ?: "Profile unavailable"))) } }
+                catch (error: Exception) { _state.update { if (generation != currentGeneration) it else it.copy(errors = it.errors + ("profile" to (error.message ?: "Profile unavailable"))) } }
             }
         }
         _state.update { if (generation != currentGeneration) it else it.copy(loading = false) }

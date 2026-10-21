@@ -370,8 +370,20 @@ private fun MainApplication(onSignedOut: () -> Unit) {
 
     // Refresh shared CRM state whenever the employee opens another screen.
     // This is read-only and does not modify local attendance or server decisions.
+    val hostLifecycle = (LocalContext.current as? androidx.lifecycle.LifecycleOwner)?.lifecycle
     LaunchedEffect(currentRoute) {
         if (currentRoute != null) liveModel.refresh()
+        // Poll only while the Activity is resumed, never as a background attendance worker.
+        if (currentRoute == ROUTE_DASHBOARD || currentRoute == ROUTE_ATTENDANCE) {
+            while (true) {
+                kotlinx.coroutines.delay(30_000L)
+                if (hostLifecycle?.currentState?.isAtLeast(
+                        androidx.lifecycle.Lifecycle.State.RESUMED
+                    ) == true) {
+                    liveModel.refresh()
+                }
+            }
+        }
     }
 
 
@@ -448,8 +460,19 @@ private fun MainApplication(onSignedOut: () -> Unit) {
             com.prodigit.bodhiattendance.domain.attendance.OnDutyWindow.isVisible(assignment.date, assignment.status, today)
         } == true
 
+    var uiRefreshing by remember { mutableStateOf(false) }
+    val uiRefreshScope = androidx.compose.runtime.rememberCoroutineScope()
     MainAppLayout(
         hasUpcomingOnDuty = hasUpcomingOnDuty,
+        isRefreshing = uiRefreshing,
+        onRefresh = {
+            if (!uiRefreshing) {
+                uiRefreshScope.launch {
+                    uiRefreshing = true
+                    try { liveModel.refresh() } finally { uiRefreshing = false }
+                }
+            }
+        },
 
         selectedDestination =
             selectedDestination,

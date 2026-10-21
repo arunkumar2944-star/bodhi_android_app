@@ -75,3 +75,23 @@ This file is kept in Git alongside the Android Studio project. The **source of t
 4. Keep the release tag and Git SHA after publishing; use an annotated tag such as `android-v2.1.0` **only after** signing and release approval.
 5. In Android Studio, view version metadata in `app/build.gradle.kts`; view historical release notes here. Git history and tags preserve the exact sources associated with each release.
 6. Updating the version does **not** install an APK on devices or guarantee an upgrade: signing certificate and application ID must remain unchanged for an in-place upgrade. Never clear Room data as part of a normal update.
+
+
+## Android v1.0.1 (versionCode 14) — official release preparation, 2026-10-21
+
+**Important:** Existing history above includes earlier *development* version naming (2.x). The local user-confirmed version for the next distributed APK is `1.0.1` / code `14`. Do not release until Gradle, prior distributed versionCode, APK metadata and signing certificate are reconciled and verified.
+
+- Feature branch: `feature/android-v1.0.1-appearance-refresh`, PR #31.
+- Implemented: Settings Appearance (Light/Dark/System) with persistent device preference; default remains Light on existing installations.
+- Implemented: manual Refresh on authenticated screens; automatic 30-second CRM *display-only* refresh on Dashboard/Attendance while Activity is resumed.
+- Implemented: retain last CRM display data on temporary fetch failures; do not manufacture attendance events.
+- Known issue: Giri and Sanjay missing-break recovery is still unverified; neither refresh nor theme changes fix `BREAK_START` creation.
+- Official employee-facing channel planned, but APK build, SHA-256, signing compatibility, employee upgrade and distribution are not yet verified.
+- Planned Firebase integration: keep machine-readable release metadata at `docs/releases/firebase-update-manifest.v1.0.1.json`; no Firebase update implementation or forced-update behavior exists yet.
+- Before publishing: run Gradle compile, unit and UI checks, sign official APK, confirm code 14 and cert fingerprint, record Git SHA, APK hash and release timestamp.
+
+### Release-note text for future Firebase presentation
+
+**What's new:** Choose your preferred Light, Dark or Follow device theme in Settings. Refresh CRM attendance information without restarting the app; Dashboard and Attendance also check for updated display data while open. Temporary network interruptions now retain the last received information.
+
+**Note:** Refreshing does not create or correct attendance events. Automatic missing-break recovery remains under investigation.
