@@ -21,6 +21,7 @@ import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.Work
 import androidx.compose.material.icons.outlined.Assignment
 
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Icon
@@ -212,9 +213,7 @@ fun AppBottomNavigation(
                 CardDefaults.cardColors(
 
                     containerColor =
-                        Color.White.copy(
-                            alpha = 0.97f
-                        )
+                        MaterialTheme.colorScheme.surface
                 ),
 
             elevation =
@@ -360,7 +359,7 @@ private fun ProfessionalNavigationItem(
                                 selected
                             ) {
 
-                                SelectedBackground
+                                MaterialTheme.colorScheme.primaryContainer
 
                             } else {
 
@@ -412,11 +411,11 @@ private fun ProfessionalNavigationItem(
                         selected
                     ) {
 
-                        NavigationBlue
+                        MaterialTheme.colorScheme.primary
 
                     } else {
 
-                        NavigationInactive
+                        MaterialTheme.colorScheme.onSurfaceVariant
                     }
             )
 
@@ -493,11 +492,11 @@ private fun ProfessionalNavigationItem(
                     selected
                 ) {
 
-                    NavigationBlue
+                    MaterialTheme.colorScheme.primary
 
                 } else {
 
-                    NavigationInactive
+                    MaterialTheme.colorScheme.onSurfaceVariant
                 },
 
             maxLines =
