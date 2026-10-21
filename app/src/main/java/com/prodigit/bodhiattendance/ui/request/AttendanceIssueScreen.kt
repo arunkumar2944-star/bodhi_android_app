@@ -1,6 +1,8 @@
 
 package com.prodigit.bodhiattendance.ui.requests
 
+import androidx.compose.material3.MaterialTheme
+
 import android.app.DatePickerDialog
 import android.net.Uri
 import android.widget.Toast
@@ -346,7 +348,7 @@ fun AttendanceIssueScreen(
                 shape = RoundedCornerShape(18.dp),
                 border = BorderStroke(1.dp, FieldBorder),
                 colors = CardDefaults.outlinedCardColors(
-                    containerColor = Color.White
+                    containerColor = MaterialTheme.colorScheme.surface
                 )
             ) {
                 Row(
@@ -599,7 +601,7 @@ private fun IssueClickableField(
         onClick = onClick,
         shape = RoundedCornerShape(14.dp),
         colors = CardDefaults.outlinedCardColors(
-            containerColor = Color.White
+            containerColor = MaterialTheme.colorScheme.surface
         ),
         border = BorderStroke(1.dp, FieldBorder)
     ) {
@@ -653,7 +655,7 @@ private fun IssueDropdown(
             onClick = { expanded = true },
             shape = RoundedCornerShape(14.dp),
             colors = CardDefaults.outlinedCardColors(
-                containerColor = Color.White
+                containerColor = MaterialTheme.colorScheme.surface
             ),
             border = BorderStroke(1.dp, FieldBorder)
         ) {
