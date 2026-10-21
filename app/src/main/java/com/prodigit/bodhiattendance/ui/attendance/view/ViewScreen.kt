@@ -630,8 +630,8 @@ private fun WeekNavigationButton(icon: ImageVector, onClick: () -> Unit) {
         onClick = onClick,
         modifier = Modifier.size(38.dp),
         shape = RoundedCornerShape(11.dp),
-        color = Color(0xFFF2F7FF),
-        border = BorderStroke(1.dp, Color(0xFFD9E7FC))
+        color = MaterialTheme.colorScheme.surfaceVariant,
+        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant)
     ) {
         Box(contentAlignment = Alignment.Center) {
             Icon(icon, contentDescription = "Change week", tint = Color(0xFF1267DF))
@@ -653,19 +653,19 @@ private fun WeekDayItem(
         modifier = modifier
             .clickable(enabled = enabled, onClick = onClick)
             .background(
-                if (selected) Color(0xFFEDF5FF) else Color.Transparent,
+                if (selected) MaterialTheme.colorScheme.primaryContainer else Color.Transparent,
                 RoundedCornerShape(14.dp)
             )
             .padding(horizontal = 1.dp, vertical = 7.dp),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
         Text(day, fontSize = 11.sp,
-            color = if (!enabled) Color(0xFFB8BFCD) else if (selected) Color(0xFF1267DF) else Color(0xFF68718D))
+            color = if (!enabled) Color(0xFFB8BFCD) else if (selected) Color(0xFF1267DF) else MaterialTheme.colorScheme.onSurfaceVariant)
         Spacer(Modifier.height(4.dp))
         Surface(shape = RoundedCornerShape(10.dp),
             color = if (selected) Color(0xFF116BF0) else Color.Transparent) {
             Text(date, modifier = Modifier.padding(horizontal = 3.dp, vertical = 5.dp),
-                color = if (!enabled) Color(0xFFC5CBD6) else if (selected) Color.White else Color(0xFF131D44),
+                color = if (!enabled) Color(0xFFC5CBD6) else if (selected) Color.White else MaterialTheme.colorScheme.onSurface,
                 fontSize = 15.sp, fontWeight = FontWeight.SemiBold)
         }
         Spacer(Modifier.height(5.dp))
