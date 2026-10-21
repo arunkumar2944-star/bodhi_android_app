@@ -2103,6 +2103,7 @@ private data class RequestVisual(
 // REQUEST VISUAL
 // ============================================================
 
+@Composable
 private fun requestVisual(
 
     type: EmployeeRequestType
