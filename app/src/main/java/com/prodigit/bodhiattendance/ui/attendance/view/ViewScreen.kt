@@ -1057,8 +1057,7 @@ private fun AttendanceDayCard(
         colors =
             CardDefaults.cardColors(
 
-                containerColor =
-                    Color.White.copy(
+                containerColor = MaterialTheme.colorScheme.surface.copy(
                         alpha =
                             0.93f
                     )
@@ -2803,8 +2802,7 @@ private fun AttendanceBaseCard(
         colors =
             CardDefaults.cardColors(
 
-                containerColor =
-                    Color.White.copy(
+                containerColor = MaterialTheme.colorScheme.surface.copy(
                         alpha =
                             0.92f
                     )
