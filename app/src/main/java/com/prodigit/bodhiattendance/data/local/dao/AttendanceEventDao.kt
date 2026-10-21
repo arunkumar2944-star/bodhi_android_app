@@ -13,6 +13,16 @@ import kotlinx.coroutines.flow.Flow
 
 @Dao
 interface AttendanceEventDao {
+    /** Only aggregate attendance data for the current registered user/device. */
+    @Query("SELECT COUNT(*) FROM attendance_events WHERE userId=:userId AND deviceId=:deviceId AND eventType='BREAK_START'")
+    suspend fun countLocalBreakStarts(userId: Int, deviceId: String): Int
+
+    @Query("SELECT COUNT(*) FROM attendance_events WHERE userId=:userId AND deviceId=:deviceId AND eventType='BREAK_END'")
+    suspend fun countLocalBreakEnds(userId: Int, deviceId: String): Int
+
+    @Query("SELECT COUNT(*) FROM attendance_events WHERE userId=:userId AND deviceId=:deviceId AND syncStatus IN ('PENDING','FAILED_RETRYABLE','SYNCING')")
+    suspend fun countUnsettledEvents(userId: Int, deviceId: String): Int
+
     @Query("SELECT EXISTS(SELECT 1 FROM attendance_events WHERE userId=:userId AND deviceId=:deviceId AND syncStatus IN ('PENDING','FAILED_RETRYABLE','SYNCING'))")
     suspend fun hasScopedUnsettledEvents(userId: Int, deviceId: String): Boolean
 
