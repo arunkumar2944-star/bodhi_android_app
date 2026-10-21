@@ -7,6 +7,18 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.TextButton
+import androidx.compose.material3.Text
+import androidx.compose.material3.Icon
+import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.outlined.Refresh
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.unit.dp
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -50,6 +62,8 @@ fun MainAppLayout(
     // ON DUTY visibility is provided by ViewModel/Repository.
     hasUpcomingOnDuty: Boolean = false,
 
+    onRefresh: () -> Unit = {},
+    isRefreshing: Boolean = false,
     content: @Composable () -> Unit
 
 ) {
@@ -109,6 +123,25 @@ fun MainAppLayout(
                 ) {
 
                     content()
+                }
+
+                Row(
+                    modifier = Modifier.fillMaxWidth().padding(horizontal = 14.dp),
+                    horizontalArrangement = Arrangement.End,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    TextButton(onClick = onRefresh, enabled = !isRefreshing) {
+                        if (isRefreshing) {
+                            CircularProgressIndicator(
+                                modifier = Modifier.padding(end = 8.dp).size(18.dp),
+                                strokeWidth = 2.dp
+                            )
+                            Text("Refreshing...")
+                        } else {
+                            Icon(Icons.Outlined.Refresh, contentDescription = null)
+                            Text(" Refresh")
+                        }
+                    }
                 }
             }
         }
