@@ -95,3 +95,12 @@ This file is kept in Git alongside the Android Studio project. The **source of t
 **What's new:** Choose your preferred Light, Dark or Follow device theme in Settings. Refresh CRM attendance information without restarting the app; Dashboard and Attendance also check for updated display data while open. Temporary network interruptions now retain the last received information.
 
 **Note:** Refreshing does not create or correct attendance events. Automatic missing-break recovery remains under investigation.
+
+
+### v1.0.1 dark-theme compatibility follow-up — pending build verification
+
+- Reason: selecting Dark changed Material 3 colors, but shared launch background, bottom navigation and several screens retained hardcoded light backgrounds and text.
+- Change in `fix/android-full-dark-theme`: use the dark Material background instead of the fixed launch graphic in Dark; make bottom navigation and multiple attendance, request, health and settings card surfaces theme-aware; improve text/status card contrast.
+- Light continues to use the existing Bodhi launch background and established light palette.
+- This is a UI-only remediation: it does not modify check-in, break, geofencing, or API confirmation behavior.
+- Still required: Kotlin compile, visual audit of **every** screen and component in Light / Dark / Follow device, and employee upgrade verification; no APK or release approval yet.
