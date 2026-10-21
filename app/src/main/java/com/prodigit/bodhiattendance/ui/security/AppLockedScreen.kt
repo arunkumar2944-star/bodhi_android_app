@@ -1,5 +1,7 @@
 package com.prodigit.bodhiattendance.ui.security
 
+import androidx.compose.material3.MaterialTheme
+
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -33,9 +35,9 @@ import com.prodigit.bodhiattendance.R
 import com.prodigit.bodhiattendance.core.monitoring.AttendanceMonitorStatus
 import com.prodigit.bodhiattendance.ui.common.AppBackground
 
-private val AccessNavy = Color(0xFF142D55)
-private val AccessBlue = Color(0xFF234D8C)
-private val AccessMuted = Color(0xFF65758D)
+private val AccessNavy = MaterialTheme.colorScheme.onSurface
+private val AccessBlue = MaterialTheme.colorScheme.onSurface
+private val AccessMuted = MaterialTheme.colorScheme.onSurfaceVariant
 
 /** Presentation only. Authentication stays in the existing Android unlock flow. */
 @Composable
@@ -80,7 +82,7 @@ fun AppLockedScreen(
                     modifier = Modifier.widthIn(max = 440.dp).fillMaxWidth(),
                     shape = RoundedCornerShape(28.dp),
                     colors = CardDefaults.cardColors(containerColor = Color.White.copy(alpha = 0.97f)),
-                    border = BorderStroke(1.dp, Color(0xFFDCE6F2)),
+                    border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
                     elevation = CardDefaults.cardElevation(defaultElevation = 5.dp)
                 ) {
                     Column(
@@ -89,7 +91,7 @@ fun AppLockedScreen(
                     ) {
                         Box(
                             Modifier.size(84.dp)
-                                .background(Brush.linearGradient(listOf(Color(0xFFE9F1FC), Color(0xFFDCE9FC))), CircleShape),
+                                .background(Brush.linearGradient(listOf(MaterialTheme.colorScheme.surfaceVariant, MaterialTheme.colorScheme.outlineVariant)), CircleShape),
                             contentAlignment = Alignment.Center
                         ) {
                             Icon(Icons.Outlined.Lock, contentDescription = null,
@@ -133,7 +135,7 @@ fun AppLockedScreen(
                         if (message.isNotBlank()) {
                             Spacer(Modifier.height(14.dp))
                             Surface(
-                                color = Color(0xFFFFF5E6), shape = RoundedCornerShape(12.dp),
+                                color = MaterialTheme.colorScheme.surfaceVariant, shape = RoundedCornerShape(12.dp),
                                 modifier = Modifier.fillMaxWidth().semantics { liveRegion = LiveRegionMode.Polite }
                             ) {
                                 Row(Modifier.padding(12.dp), horizontalArrangement = Arrangement.spacedBy(9.dp)) {
@@ -145,7 +147,7 @@ fun AppLockedScreen(
                             }
                         }
                         Spacer(Modifier.height(24.dp))
-                        HorizontalDivider(color = Color(0xFFE7EDF5))
+                        HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
                         Spacer(Modifier.height(17.dp))
                         Row(
                             verticalAlignment = Alignment.CenterVertically,

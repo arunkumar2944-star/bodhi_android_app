@@ -257,8 +257,8 @@ private fun HealthTitle(title: String, description: String) {
 @Composable
 private fun HealthExplanation(title: String, message: String) {
     Card(
-        colors = CardDefaults.cardColors(containerColor = Color(0xFFEBF4FF)),
-        border = BorderStroke(1.dp, Color(0xFFD5E6FC)),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant),
+        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
         shape = RoundedCornerShape(17.dp)
     ) {
         Row(modifier = Modifier.padding(14.dp), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
