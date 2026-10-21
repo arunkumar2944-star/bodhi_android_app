@@ -38,9 +38,9 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 
 private val BatteryBlue = Color(0xFF1769E8)
-private val BatteryInk = Color(0xFF142343)
-private val BatteryMuted = Color(0xFF728099)
-private val BatteryBorder = Color(0xFFDDE7F4)
+private val BatteryInk = MaterialTheme.colorScheme.onSurface
+private val BatteryMuted = MaterialTheme.colorScheme.onSurfaceVariant
+private val BatteryBorder = MaterialTheme.colorScheme.outlineVariant
 private val BatteryAmber = Color(0xFFB86B0B)
 private val BatteryGreen = Color(0xFF17804E)
 
@@ -126,7 +126,7 @@ fun BatteryOptimizationScreen(
         item {
             BatteryPanel {
                 Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                    Surface(color = Color(0xFFEAF3FF), shape = RoundedCornerShape(16.dp)) {
+                    Surface(color = MaterialTheme.colorScheme.surfaceVariant, shape = RoundedCornerShape(16.dp)) {
                         Box(Modifier.size(54.dp), contentAlignment = Alignment.Center) {
                             Icon(Icons.Outlined.BatteryChargingFull, contentDescription = null, tint = BatteryBlue, modifier = Modifier.size(28.dp))
                         }
@@ -223,7 +223,7 @@ fun BatteryOptimizationScreen(
         }
 
         item {
-            Surface(color = Color(0xFFEAF3FF), shape = RoundedCornerShape(18.dp)) {
+            Surface(color = MaterialTheme.colorScheme.surfaceVariant, shape = RoundedCornerShape(18.dp)) {
                 Row(Modifier.padding(15.dp), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
                     Icon(Icons.Outlined.Info, contentDescription = null, tint = BatteryBlue)
                     Column {

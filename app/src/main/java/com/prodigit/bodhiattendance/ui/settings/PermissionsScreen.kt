@@ -33,9 +33,9 @@ import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 
 private val Blue = Color(0xFF1769E8)
-private val Ink = Color(0xFF17243D)
-private val Muted = Color(0xFF718098)
-private val Stroke = Color(0xFFE0E8F3)
+private val Ink = MaterialTheme.colorScheme.onSurface
+private val Muted = MaterialTheme.colorScheme.onSurfaceVariant
+private val Stroke = MaterialTheme.colorScheme.outlineVariant
 
 data class PermissionCheck(
     val title: String,
@@ -139,7 +139,7 @@ fun PermissionsScreen(
             item {
                 Card(
                     shape = RoundedCornerShape(18.dp),
-                    colors = CardDefaults.cardColors(containerColor = Color(0xFFEAF3FF))
+                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)
                 ) {
                     Column(Modifier.padding(16.dp)) {
                         Text("Device access overview", color = Ink, fontWeight = FontWeight.Bold)
@@ -212,7 +212,7 @@ private fun PermissionStatusCard(check: PermissionCheck) {
         border = BorderStroke(1.dp, Stroke)
     ) {
         Row(Modifier.fillMaxWidth().padding(15.dp), verticalAlignment = Alignment.CenterVertically) {
-            Surface(color = if (okay) Color(0xFFE7F6EE) else Color(0xFFFFEAED),
+            Surface(color = if (okay) MaterialTheme.colorScheme.surfaceVariant else MaterialTheme.colorScheme.surfaceVariant,
                 shape = RoundedCornerShape(12.dp)) {
                 Box(Modifier.size(42.dp), contentAlignment = Alignment.Center) {
                     Icon(if (okay) Icons.Outlined.CheckCircle else Icons.Outlined.WarningAmber,

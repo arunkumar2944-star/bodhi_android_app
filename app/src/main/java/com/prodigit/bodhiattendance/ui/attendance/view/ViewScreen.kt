@@ -2868,9 +2868,7 @@ private fun AttendanceFilterCard(
                     ),
 
                 color =
-                    Color(
-                        0xFFEAF3FF
-                    )
+                    MaterialTheme.colorScheme.surfaceVariant
 
             ) {
 

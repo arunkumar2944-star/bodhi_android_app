@@ -25,10 +25,10 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 
 private val DeviceBlue = Color(0xFF1267DF)
-private val DeviceText = Color(0xFF152443)
-private val DeviceMuted = Color(0xFF718096)
-private val DeviceBorder = Color(0xFFE1E8F3)
-private val DeviceBackground = Color(0xFFF5F9FF)
+private val DeviceText = MaterialTheme.colorScheme.onSurface
+private val DeviceMuted = MaterialTheme.colorScheme.onSurfaceVariant
+private val DeviceBorder = MaterialTheme.colorScheme.outlineVariant
+private val DeviceBackground = MaterialTheme.colorScheme.surfaceVariant
 
 data class RegisteredDeviceUiState(
     val deviceName: String,
@@ -123,7 +123,7 @@ fun RegisteredDeviceScreen(
                 ) {
 
                     Surface(
-                        color = Color(0xFFEAF3FF),
+                        color = MaterialTheme.colorScheme.surfaceVariant,
                         shape = RoundedCornerShape(20.dp)
                     ) {
                         Box(
@@ -239,7 +239,7 @@ fun RegisteredDeviceScreen(
             Card(
                 shape = RoundedCornerShape(18.dp),
                 colors = CardDefaults.cardColors(
-                    containerColor = Color(0xFFEAF3FF)
+                    containerColor = MaterialTheme.colorScheme.surfaceVariant
                 )
             ) {
                 Row(
