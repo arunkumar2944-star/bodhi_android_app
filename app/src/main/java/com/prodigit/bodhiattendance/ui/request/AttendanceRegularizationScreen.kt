@@ -43,12 +43,16 @@ import java.util.Locale
 
 private val RegularizationBlue = Color(0xFF1769E8)
 private val RegularizationDark = Color(0xFF0B438F)
-private val RegularizationLight = MaterialTheme.colorScheme.surfaceVariant
-private val RegularizationBackground = MaterialTheme.colorScheme.surfaceVariant
-private val RegularizationText = MaterialTheme.colorScheme.onSurface
-private val RegularizationMuted = MaterialTheme.colorScheme.onSurfaceVariant
-private val RegularizationBorder = MaterialTheme.colorScheme.outlineVariant
-
+private val RegularizationLight: Color
+    @Composable get() = MaterialTheme.colorScheme.surfaceVariant
+private val RegularizationBackground: Color
+    @Composable get() = MaterialTheme.colorScheme.surfaceVariant
+private val RegularizationText: Color
+    @Composable get() = MaterialTheme.colorScheme.onSurface
+private val RegularizationMuted: Color
+    @Composable get() = MaterialTheme.colorScheme.onSurfaceVariant
+private val RegularizationBorder: Color
+    @Composable get() = MaterialTheme.colorScheme.outlineVariant
 // =======================================================
 // DATA MODEL
 // =======================================================

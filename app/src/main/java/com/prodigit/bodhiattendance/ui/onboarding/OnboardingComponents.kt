@@ -24,20 +24,21 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 
 
-val OnboardingNavy = MaterialTheme.colorScheme.onSurface
+val OnboardingNavy: Color
+    @Composable get() = MaterialTheme.colorScheme.onSurface
 val OnboardingBlue = Color(0xFF0877F9)
 val OnboardingDeepBlue = Color(0xFF0757C7)
 
 val OnboardingGreen = Color(0xFF0BA968)
-val OnboardingGreenBackground = MaterialTheme.colorScheme.surfaceVariant
-
+val OnboardingGreenBackground: Color
+    @Composable get() = MaterialTheme.colorScheme.surfaceVariant
 val OnboardingOrange = Color(0xFFE67800)
-val OnboardingOrangeBackground = MaterialTheme.colorScheme.surfaceVariant
-
-val OnboardingTextSecondary = MaterialTheme.colorScheme.onSurfaceVariant
-val OnboardingDivider = MaterialTheme.colorScheme.surfaceVariant
-
-
+val OnboardingOrangeBackground: Color
+    @Composable get() = MaterialTheme.colorScheme.surfaceVariant
+val OnboardingTextSecondary: Color
+    @Composable get() = MaterialTheme.colorScheme.onSurfaceVariant
+val OnboardingDivider: Color
+    @Composable get() = MaterialTheme.colorScheme.surfaceVariant
 // ============================================================
 // SECTION HEADER
 // ============================================================

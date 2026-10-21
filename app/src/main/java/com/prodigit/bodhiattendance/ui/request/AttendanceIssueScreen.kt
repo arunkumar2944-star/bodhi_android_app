@@ -39,10 +39,14 @@ import java.util.Locale
 private val IssueGreen = Color(0xFF15976D)
 private val IssueDarkGreen = Color(0xFF087A59)
 private val IssueLightGreen = Color(0xFFE9F9F1)
-private val PageBackground = MaterialTheme.colorScheme.surfaceVariant
-private val DarkText = MaterialTheme.colorScheme.onSurface
-private val SecondaryText = MaterialTheme.colorScheme.onSurfaceVariant
-private val FieldBorder = MaterialTheme.colorScheme.outlineVariant
+private val PageBackground: Color
+    @Composable get() = MaterialTheme.colorScheme.surfaceVariant
+private val DarkText: Color
+    @Composable get() = MaterialTheme.colorScheme.onSurface
+private val SecondaryText: Color
+    @Composable get() = MaterialTheme.colorScheme.onSurfaceVariant
+private val FieldBorder: Color
+    @Composable get() = MaterialTheme.colorScheme.outlineVariant
 private val BodhiBlue = Color(0xFF1769D8)
 
 // ====================================================

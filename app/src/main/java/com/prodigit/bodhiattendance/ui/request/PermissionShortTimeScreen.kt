@@ -43,14 +43,19 @@ import com.prodigit.bodhiattendance.ui.common.mouseWheelScroll
 
 private val PrimaryBlue = Color(0xFF0866E8)
 private val DeepBlue = Color(0xFF0349AC)
-private val LightBlue = MaterialTheme.colorScheme.surfaceVariant
-private val PageBackground = MaterialTheme.colorScheme.surfaceVariant
-private val DarkText = MaterialTheme.colorScheme.onSurface
-private val SecondaryText = MaterialTheme.colorScheme.onSurfaceVariant
-private val BorderColor = MaterialTheme.colorScheme.outlineVariant
+private val LightBlue: Color
+    @Composable get() = MaterialTheme.colorScheme.surfaceVariant
+private val PageBackground: Color
+    @Composable get() = MaterialTheme.colorScheme.surfaceVariant
+private val DarkText: Color
+    @Composable get() = MaterialTheme.colorScheme.onSurface
+private val SecondaryText: Color
+    @Composable get() = MaterialTheme.colorScheme.onSurfaceVariant
+private val BorderColor: Color
+    @Composable get() = MaterialTheme.colorScheme.outlineVariant
 private val Orange = Color(0xFFFF762D)
-private val OrangeLight = MaterialTheme.colorScheme.surfaceVariant
-
+private val OrangeLight: Color
+    @Composable get() = MaterialTheme.colorScheme.surfaceVariant
 // ======================================================
 // MODELS
 // ======================================================

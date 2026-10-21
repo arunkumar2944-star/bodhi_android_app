@@ -20,10 +20,14 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 
-private val DetailBackground = MaterialTheme.colorScheme.surfaceVariant
-private val DetailText = MaterialTheme.colorScheme.onSurface
-private val DetailMuted = MaterialTheme.colorScheme.onSurfaceVariant
-private val DetailBorder = MaterialTheme.colorScheme.outlineVariant
+private val DetailBackground: Color
+    @Composable get() = MaterialTheme.colorScheme.surfaceVariant
+private val DetailText: Color
+    @Composable get() = MaterialTheme.colorScheme.onSurface
+private val DetailMuted: Color
+    @Composable get() = MaterialTheme.colorScheme.onSurfaceVariant
+private val DetailBorder: Color
+    @Composable get() = MaterialTheme.colorScheme.outlineVariant
 private val DetailBlue = Color(0xFF1769E8)
 
 @Composable

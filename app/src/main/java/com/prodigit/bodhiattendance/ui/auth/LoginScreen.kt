@@ -64,11 +64,14 @@ import com.prodigit.bodhiattendance.R
 // BODHI THEME COLORS
 // ============================================================
 
-private val BodhiNavy = MaterialTheme.colorScheme.onSurface
-private val BodhiBlue = MaterialTheme.colorScheme.onSurface
-private val BodhiBlueLight = MaterialTheme.colorScheme.onSurface
-
-private val InputBorder = MaterialTheme.colorScheme.outlineVariant
+private val BodhiNavy: Color
+    @Composable get() = MaterialTheme.colorScheme.onSurface
+private val BodhiBlue: Color
+    @Composable get() = MaterialTheme.colorScheme.onSurface
+private val BodhiBlueLight: Color
+    @Composable get() = MaterialTheme.colorScheme.onSurface
+private val InputBorder: Color
+    @Composable get() = MaterialTheme.colorScheme.outlineVariant
 private val SuccessGreen = Color(0xFF64846E)
 
 

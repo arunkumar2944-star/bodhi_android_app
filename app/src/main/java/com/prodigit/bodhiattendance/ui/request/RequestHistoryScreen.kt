@@ -55,12 +55,15 @@ data class BodhiRequest(
 // COLORS
 // =====================================================
 
-private val PageBg = MaterialTheme.colorScheme.surfaceVariant
-private val TextDark = MaterialTheme.colorScheme.onSurface
-private val TextMuted = MaterialTheme.colorScheme.onSurfaceVariant
+private val PageBg: Color
+    @Composable get() = MaterialTheme.colorScheme.surfaceVariant
+private val TextDark: Color
+    @Composable get() = MaterialTheme.colorScheme.onSurface
+private val TextMuted: Color
+    @Composable get() = MaterialTheme.colorScheme.onSurfaceVariant
 private val BrandBlue = Color(0xFF1769E8)
-private val Stroke = MaterialTheme.colorScheme.outlineVariant
-
+private val Stroke: Color
+    @Composable get() = MaterialTheme.colorScheme.outlineVariant
 private fun statusColor(status: BodhiRequestStatus): Color =
     when (status) {
         BodhiRequestStatus.PENDING -> Color(0xFFB96E00)
