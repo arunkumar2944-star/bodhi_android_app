@@ -424,7 +424,7 @@ private fun PageHeader() {
 
         Text(
             text = "On Duty",
-            color = Color(0xFF0D1745),
+            color = MaterialTheme.colorScheme.onSurface,
             fontSize = 25.sp,
             fontWeight = FontWeight.Bold
         )
@@ -440,7 +440,7 @@ private fun PageHeader() {
 
         Text(
             text = "View duties assigned to you by Admin or Manager",
-            color = Color(0xFF6D7692),
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
             fontSize = 14.sp
         )
     }
