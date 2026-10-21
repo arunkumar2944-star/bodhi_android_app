@@ -1,6 +1,8 @@
 
 package com.prodigit.bodhiattendance.ui.requests
 
+import androidx.compose.material3.MaterialTheme
+
 import android.app.DatePickerDialog
 import android.app.TimePickerDialog
 import android.net.Uri
@@ -300,7 +302,7 @@ fun AttendanceRegularizationScreen(
                     onClick = { typeExpanded = true },
                     modifier = Modifier.fillMaxWidth(),
                     colors = CardDefaults.outlinedCardColors(
-                        containerColor = Color.White
+                        containerColor = MaterialTheme.colorScheme.surface
                     ),
                     border = BorderStroke(
                         1.dp,
@@ -433,7 +435,7 @@ fun AttendanceRegularizationScreen(
                 enabled = false,
                 modifier = Modifier.fillMaxWidth(),
                 colors = CardDefaults.outlinedCardColors(
-                    containerColor = Color.White
+                    containerColor = MaterialTheme.colorScheme.surface
                 ),
                 border = BorderStroke(
                     1.dp,
@@ -637,7 +639,7 @@ private fun RegularizationValueCard(
         modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(15.dp),
         colors = CardDefaults.outlinedCardColors(
-            containerColor = Color.White
+            containerColor = MaterialTheme.colorScheme.surface
         ),
         border = BorderStroke(
             1.dp,
