@@ -71,6 +71,7 @@ private fun statusColor(status: BodhiRequestStatus): Color =
         BodhiRequestStatus.REJECTED -> Color(0xFFD64154)
     }
 
+@Composable
 private fun statusBackground(
     status: BodhiRequestStatus
 ): Color = when (status) {
