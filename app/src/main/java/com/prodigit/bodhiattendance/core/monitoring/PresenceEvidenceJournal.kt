@@ -1,6 +1,7 @@
 package com.prodigit.bodhiattendance.core.monitoring
 
 import android.content.Context
+import android.content.ContentValues
 import android.database.Cursor
 import android.database.sqlite.SQLiteDatabase
 import android.database.sqlite.SQLiteOpenHelper
@@ -39,23 +40,46 @@ class PresenceEvidenceJournal(context: Context) {
     fun markDepartureCandidate(
         userId: Int, companyId: Int, deviceId: String, bootId: String,
         officeId: Long, elapsedMs: Long, status: String
-    ) {
-        val db = helper.writableDatabase
-        db.execSQL(
-            """INSERT OR IGNORE INTO departure_candidates
-               (id,user_id,company_id,device_id,boot_id,office_id,first_observed_elapsed_ms,status,updated_wall_ms)
-               VALUES (?,?,?,?,?,?,?,?,?)""",
-            arrayOf<Any>(UUID.randomUUID().toString(), userId, companyId,
-                deviceId, bootId, officeId, elapsedMs, status, System.currentTimeMillis())
+    ): Boolean {
+        val values = ContentValues().apply {
+            put("id", UUID.randomUUID().toString())
+            put("user_id", userId)
+            put("company_id", companyId)
+            put("device_id", deviceId)
+            put("boot_id", bootId)
+            put("office_id", officeId)
+            put("first_observed_elapsed_ms", elapsedMs)
+            put("status", status)
+            put("updated_wall_ms", System.currentTimeMillis())
+        }
+        return helper.writableDatabase.insertWithOnConflict(
+            "departure_candidates", null, values, SQLiteDatabase.CONFLICT_IGNORE
+        ) != -1L
+    }
+
+    fun resolveDepartureCandidate(userId: Int, deviceId: String, bootId: String, status: String): Int {
+        val values = ContentValues().apply {
+            put("status", status)
+            put("updated_wall_ms", System.currentTimeMillis())
+        }
+        return helper.writableDatabase.update(
+            "departure_candidates", values,
+            "user_id=? AND device_id=? AND boot_id=? AND status='UNCONFIRMED'",
+            arrayOf(userId.toString(), deviceId, bootId)
         )
     }
 
-    fun resolveDepartureCandidate(userId: Int, deviceId: String, bootId: String, status: String) {
-        helper.writableDatabase.execSQL(
-            """UPDATE departure_candidates SET status=?, updated_wall_ms=?
-               WHERE user_id=? AND device_id=? AND boot_id=? AND status='UNCONFIRMED'""",
-            arrayOf<Any>(status, System.currentTimeMillis(), userId, deviceId, bootId)
-        )
+    /** Aggregate counts only. No coordinates, tokens, raw BSSIDs or unrelated users. */
+    fun candidateCounts(userId: Int, companyId: Int, deviceId: String): Pair<Int, Int> {
+        helper.readableDatabase.rawQuery(
+            """SELECT
+                COUNT(*),
+                COALESCE(SUM(CASE WHEN status='UNCONFIRMED' THEN 1 ELSE 0 END),0)
+               FROM departure_candidates WHERE user_id=? AND company_id=? AND device_id=?""",
+            arrayOf(userId.toString(), companyId.toString(), deviceId)
+        ).use { cursor ->
+            return if (cursor.moveToFirst()) cursor.getInt(0) to cursor.getInt(1) else 0 to 0
+        }
     }
 
     fun markUploaded(ids: List<String>) {
