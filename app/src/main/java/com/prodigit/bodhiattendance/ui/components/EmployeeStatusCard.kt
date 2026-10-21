@@ -108,9 +108,7 @@ fun EmployeeStatusCard(
         colors =
             CardDefaults.cardColors(
                 containerColor =
-                    Color.White.copy(
-                        alpha = 0.96f
-                    )
+                    MaterialTheme.colorScheme.surface
             ),
 
         elevation =
@@ -394,9 +392,7 @@ fun EmployeeStatusCard(
                     RoundedCornerShape(16.dp),
 
                 color =
-                    Color.White.copy(
-                        alpha = 0.75f
-                    )
+                    MaterialTheme.colorScheme.surface
             ) {
 
                 Row(
