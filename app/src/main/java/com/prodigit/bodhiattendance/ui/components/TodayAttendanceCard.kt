@@ -90,9 +90,7 @@ fun TodayAttendanceCard(
         colors =
             CardDefaults.cardColors(
                 containerColor =
-                    Color.White.copy(
-                        alpha = 0.96f
-                    )
+                    MaterialTheme.colorScheme.surface
             ),
 
         elevation =
