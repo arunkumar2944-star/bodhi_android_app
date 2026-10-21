@@ -112,3 +112,10 @@ This file is kept in Git alongside the Android Studio project. The **source of t
 - Prior light branding remains the target when Light is selected. Dark now uses theme surfaces instead of the fixed light launch image in the authenticated shell.
 - **Not a verified full-screen migration yet**: visual audit and replacement of remaining literal light colors across screens are required; compiling and emulator/phone testing are pending.
 - The theme switch must not change device authorization, attendance evidence, monitoring, or CRM synchronization.
+
+### v1.0.1 broad theme migration for MD demo — verification pending
+
+- Updated shared authenticated shell, bottom navigation, Dashboard/summary cards, Attendance History/calendar/detail UI, Requests and its child forms, System Health, Settings/device pages, login/onboarding, and app-lock presentation to use Material semantic colors.
+- Settings appearance preference remains the single selection source for LIGHT, DARK and SYSTEM; previously installed users retain Light unless changed.
+- No attendance event engine, CRM mutation, registration, geofence, or device-security policy changes were made for this appearance update.
+- **CI build and end-to-end emulator review must pass before marking the migration complete.** Verify text contrast and status meaning in all three modes. Firebase update publication and official APK signing are not included in this change.
