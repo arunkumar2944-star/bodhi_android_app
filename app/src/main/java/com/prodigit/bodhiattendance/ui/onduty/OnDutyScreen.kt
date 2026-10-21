@@ -1,5 +1,7 @@
 package com.prodigit.bodhiattendance.ui.onduty
 
+import androidx.compose.material3.MaterialTheme
+
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -1597,9 +1599,7 @@ private fun ModernOnDutyDetailsCard(
         colors =
             CardDefaults.cardColors(
                 containerColor =
-                    Color.White.copy(
-                        alpha = 0.95f
-                    )
+                    MaterialTheme.colorScheme.surface
             ),
 
         border =
@@ -2239,9 +2239,7 @@ private fun BaseCard(
         colors =
             CardDefaults.cardColors(
                 containerColor =
-                    Color.White.copy(
-                        alpha = 0.94f
-                    )
+                    MaterialTheme.colorScheme.surface
             ),
 
         border =
