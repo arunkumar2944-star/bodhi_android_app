@@ -20,10 +20,10 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 
-private val DetailBackground = Color(0xFFF5F9FE)
-private val DetailText = Color(0xFF17243D)
-private val DetailMuted = Color(0xFF718198)
-private val DetailBorder = Color(0xFFE2E9F3)
+private val DetailBackground = MaterialTheme.colorScheme.surfaceVariant
+private val DetailText = MaterialTheme.colorScheme.onSurface
+private val DetailMuted = MaterialTheme.colorScheme.onSurfaceVariant
+private val DetailBorder = MaterialTheme.colorScheme.outlineVariant
 private val DetailBlue = Color(0xFF1769E8)
 
 @Composable
@@ -220,7 +220,7 @@ fun RequestDetailsScreen(
             // ============================================
 
             Surface(
-                color = Color(0xFFE8F2FF),
+                color = MaterialTheme.colorScheme.surfaceVariant,
                 shape = RoundedCornerShape(14.dp)
             ) {
                 Row(

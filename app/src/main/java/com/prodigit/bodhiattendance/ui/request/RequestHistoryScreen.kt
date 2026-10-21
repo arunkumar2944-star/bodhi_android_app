@@ -55,11 +55,11 @@ data class BodhiRequest(
 // COLORS
 // =====================================================
 
-private val PageBg = Color(0xFFF5F9FE)
-private val TextDark = Color(0xFF14243D)
-private val TextMuted = Color(0xFF748298)
+private val PageBg = MaterialTheme.colorScheme.surfaceVariant
+private val TextDark = MaterialTheme.colorScheme.onSurface
+private val TextMuted = MaterialTheme.colorScheme.onSurfaceVariant
 private val BrandBlue = Color(0xFF1769E8)
-private val Stroke = Color(0xFFE3EAF3)
+private val Stroke = MaterialTheme.colorScheme.outlineVariant
 
 private fun statusColor(status: BodhiRequestStatus): Color =
     when (status) {
@@ -71,9 +71,9 @@ private fun statusColor(status: BodhiRequestStatus): Color =
 private fun statusBackground(
     status: BodhiRequestStatus
 ): Color = when (status) {
-    BodhiRequestStatus.PENDING -> Color(0xFFFFF2D9)
-    BodhiRequestStatus.APPROVED -> Color(0xFFE0F7EA)
-    BodhiRequestStatus.REJECTED -> Color(0xFFFFE8EC)
+    BodhiRequestStatus.PENDING -> MaterialTheme.colorScheme.surfaceVariant
+    BodhiRequestStatus.APPROVED -> MaterialTheme.colorScheme.surfaceVariant
+    BodhiRequestStatus.REJECTED -> MaterialTheme.colorScheme.surfaceVariant
 }
 
 private fun requestColor(type: BodhiRequestType): Color =
@@ -178,7 +178,7 @@ fun RequestHistoryScreen(
                                 colors = FilterChipDefaults
                                     .filterChipColors(
                                         selectedContainerColor =
-                                            Color(0xFFE4EFFF),
+                                            MaterialTheme.colorScheme.surfaceVariant,
                                         selectedLabelColor =
                                             BrandBlue
                                     )

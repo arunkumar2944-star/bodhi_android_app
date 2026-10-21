@@ -39,10 +39,10 @@ import java.util.Locale
 private val IssueGreen = Color(0xFF15976D)
 private val IssueDarkGreen = Color(0xFF087A59)
 private val IssueLightGreen = Color(0xFFE9F9F1)
-private val PageBackground = Color(0xFFF6FAFF)
-private val DarkText = Color(0xFF17243D)
-private val SecondaryText = Color(0xFF78859A)
-private val FieldBorder = Color(0xFFE1E8F1)
+private val PageBackground = MaterialTheme.colorScheme.surfaceVariant
+private val DarkText = MaterialTheme.colorScheme.onSurface
+private val SecondaryText = MaterialTheme.colorScheme.onSurfaceVariant
+private val FieldBorder = MaterialTheme.colorScheme.outlineVariant
 private val BodhiBlue = Color(0xFF1769D8)
 
 // ====================================================
@@ -425,7 +425,7 @@ fun AttendanceIssueScreen(
             Card(
                 shape = RoundedCornerShape(16.dp),
                 colors = CardDefaults.cardColors(
-                    containerColor = Color(0xFFEAF3FF)
+                    containerColor = MaterialTheme.colorScheme.surfaceVariant
                 )
             ) {
                 Row(

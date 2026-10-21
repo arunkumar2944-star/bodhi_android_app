@@ -43,13 +43,13 @@ import com.prodigit.bodhiattendance.ui.common.mouseWheelScroll
 
 private val PrimaryBlue = Color(0xFF0866E8)
 private val DeepBlue = Color(0xFF0349AC)
-private val LightBlue = Color(0xFFEAF3FF)
-private val PageBackground = Color(0xFFF7F9FD)
-private val DarkText = Color(0xFF142038)
-private val SecondaryText = Color(0xFF718096)
-private val BorderColor = Color(0xFFE2E8F0)
+private val LightBlue = MaterialTheme.colorScheme.surfaceVariant
+private val PageBackground = MaterialTheme.colorScheme.surfaceVariant
+private val DarkText = MaterialTheme.colorScheme.onSurface
+private val SecondaryText = MaterialTheme.colorScheme.onSurfaceVariant
+private val BorderColor = MaterialTheme.colorScheme.outlineVariant
 private val Orange = Color(0xFFFF762D)
-private val OrangeLight = Color(0xFFFFF2E8)
+private val OrangeLight = MaterialTheme.colorScheme.surfaceVariant
 
 // ======================================================
 // MODELS
@@ -224,7 +224,7 @@ fun PermissionShortTimeScreen(
                             "• Arriving late by 30–60 minutes\n" +
                                     "• Leaving 30–60 minutes before " +
                                     "the expected closing time",
-                            color = Color(0xFF526071),
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
                             fontSize = 12.sp,
                             lineHeight = 19.sp
                         )
@@ -638,7 +638,7 @@ private fun PermissionSelectionCard(
                         .clip(CircleShape)
                         .background(
                             if (selected)
-                                Color(0xFFD4E6FF)
+                                MaterialTheme.colorScheme.outlineVariant
                             else
                                 OrangeLight
                         ),
