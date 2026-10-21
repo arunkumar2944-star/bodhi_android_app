@@ -108,8 +108,8 @@ fun SystemHealthScreen(
         item {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Column(modifier = Modifier.weight(1f)) {
-                    Text("System Health", fontSize = 26.sp, fontWeight = FontWeight.Bold, color = Color(0xFF142343))
-                    Text("Live device and attendance diagnostics", fontSize = 12.sp, color = Color(0xFF728099))
+                    Text("System Health", fontSize = 26.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSurface)
+                    Text("Live device and attendance diagnostics", fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
                 }
                 TextButton(onClick = onBack) { Text("Back") }
             }
@@ -206,7 +206,7 @@ fun SystemHealthScreen(
             Spacer(Modifier.height(8.dp))
             Text(
                 "Wi-Fi and BLE requirements are read from the active CRM office policy. Unknown policy or sensor evidence is not treated as verified.",
-                fontSize = 11.sp, lineHeight = 16.sp, color = Color(0xFF75839B)
+                fontSize = 11.sp, lineHeight = 16.sp, color = MaterialTheme.colorScheme.onSurfaceVariant
             )
         }
 
@@ -240,7 +240,7 @@ fun SystemHealthScreen(
             Spacer(Modifier.height(8.dp))
             Text(
                 "Checks use local device information and any currently available attendance configuration. Missing configuration must not be displayed as verified.",
-                color = Color(0xFF74829A), fontSize = 11.sp, lineHeight = 16.sp
+                color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 11.sp, lineHeight = 16.sp
             )
         }
     }
@@ -250,7 +250,7 @@ fun SystemHealthScreen(
 private fun HealthTitle(title: String, description: String) {
     Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
         Text(title, fontSize = 11.sp, letterSpacing = .6.sp, fontWeight = FontWeight.Bold, color = Color(0xFF1769E8))
-        Text(description, fontSize = 11.sp, color = Color(0xFF718098))
+        Text(description, fontSize = 11.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
     }
 }
 
@@ -264,9 +264,9 @@ private fun HealthExplanation(title: String, message: String) {
         Row(modifier = Modifier.padding(14.dp), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
             Icon(Icons.Outlined.Info, contentDescription = null, tint = Color(0xFF1769E8))
             Column {
-                Text(title, fontSize = 13.sp, fontWeight = FontWeight.Bold, color = Color(0xFF142343))
+                Text(title, fontSize = 13.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSurface)
                 Spacer(Modifier.height(4.dp))
-                Text(message, fontSize = 11.sp, lineHeight = 17.sp, color = Color(0xFF536985))
+                Text(message, fontSize = 11.sp, lineHeight = 17.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
             }
         }
     }
