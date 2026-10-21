@@ -2,7 +2,6 @@ package com.prodigit.bodhiattendance.ui.common
 
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
-import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxScope
@@ -23,7 +22,7 @@ fun AppBackground(
         modifier = Modifier.fillMaxSize()
     ) {
 
-        if (isSystemInDarkTheme() && MaterialTheme.colorScheme.background == androidx.compose.ui.graphics.Color(0xFF101827)) {
+        if (MaterialTheme.colorScheme.background == androidx.compose.ui.graphics.Color(0xFF101827)) {
             Box(Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background))
         } else {
             Image(
