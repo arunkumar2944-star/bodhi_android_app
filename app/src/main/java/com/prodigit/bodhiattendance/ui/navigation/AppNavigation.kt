@@ -372,6 +372,13 @@ private fun MainApplication(onSignedOut: () -> Unit) {
     // This is read-only and does not modify local attendance or server decisions.
     LaunchedEffect(currentRoute) {
         if (currentRoute != null) liveModel.refresh()
+        // Foreground-only refresh: UI reads CRM state; attendance engine stays independent.
+        if (currentRoute == ROUTE_DASHBOARD || currentRoute == ROUTE_ATTENDANCE) {
+            while (true) {
+                kotlinx.coroutines.delay(30_000L)
+                liveModel.refresh()
+            }
+        }
     }
 
 
@@ -448,8 +455,19 @@ private fun MainApplication(onSignedOut: () -> Unit) {
             com.prodigit.bodhiattendance.domain.attendance.OnDutyWindow.isVisible(assignment.date, assignment.status, today)
         } == true
 
+    var uiRefreshing by remember { mutableStateOf(false) }
+    val uiRefreshScope = androidx.compose.runtime.rememberCoroutineScope()
     MainAppLayout(
         hasUpcomingOnDuty = hasUpcomingOnDuty,
+        isRefreshing = uiRefreshing,
+        onRefresh = {
+            if (!uiRefreshing) {
+                uiRefreshScope.launch {
+                    uiRefreshing = true
+                    try { liveModel.refresh() } finally { uiRefreshing = false }
+                }
+            }
+        },
 
         selectedDestination =
             selectedDestination,
