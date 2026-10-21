@@ -25,10 +25,13 @@ import androidx.compose.ui.unit.sp
 
 // Shared, presentation-only UI components. No persistence or attendance writes.
 // UI prototype for the MD presentation. No backend, credential persistence, or attendance mutation.
-internal val ProtoNavy = MaterialTheme.colorScheme.onSurface
+internal val ProtoNavy: Color
+    @Composable get() = MaterialTheme.colorScheme.onSurface
 internal val ProtoBlue = Color(0xFF1769E8)
-internal val ProtoMuted = MaterialTheme.colorScheme.onSurfaceVariant
-internal val ProtoBorder = MaterialTheme.colorScheme.outlineVariant
+internal val ProtoMuted: Color
+    @Composable get() = MaterialTheme.colorScheme.onSurfaceVariant
+internal val ProtoBorder: Color
+    @Composable get() = MaterialTheme.colorScheme.outlineVariant
 internal val ProtoPurple = Color(0xFF7650DC)
 internal val ProtoGreen = Color(0xFF138968)
 

@@ -35,10 +35,12 @@ import com.prodigit.bodhiattendance.core.monitoring.TrustedTimeMonitor
 import com.prodigit.bodhiattendance.core.monitoring.TrustedClockEvidence
 
 private val TimeBlue = Color(0xFF1769E8)
-private val TimeText = MaterialTheme.colorScheme.onSurface
-private val TimeMuted = MaterialTheme.colorScheme.onSurfaceVariant
-private val TimeBorder = MaterialTheme.colorScheme.outlineVariant
-
+private val TimeText: Color
+    @Composable get() = MaterialTheme.colorScheme.onSurface
+private val TimeMuted: Color
+    @Composable get() = MaterialTheme.colorScheme.onSurfaceVariant
+private val TimeBorder: Color
+    @Composable get() = MaterialTheme.colorScheme.outlineVariant
 private data class LocalTimeSnapshot(
     val capturedAt: Long,
     val automaticTime: Boolean?,

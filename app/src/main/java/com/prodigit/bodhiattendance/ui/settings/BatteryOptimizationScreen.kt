@@ -38,9 +38,12 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 
 private val BatteryBlue = Color(0xFF1769E8)
-private val BatteryInk = MaterialTheme.colorScheme.onSurface
-private val BatteryMuted = MaterialTheme.colorScheme.onSurfaceVariant
-private val BatteryBorder = MaterialTheme.colorScheme.outlineVariant
+private val BatteryInk: Color
+    @Composable get() = MaterialTheme.colorScheme.onSurface
+private val BatteryMuted: Color
+    @Composable get() = MaterialTheme.colorScheme.onSurfaceVariant
+private val BatteryBorder: Color
+    @Composable get() = MaterialTheme.colorScheme.outlineVariant
 private val BatteryAmber = Color(0xFFB86B0B)
 private val BatteryGreen = Color(0xFF17804E)
 

@@ -33,10 +33,12 @@ import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 
 private val Blue = Color(0xFF1769E8)
-private val Ink = MaterialTheme.colorScheme.onSurface
-private val Muted = MaterialTheme.colorScheme.onSurfaceVariant
-private val Stroke = MaterialTheme.colorScheme.outlineVariant
-
+private val Ink: Color
+    @Composable get() = MaterialTheme.colorScheme.onSurface
+private val Muted: Color
+    @Composable get() = MaterialTheme.colorScheme.onSurfaceVariant
+private val Stroke: Color
+    @Composable get() = MaterialTheme.colorScheme.outlineVariant
 data class PermissionCheck(
     val title: String,
     val description: String,

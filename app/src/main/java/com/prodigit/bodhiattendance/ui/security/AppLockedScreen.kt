@@ -35,10 +35,12 @@ import com.prodigit.bodhiattendance.R
 import com.prodigit.bodhiattendance.core.monitoring.AttendanceMonitorStatus
 import com.prodigit.bodhiattendance.ui.common.AppBackground
 
-private val AccessNavy = MaterialTheme.colorScheme.onSurface
-private val AccessBlue = MaterialTheme.colorScheme.onSurface
-private val AccessMuted = MaterialTheme.colorScheme.onSurfaceVariant
-
+private val AccessNavy: Color
+    @Composable get() = MaterialTheme.colorScheme.onSurface
+private val AccessBlue: Color
+    @Composable get() = MaterialTheme.colorScheme.onSurface
+private val AccessMuted: Color
+    @Composable get() = MaterialTheme.colorScheme.onSurfaceVariant
 /** Presentation only. Authentication stays in the existing Android unlock flow. */
 @Composable
 fun AppLockedScreen(

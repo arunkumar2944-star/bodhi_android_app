@@ -25,11 +25,14 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 
 private val DeviceBlue = Color(0xFF1267DF)
-private val DeviceText = MaterialTheme.colorScheme.onSurface
-private val DeviceMuted = MaterialTheme.colorScheme.onSurfaceVariant
-private val DeviceBorder = MaterialTheme.colorScheme.outlineVariant
-private val DeviceBackground = MaterialTheme.colorScheme.surfaceVariant
-
+private val DeviceText: Color
+    @Composable get() = MaterialTheme.colorScheme.onSurface
+private val DeviceMuted: Color
+    @Composable get() = MaterialTheme.colorScheme.onSurfaceVariant
+private val DeviceBorder: Color
+    @Composable get() = MaterialTheme.colorScheme.outlineVariant
+private val DeviceBackground: Color
+    @Composable get() = MaterialTheme.colorScheme.surfaceVariant
 data class RegisteredDeviceUiState(
     val deviceName: String,
     val manufacturer: String,

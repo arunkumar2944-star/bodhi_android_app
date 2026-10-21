@@ -20,10 +20,12 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 
 private val PolicyBlue = Color(0xFF1769E8)
-private val PolicyInk = MaterialTheme.colorScheme.onSurface
-private val PolicyMuted = MaterialTheme.colorScheme.onSurfaceVariant
-private val PolicyBorder = MaterialTheme.colorScheme.outlineVariant
-
+private val PolicyInk: Color
+    @Composable get() = MaterialTheme.colorScheme.onSurface
+private val PolicyMuted: Color
+    @Composable get() = MaterialTheme.colorScheme.onSurfaceVariant
+private val PolicyBorder: Color
+    @Composable get() = MaterialTheme.colorScheme.outlineVariant
 /** Displays CRM configuration verbatim; never changes attendance policy. */
 @Composable
 fun AttendanceConfigurationScreen(onBack: () -> Unit, modifier: Modifier = Modifier) {
