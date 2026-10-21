@@ -447,7 +447,7 @@ private fun AttendanceHistoryScreenContent(
 
         if (monthRecords.isEmpty()) item {
             Text("No attendance records returned for this month. This does not mean you were absent.",
-                fontSize = 13.sp, color = Color(0xFF68718C))
+                fontSize = 13.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
         }
 
         items(
@@ -1829,9 +1829,9 @@ private fun AttendanceDetailsScreenContent(
             Text(attendance.date, fontSize = 16.sp)
             if (attendance.status == "HOLIDAY") {
                 Text(attendance.holidayTitle ?: "Company Holiday", fontWeight = FontWeight.Bold, fontSize = 19.sp)
-                Text(attendance.holidayMessage ?: "Regular attendance is not required.", color = Color(0xFF68718C))
-                Text("Attendance status: Holiday — No attendance required", color = Color(0xFF68718C))
-            } else Text("No attendance record available for this date.", color = Color(0xFF68718C))
+                Text(attendance.holidayMessage ?: "Regular attendance is not required.", color = MaterialTheme.colorScheme.onSurfaceVariant)
+                Text("Attendance status: Holiday — No attendance required", color = MaterialTheme.colorScheme.onSurfaceVariant)
+            } else Text("No attendance record available for this date.", color = MaterialTheme.colorScheme.onSurfaceVariant)
         }
         return
     }
