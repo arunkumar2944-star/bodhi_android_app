@@ -1,5 +1,6 @@
 package com.prodigit.bodhiattendance.ui.attendance.view
 
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
