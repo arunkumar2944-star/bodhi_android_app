@@ -684,6 +684,17 @@ private fun MonthlySummarySection(year: Int, month: Int) {
         } == true
     }
 
+    // Monthly totals include confirmed values only. Unknown days remain unknown,
+    // rather than being counted as zero or suppressing all confirmed totals.
+    val confirmedBreakDays = days.orEmpty().filter { it.breakMinutes != null }
+    val confirmedWorkDays = days.orEmpty().filter { it.workMinutes != null }
+    val breakCoverage = if (days != null && confirmedBreakDays.size < days.size)
+        "Partial: ${confirmedBreakDays.size}/${days.size} days with totals"
+    else "Loaded records in month"
+    val workCoverage = if (days != null && confirmedWorkDays.size < days.size)
+        "Partial: ${confirmedWorkDays.size}/${days.size} days with totals"
+    else "Loaded records in month"
+
     Column(
 
         verticalArrangement =
@@ -791,10 +802,10 @@ private fun MonthlySummarySection(year: Int, month: Int) {
                     "Total Break",
 
                 value =
-                    days?.takeIf { it.all { day -> day.breakMinutes != null } }?.let { com.prodigit.bodhiattendance.ui.live.durationText(it.sumOf { day -> day.breakMinutes!! }) } ?: "--",
+                    confirmedBreakDays.takeIf { it.isNotEmpty() }?.let { com.prodigit.bodhiattendance.ui.live.durationText(it.sumOf { day -> day.breakMinutes!! }) } ?: "--",
 
                 subtitle =
-                    "Loaded records in month",
+                    breakCoverage,
 
                 icon =
                     Icons.Outlined.Coffee,
@@ -822,10 +833,10 @@ private fun MonthlySummarySection(year: Int, month: Int) {
                     "Work Hours",
 
                 value =
-                    days?.takeIf { it.all { day -> day.workMinutes != null } }?.let { com.prodigit.bodhiattendance.ui.live.durationText(it.sumOf { day -> day.workMinutes!! }) } ?: "--",
+                    confirmedWorkDays.takeIf { it.isNotEmpty() }?.let { com.prodigit.bodhiattendance.ui.live.durationText(it.sumOf { day -> day.workMinutes!! }) } ?: "--",
 
                 subtitle =
-                    "Loaded records in month",
+                    workCoverage,
 
                 icon =
                     Icons.Outlined.AccessTime,
@@ -2607,82 +2618,17 @@ private fun StatusChip(
 ) {
 
 
-    val backgroundColor: Color
-
-    val textColor: Color
-
-
-    when (
-        status.lowercase()
-    ) {
-
-
-        "present" -> {
-
-            backgroundColor =
-                Color(
-                    0xFFE3F8EA
-                )
-
-            textColor =
-                Color(
-                    0xFF078637
-                )
-        }
-
-
-        "working" -> {
-
-            backgroundColor =
-                Color(
-                    0xFFE7F3FF
-                )
-
-            textColor =
-                Color(
-                    0xFF1267DF
-                )
-        }
-
-
-        "absent" -> {
-
-            backgroundColor =
-                Color(
-                    0xFFFFE8EB
-                )
-
-            textColor =
-                Color(
-                    0xFFE42338
-                )
-        }
-
-
-        "holiday" -> {
-
-            backgroundColor =
-                Color(
-                    0xFFF0F2F7
-                )
-
-            textColor =
-                MaterialTheme.colorScheme.onSurfaceVariant
-        }
-
-
-        else -> {
-
-            backgroundColor =
-                Color(
-                    0xFFF0F2F7
-                )
-
-            textColor =
-                MaterialTheme.colorScheme.onSurfaceVariant
-        }
+    val scheme = MaterialTheme.colorScheme
+    val (backgroundColor, textColor) = when (status.lowercase()) {
+        "present" -> scheme.primaryContainer to scheme.onPrimaryContainer
+        "working" -> scheme.primaryContainer to scheme.onPrimaryContainer
+        "checked out" -> scheme.secondaryContainer to scheme.onSecondaryContainer
+        "on break" -> scheme.tertiaryContainer to scheme.onTertiaryContainer
+        "needs review" -> scheme.errorContainer to scheme.onErrorContainer
+        "absent" -> scheme.errorContainer to scheme.onErrorContainer
+        "holiday" -> scheme.surfaceVariant to scheme.onSurfaceVariant
+        else -> scheme.surfaceVariant to scheme.onSurfaceVariant
     }
-
 
     Surface(
 
