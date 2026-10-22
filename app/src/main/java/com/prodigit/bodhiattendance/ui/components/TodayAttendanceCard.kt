@@ -49,8 +49,8 @@ private val AttendanceOrange =
 private val AttendanceGray =
     Color(0xFF64748B)
 
-private val AttendanceBorder =
-    MaterialTheme.colorScheme.outlineVariant
+private val AttendanceBorder: Color
+    @Composable get() = MaterialTheme.colorScheme.outlineVariant
 
 
 // ============================================================
