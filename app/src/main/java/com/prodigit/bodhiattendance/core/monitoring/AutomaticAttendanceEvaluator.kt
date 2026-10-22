@@ -173,7 +173,8 @@ class AutomaticAttendanceEvaluator(context: Context, private val workDate: Strin
         }
         suspend fun uncertain(reason: String) {
             reviewEvidence.record(location, bssid, wifiDisconnected, office, "UNCERTAIN", snapshot.attendanceState?.name ?: "UNKNOWN")
-            departureEvidence.reset()
+            // Preserve a prior valid outside sample during a transient inaccurate fix.
+            // Tracker itself rejects stale pairs (>90 seconds), duplicated and reordered fixes.
             needsBetterGps = true
             // Keep recovery checks prompt while an observation is uncertain.
             // This is a retry hint, NOT permission to infer absence or backdate a break.
@@ -194,6 +195,16 @@ class AutomaticAttendanceEvaluator(context: Context, private val workDate: Strin
             journal.record(location, office.id, reportedWifiMatch, "UNCERTAIN")
             diagnostics.record("ENGINE", "Evidence uncertain: $reason; no attendance event")
         }
+        // Persist Wi-Fi loss even if GPS accuracy is temporarily too poor to evaluate.
+        // This is review evidence only; it never starts grace or creates a break.
+        if (snapshot.attendanceState == AttendanceState.WORKING &&
+            wifiDisconnected && boundOfficeId == office.id) {
+            journal.markDepartureCandidate(
+                session.getUserId(), session.getCompanyId(), deviceId,
+                boot.getBootId(), office.id, location.elapsedRealtimeNanos / 1_000_000L,
+                "UNCONFIRMED"
+            )
+        }
         val accuracyLimit = office.maxAccuracyMeters
         if (accuracyLimit == null || !accuracyLimit.isFinite() || accuracyLimit <= 0 ||
             location.accuracy > accuracyLimit || !office.geofenceRadiusMeters.isFinite() || office.geofenceRadiusMeters <= 0) {
@@ -206,14 +217,6 @@ class AutomaticAttendanceEvaluator(context: Context, private val workDate: Strin
         }
         val readableBssid = bssid?.takeIf { it.matches(Regex("(?i)([0-9a-f]{2}:){5}[0-9a-f]{2}")) &&
             it != "02:00:00:00:00:00" && it != "00:00:00:00:00:00" }
-        // Wi-Fi loss is only a provisional departure time, never proof of absence.
-        if (snapshot.attendanceState == AttendanceState.WORKING && wifiDisconnected && boundOfficeId == office.id) {
-            journal.markDepartureCandidate(
-                session.getUserId(), session.getCompanyId(), deviceId,
-                boot.getBootId(), office.id, location.elapsedRealtimeNanos / 1_000_000L,
-                "UNCONFIRMED"
-            )
-        }
         val distanceMeters = distance(office).toDouble()
         val inside = distanceMeters <= office.geofenceRadiusMeters
         val wifiVerified = !wifiDisconnected && readableBssid != null && office.wifiAccessPoints.any { it.bssid.equals(readableBssid, true) }
@@ -234,7 +237,9 @@ class AutomaticAttendanceEvaluator(context: Context, private val workDate: Strin
             needsContinuityChecks = snapshot.attendanceState in setOf(AttendanceState.WORKING, AttendanceState.ON_BREAK)
             if (!departureEvidence.confirmOutside(now)) {
                 uncertain("Departure needs another fresh outside observation")
-                // Uncertainty reset the evidence pair; retain this new first fix for the next burst.
+                // Keep the first fresh outside fix and request a second one promptly.
+                needsContinuityChecks = true
+                nextVerificationElapsedMs = android.os.SystemClock.elapsedRealtime() + 20_000L
                 departureEvidence.confirmOutside(now)
                 return@withLock
             }
