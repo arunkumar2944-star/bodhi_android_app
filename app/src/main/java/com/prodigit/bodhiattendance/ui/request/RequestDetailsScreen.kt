@@ -1,6 +1,8 @@
 
 package com.prodigit.bodhiattendance.ui.requests
 
+import androidx.compose.material3.MaterialTheme
+
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
@@ -18,10 +20,14 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 
-private val DetailBackground = Color(0xFFF5F9FE)
-private val DetailText = Color(0xFF17243D)
-private val DetailMuted = Color(0xFF718198)
-private val DetailBorder = Color(0xFFE2E9F3)
+private val DetailBackground: Color
+    @Composable get() = MaterialTheme.colorScheme.surfaceVariant
+private val DetailText: Color
+    @Composable get() = MaterialTheme.colorScheme.onSurface
+private val DetailMuted: Color
+    @Composable get() = MaterialTheme.colorScheme.onSurfaceVariant
+private val DetailBorder: Color
+    @Composable get() = MaterialTheme.colorScheme.outlineVariant
 private val DetailBlue = Color(0xFF1769E8)
 
 @Composable
@@ -72,7 +78,7 @@ fun RequestDetailsScreen(
                 modifier = Modifier.fillMaxWidth(),
                 shape = RoundedCornerShape(20.dp),
                 colors = CardDefaults.cardColors(
-                    containerColor = Color.White
+                    containerColor = MaterialTheme.colorScheme.surface
                 ),
                 border = BorderStroke(
                     1.dp,
@@ -218,7 +224,7 @@ fun RequestDetailsScreen(
             // ============================================
 
             Surface(
-                color = Color(0xFFE8F2FF),
+                color = MaterialTheme.colorScheme.surfaceVariant,
                 shape = RoundedCornerShape(14.dp)
             ) {
                 Row(
@@ -254,7 +260,7 @@ private fun DetailSectionCard(
     Card(
         modifier = Modifier.fillMaxWidth(),
         colors = CardDefaults.cardColors(
-            containerColor = Color.White
+            containerColor = MaterialTheme.colorScheme.surface
         ),
         shape = RoundedCornerShape(18.dp),
         border = BorderStroke(

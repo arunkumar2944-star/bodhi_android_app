@@ -1,5 +1,7 @@
 package com.prodigit.bodhiattendance.ui.onduty
 
+import androidx.compose.material3.MaterialTheme
+
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -422,7 +424,7 @@ private fun PageHeader() {
 
         Text(
             text = "On Duty",
-            color = Color(0xFF0D1745),
+            color = MaterialTheme.colorScheme.onSurface,
             fontSize = 25.sp,
             fontWeight = FontWeight.Bold
         )
@@ -438,7 +440,7 @@ private fun PageHeader() {
 
         Text(
             text = "View duties assigned to you by Admin or Manager",
-            color = Color(0xFF6D7692),
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
             fontSize = 14.sp
         )
     }
@@ -1597,9 +1599,7 @@ private fun ModernOnDutyDetailsCard(
         colors =
             CardDefaults.cardColors(
                 containerColor =
-                    Color.White.copy(
-                        alpha = 0.95f
-                    )
+                    MaterialTheme.colorScheme.surface
             ),
 
         border =
@@ -2239,9 +2239,7 @@ private fun BaseCard(
         colors =
             CardDefaults.cardColors(
                 containerColor =
-                    Color.White.copy(
-                        alpha = 0.94f
-                    )
+                    MaterialTheme.colorScheme.surface
             ),
 
         border =

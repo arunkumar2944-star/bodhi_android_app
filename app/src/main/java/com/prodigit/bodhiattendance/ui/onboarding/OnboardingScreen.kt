@@ -1201,9 +1201,7 @@ fun OnboardingScreen(
                                 Color.White,
 
                             disabledContainerColor =
-                                Color(
-                                    0xFFB7C9E3
-                                ),
+                                MaterialTheme.colorScheme.outlineVariant,
 
                             disabledContentColor =
                                 Color.White.copy(

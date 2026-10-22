@@ -1,5 +1,7 @@
 package com.prodigit.bodhiattendance.ui.settings
 
+import androidx.compose.material3.MaterialTheme
+
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
@@ -23,10 +25,13 @@ import androidx.compose.ui.unit.sp
 
 // Shared, presentation-only UI components. No persistence or attendance writes.
 // UI prototype for the MD presentation. No backend, credential persistence, or attendance mutation.
-internal val ProtoNavy = Color(0xFF142343)
+internal val ProtoNavy: Color
+    @Composable get() = MaterialTheme.colorScheme.onSurface
 internal val ProtoBlue = Color(0xFF1769E8)
-internal val ProtoMuted = Color(0xFF75839B)
-internal val ProtoBorder = Color(0xFFDEE8F5)
+internal val ProtoMuted: Color
+    @Composable get() = MaterialTheme.colorScheme.onSurfaceVariant
+internal val ProtoBorder: Color
+    @Composable get() = MaterialTheme.colorScheme.outlineVariant
 internal val ProtoPurple = Color(0xFF7650DC)
 internal val ProtoGreen = Color(0xFF138968)
 
@@ -61,7 +66,7 @@ internal fun PrototypeInfo(text: String) {
 @Composable
 internal fun PrototypePanel(content: @Composable ColumnScope.() -> Unit) {
     Card(Modifier.fillMaxWidth(), shape = RoundedCornerShape(20.dp),
-        colors = CardDefaults.cardColors(containerColor = Color.White),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
         border = BorderStroke(1.dp, ProtoBorder), elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)) {
         Column(Modifier.fillMaxWidth().padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp), content = content)
     }
@@ -84,10 +89,10 @@ internal fun PrototypeHeading(icon: ImageVector, title: String, description: Str
 
 @Composable
 internal fun PrototypeNotice(text: String) {
-    Surface(color = Color(0xFFEBF4FF), shape = RoundedCornerShape(15.dp), border = BorderStroke(1.dp, Color(0xFFD5E6FC))) {
+    Surface(color = MaterialTheme.colorScheme.surfaceVariant, shape = RoundedCornerShape(15.dp), border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant)) {
         Row(Modifier.padding(14.dp), horizontalArrangement = Arrangement.spacedBy(9.dp)) {
             Icon(Icons.Outlined.Info, null, tint = ProtoBlue, modifier = Modifier.size(19.dp))
-            Text(text, color = Color(0xFF536985), fontSize = 12.sp, lineHeight = 18.sp)
+            Text(text, color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 12.sp, lineHeight = 18.sp)
         }
     }
 }

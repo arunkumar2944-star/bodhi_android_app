@@ -1,6 +1,8 @@
 
 package com.prodigit.bodhiattendance.ui.requests
 
+import androidx.compose.material3.MaterialTheme
+
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -53,12 +55,15 @@ data class BodhiRequest(
 // COLORS
 // =====================================================
 
-private val PageBg = Color(0xFFF5F9FE)
-private val TextDark = Color(0xFF14243D)
-private val TextMuted = Color(0xFF748298)
+private val PageBg: Color
+    @Composable get() = MaterialTheme.colorScheme.surfaceVariant
+private val TextDark: Color
+    @Composable get() = MaterialTheme.colorScheme.onSurface
+private val TextMuted: Color
+    @Composable get() = MaterialTheme.colorScheme.onSurfaceVariant
 private val BrandBlue = Color(0xFF1769E8)
-private val Stroke = Color(0xFFE3EAF3)
-
+private val Stroke: Color
+    @Composable get() = MaterialTheme.colorScheme.outlineVariant
 private fun statusColor(status: BodhiRequestStatus): Color =
     when (status) {
         BodhiRequestStatus.PENDING -> Color(0xFFB96E00)
@@ -66,12 +71,13 @@ private fun statusColor(status: BodhiRequestStatus): Color =
         BodhiRequestStatus.REJECTED -> Color(0xFFD64154)
     }
 
+@Composable
 private fun statusBackground(
     status: BodhiRequestStatus
 ): Color = when (status) {
-    BodhiRequestStatus.PENDING -> Color(0xFFFFF2D9)
-    BodhiRequestStatus.APPROVED -> Color(0xFFE0F7EA)
-    BodhiRequestStatus.REJECTED -> Color(0xFFFFE8EC)
+    BodhiRequestStatus.PENDING -> MaterialTheme.colorScheme.surfaceVariant
+    BodhiRequestStatus.APPROVED -> MaterialTheme.colorScheme.surfaceVariant
+    BodhiRequestStatus.REJECTED -> MaterialTheme.colorScheme.surfaceVariant
 }
 
 private fun requestColor(type: BodhiRequestType): Color =
@@ -176,7 +182,7 @@ fun RequestHistoryScreen(
                                 colors = FilterChipDefaults
                                     .filterChipColors(
                                         selectedContainerColor =
-                                            Color(0xFFE4EFFF),
+                                            MaterialTheme.colorScheme.surfaceVariant,
                                         selectedLabelColor =
                                             BrandBlue
                                     )
@@ -197,7 +203,7 @@ fun RequestHistoryScreen(
                     Card(
                         modifier = Modifier.fillMaxWidth(),
                         colors = CardDefaults.cardColors(
-                            containerColor = Color.White
+                            containerColor = MaterialTheme.colorScheme.surface
                         ),
                         shape = RoundedCornerShape(18.dp)
                     ) {
@@ -260,7 +266,7 @@ private fun RequestHistoryCard(
         modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(18.dp),
         colors = CardDefaults.cardColors(
-            containerColor = Color.White
+            containerColor = MaterialTheme.colorScheme.surface
         ),
         border = BorderStroke(1.dp, Stroke),
         elevation = CardDefaults.cardElevation(

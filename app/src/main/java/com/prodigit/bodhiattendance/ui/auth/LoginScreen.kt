@@ -64,11 +64,14 @@ import com.prodigit.bodhiattendance.R
 // BODHI THEME COLORS
 // ============================================================
 
-private val BodhiNavy = Color(0xFF142D55)
-private val BodhiBlue = Color(0xFF234D8C)
-private val BodhiBlueLight = Color(0xFF315F9D)
-
-private val InputBorder = Color(0xFFCBD5E5)
+private val BodhiNavy: Color
+    @Composable get() = MaterialTheme.colorScheme.onSurface
+private val BodhiBlue: Color
+    @Composable get() = MaterialTheme.colorScheme.onSurface
+private val BodhiBlueLight: Color
+    @Composable get() = MaterialTheme.colorScheme.onSurface
+private val InputBorder: Color
+    @Composable get() = MaterialTheme.colorScheme.outlineVariant
 private val SuccessGreen = Color(0xFF64846E)
 
 
@@ -982,7 +985,7 @@ fun LoginScreen(
 
                     HorizontalDivider(
                         color =
-                            Color(0xFFE6EBF2),
+                            MaterialTheme.colorScheme.outlineVariant,
 
                         thickness =
                             1.dp

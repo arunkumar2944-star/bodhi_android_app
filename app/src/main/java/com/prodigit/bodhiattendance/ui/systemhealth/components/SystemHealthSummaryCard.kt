@@ -108,7 +108,7 @@ fun SystemHealthSummaryCard(
     val statusColor = when {
         attentionCount > 0 -> MaterialTheme.colorScheme.error
         overallReady -> Color(0xFF16834A)
-        else -> Color(0xFF687386)
+        else -> MaterialTheme.colorScheme.onSurfaceVariant
     }
     val statusTitle = when {
         attentionCount > 0 -> "Attention Required"
@@ -500,9 +500,7 @@ fun SystemHealthSummaryCard(
                         Icons.Outlined.HourglassEmpty,
 
                     color =
-                        Color(
-                            0xFF687386
-                        )
+                        MaterialTheme.colorScheme.onSurfaceVariant
                 )
 
 

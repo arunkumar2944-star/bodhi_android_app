@@ -178,12 +178,10 @@ fun SystemHealthCard(
                     .error
 
             HealthStatus.NOT_CONFIGURED ->
-                Color(
-                    0xFF687386
-                )
+                MaterialTheme.colorScheme.onSurfaceVariant
 
             HealthStatus.NOT_REQUIRED ->
-                Color(0xFF687386)
+                MaterialTheme.colorScheme.onSurfaceVariant
 
             HealthStatus.CHECKING ->
                 MaterialTheme
@@ -609,12 +607,10 @@ fun HealthStatusDot(
                     .error
 
             HealthStatus.NOT_CONFIGURED ->
-                Color(
-                    0xFF687386
-                )
+                MaterialTheme.colorScheme.onSurfaceVariant
 
             HealthStatus.NOT_REQUIRED ->
-                Color(0xFF687386)
+                MaterialTheme.colorScheme.onSurfaceVariant
 
             HealthStatus.CHECKING ->
                 MaterialTheme

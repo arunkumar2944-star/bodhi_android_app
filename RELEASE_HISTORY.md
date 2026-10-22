@@ -95,3 +95,27 @@ This file is kept in Git alongside the Android Studio project. The **source of t
 **What's new:** Choose your preferred Light, Dark or Follow device theme in Settings. Refresh CRM attendance information without restarting the app; Dashboard and Attendance also check for updated display data while open. Temporary network interruptions now retain the last received information.
 
 **Note:** Refreshing does not create or correct attendance events. Automatic missing-break recovery remains under investigation.
+
+
+### v1.0.1 dark-theme compatibility follow-up — pending build verification
+
+- Reason: selecting Dark changed Material 3 colors, but shared launch background, bottom navigation and several screens retained hardcoded light backgrounds and text.
+- Change in `fix/android-full-dark-theme`: use the dark Material background instead of the fixed launch graphic in Dark; make bottom navigation and multiple attendance, request, health and settings card surfaces theme-aware; improve text/status card contrast.
+- Light continues to use the existing Bodhi launch background and established light palette.
+- This is a UI-only remediation: it does not modify check-in, break, geofencing, or API confirmation behavior.
+- Still required: Kotlin compile, visual audit of **every** screen and component in Light / Dark / Follow device, and employee upgrade verification; no APK or release approval yet.
+
+### v1.0.1 appearance follow-up: centralized UI palette (pending verification)
+
+- Added `ui/theme/BodhiPalette.kt` for reusable Material semantic colors; Light/Dark/System preference remains controlled centrally by `MainActivity.kt` and `AppearancePreference.kt`.
+- Updated authenticated app background, shared navigation, status-card surface/gradient, Today/History views, and Dashboard holiday colors to respond to the selected theme.
+- Prior light branding remains the target when Light is selected. Dark now uses theme surfaces instead of the fixed light launch image in the authenticated shell.
+- **Not a verified full-screen migration yet**: visual audit and replacement of remaining literal light colors across screens are required; compiling and emulator/phone testing are pending.
+- The theme switch must not change device authorization, attendance evidence, monitoring, or CRM synchronization.
+
+### v1.0.1 broad theme migration for MD demo — verification pending
+
+- Updated shared authenticated shell, bottom navigation, Dashboard/summary cards, Attendance History/calendar/detail UI, Requests and its child forms, System Health, Settings/device pages, login/onboarding, and app-lock presentation to use Material semantic colors.
+- Settings appearance preference remains the single selection source for LIGHT, DARK and SYSTEM; previously installed users retain Light unless changed.
+- No attendance event engine, CRM mutation, registration, geofence, or device-security policy changes were made for this appearance update.
+- **CI build and end-to-end emulator review must pass before marking the migration complete.** Verify text contrast and status meaning in all three modes. Firebase update publication and official APK signing are not included in this change.

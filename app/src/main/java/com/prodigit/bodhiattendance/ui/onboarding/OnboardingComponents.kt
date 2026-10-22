@@ -1,5 +1,7 @@
 package com.prodigit.bodhiattendance.ui.onboarding
 
+import androidx.compose.material3.MaterialTheme
+
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
@@ -22,20 +24,21 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 
 
-val OnboardingNavy = Color(0xFF102F63)
+val OnboardingNavy: Color
+    @Composable get() = MaterialTheme.colorScheme.onSurface
 val OnboardingBlue = Color(0xFF0877F9)
 val OnboardingDeepBlue = Color(0xFF0757C7)
 
 val OnboardingGreen = Color(0xFF0BA968)
-val OnboardingGreenBackground = Color(0xFFE8F8F0)
-
+val OnboardingGreenBackground: Color
+    @Composable get() = MaterialTheme.colorScheme.surfaceVariant
 val OnboardingOrange = Color(0xFFE67800)
-val OnboardingOrangeBackground = Color(0xFFFFF2E3)
-
-val OnboardingTextSecondary = Color(0xFF536887)
-val OnboardingDivider = Color(0xFFE9EFF7)
-
-
+val OnboardingOrangeBackground: Color
+    @Composable get() = MaterialTheme.colorScheme.surfaceVariant
+val OnboardingTextSecondary: Color
+    @Composable get() = MaterialTheme.colorScheme.onSurfaceVariant
+val OnboardingDivider: Color
+    @Composable get() = MaterialTheme.colorScheme.surfaceVariant
 // ============================================================
 // SECTION HEADER
 // ============================================================
@@ -81,7 +84,7 @@ fun OnboardingSectionHeader(
                 if (completed)
                     OnboardingGreenBackground
                 else
-                    Color(0xFFF0F4FA)
+                    MaterialTheme.colorScheme.surfaceVariant
         ) {
 
             Text(
@@ -165,7 +168,7 @@ fun SetupProgressCard(
 
                 Surface(
                     shape = RoundedCornerShape(50.dp),
-                    color = Color(0xFFEAF3FF)
+                    color = MaterialTheme.colorScheme.surfaceVariant
                 ) {
 
                     Text(
@@ -191,7 +194,7 @@ fun SetupProgressCard(
                     .fillMaxWidth()
                     .height(7.dp),
                 color = OnboardingBlue,
-                trackColor = Color(0xFFE7EEF7)
+                trackColor = MaterialTheme.colorScheme.surfaceVariant
             )
         }
     }
@@ -366,7 +369,7 @@ fun ModernSetupCard(
 
                     shape = RoundedCornerShape(50.dp),
 
-                    color = Color(0xFFEAF3FF)
+                    color = MaterialTheme.colorScheme.surfaceVariant
                 ) {
 
                     Row(
@@ -470,8 +473,8 @@ fun AttendanceSecurityCard(
                     .background(
                         Brush.linearGradient(
                             listOf(
-                                Color(0xFFE6F4FF),
-                                Color(0xFFDCEBFF)
+                                MaterialTheme.colorScheme.surfaceVariant,
+                                MaterialTheme.colorScheme.surfaceVariant
                             )
                         ),
                         RoundedCornerShape(14.dp)

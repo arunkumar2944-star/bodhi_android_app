@@ -1,6 +1,8 @@
 
 package com.prodigit.bodhiattendance.ui.requests
 
+import androidx.compose.material3.MaterialTheme
+
 import android.app.DatePickerDialog
 import android.app.TimePickerDialog
 import android.net.Uri
@@ -41,12 +43,16 @@ import java.util.Locale
 
 private val RegularizationBlue = Color(0xFF1769E8)
 private val RegularizationDark = Color(0xFF0B438F)
-private val RegularizationLight = Color(0xFFEAF3FF)
-private val RegularizationBackground = Color(0xFFF5F9FF)
-private val RegularizationText = Color(0xFF17243D)
-private val RegularizationMuted = Color(0xFF708096)
-private val RegularizationBorder = Color(0xFFE1E8F0)
-
+private val RegularizationLight: Color
+    @Composable get() = MaterialTheme.colorScheme.surfaceVariant
+private val RegularizationBackground: Color
+    @Composable get() = MaterialTheme.colorScheme.surfaceVariant
+private val RegularizationText: Color
+    @Composable get() = MaterialTheme.colorScheme.onSurface
+private val RegularizationMuted: Color
+    @Composable get() = MaterialTheme.colorScheme.onSurfaceVariant
+private val RegularizationBorder: Color
+    @Composable get() = MaterialTheme.colorScheme.outlineVariant
 // =======================================================
 // DATA MODEL
 // =======================================================
@@ -215,7 +221,7 @@ fun AttendanceRegularizationScreen(
                 shape = RoundedCornerShape(18.dp),
                 border = BorderStroke(
                     1.dp,
-                    Color(0xFFD0E2FF)
+                    MaterialTheme.colorScheme.outlineVariant
                 )
             ) {
                 Row(
@@ -300,7 +306,7 @@ fun AttendanceRegularizationScreen(
                     onClick = { typeExpanded = true },
                     modifier = Modifier.fillMaxWidth(),
                     colors = CardDefaults.outlinedCardColors(
-                        containerColor = Color.White
+                        containerColor = MaterialTheme.colorScheme.surface
                     ),
                     border = BorderStroke(
                         1.dp,
@@ -433,7 +439,7 @@ fun AttendanceRegularizationScreen(
                 enabled = false,
                 modifier = Modifier.fillMaxWidth(),
                 colors = CardDefaults.outlinedCardColors(
-                    containerColor = Color.White
+                    containerColor = MaterialTheme.colorScheme.surface
                 ),
                 border = BorderStroke(
                     1.dp,
@@ -493,7 +499,7 @@ fun AttendanceRegularizationScreen(
 
             Card(
                 colors = CardDefaults.cardColors(
-                    containerColor = Color(0xFFF0F5FC)
+                    containerColor = MaterialTheme.colorScheme.surfaceVariant
                 ),
                 shape = RoundedCornerShape(15.dp)
             ) {
@@ -637,7 +643,7 @@ private fun RegularizationValueCard(
         modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(15.dp),
         colors = CardDefaults.outlinedCardColors(
-            containerColor = Color.White
+            containerColor = MaterialTheme.colorScheme.surface
         ),
         border = BorderStroke(
             1.dp,

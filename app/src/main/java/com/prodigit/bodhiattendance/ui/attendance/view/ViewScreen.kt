@@ -428,9 +428,7 @@ private fun AttendanceHistoryScreenContent(
                     "Attendance Records",
 
                 color =
-                    Color(
-                        0xFF0C1745
-                    ),
+                    MaterialTheme.colorScheme.onSurface,
 
                 fontSize =
                     17.sp,
@@ -447,7 +445,7 @@ private fun AttendanceHistoryScreenContent(
 
         if (monthRecords.isEmpty()) item {
             Text("No attendance records returned for this month. This does not mean you were absent.",
-                fontSize = 13.sp, color = Color(0xFF68718C))
+                fontSize = 13.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
         }
 
         items(
@@ -519,9 +517,7 @@ private fun AttendanceHistoryHeader() {
                 "Attendance History",
 
             color =
-                Color(
-                    0xFF0A1640
-                ),
+                MaterialTheme.colorScheme.onSurface,
 
             fontSize =
                 25.sp,
@@ -546,9 +542,7 @@ private fun AttendanceHistoryHeader() {
                 "View attendance records and holidays for the past 90 calendar days",
 
             color =
-                Color(
-                    0xFF66708F
-                ),
+                MaterialTheme.colorScheme.onSurfaceVariant,
 
             fontSize =
                 14.sp
@@ -630,8 +624,8 @@ private fun WeekNavigationButton(icon: ImageVector, onClick: () -> Unit) {
         onClick = onClick,
         modifier = Modifier.size(38.dp),
         shape = RoundedCornerShape(11.dp),
-        color = Color(0xFFF2F7FF),
-        border = BorderStroke(1.dp, Color(0xFFD9E7FC))
+        color = MaterialTheme.colorScheme.surfaceVariant,
+        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant)
     ) {
         Box(contentAlignment = Alignment.Center) {
             Icon(icon, contentDescription = "Change week", tint = Color(0xFF1267DF))
@@ -653,19 +647,19 @@ private fun WeekDayItem(
         modifier = modifier
             .clickable(enabled = enabled, onClick = onClick)
             .background(
-                if (selected) Color(0xFFEDF5FF) else Color.Transparent,
+                if (selected) MaterialTheme.colorScheme.primaryContainer else Color.Transparent,
                 RoundedCornerShape(14.dp)
             )
             .padding(horizontal = 1.dp, vertical = 7.dp),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
         Text(day, fontSize = 11.sp,
-            color = if (!enabled) Color(0xFFB8BFCD) else if (selected) Color(0xFF1267DF) else Color(0xFF68718D))
+            color = if (!enabled) Color(0xFFB8BFCD) else if (selected) Color(0xFF1267DF) else MaterialTheme.colorScheme.onSurfaceVariant)
         Spacer(Modifier.height(4.dp))
         Surface(shape = RoundedCornerShape(10.dp),
             color = if (selected) Color(0xFF116BF0) else Color.Transparent) {
             Text(date, modifier = Modifier.padding(horizontal = 3.dp, vertical = 5.dp),
-                color = if (!enabled) Color(0xFFC5CBD6) else if (selected) Color.White else Color(0xFF131D44),
+                color = if (!enabled) Color(0xFFC5CBD6) else if (selected) Color.White else MaterialTheme.colorScheme.onSurface,
                 fontSize = 15.sp, fontWeight = FontWeight.SemiBold)
         }
         Spacer(Modifier.height(5.dp))
@@ -887,7 +881,9 @@ private fun SummaryCard(
             CardDefaults.cardColors(
 
                 containerColor =
-                    background
+                    if (MaterialTheme.colorScheme.background == Color(0xFF101827))
+                        MaterialTheme.colorScheme.surfaceVariant
+                    else background
             ),
 
         border =
@@ -981,9 +977,7 @@ private fun SummaryCard(
                     title,
 
                 color =
-                    Color(
-                        0xFF17214A
-                    ),
+                    MaterialTheme.colorScheme.onSurface,
 
                 fontSize =
                     12.sp,
@@ -1015,9 +1009,7 @@ private fun SummaryCard(
                     subtitle,
 
                 color =
-                    Color(
-                        0xFF737B94
-                    ),
+                    MaterialTheme.colorScheme.onSurfaceVariant,
 
                 fontSize =
                     10.sp
@@ -1057,8 +1049,7 @@ private fun AttendanceDayCard(
         colors =
             CardDefaults.cardColors(
 
-                containerColor =
-                    Color.White.copy(
+                containerColor = MaterialTheme.colorScheme.surface.copy(
                         alpha =
                             0.93f
                     )
@@ -1130,9 +1121,7 @@ private fun AttendanceDayCard(
                             "${attendance.day}, ${attendance.date}",
 
                         color =
-                            Color(
-                                0xFF0C1742
-                            ),
+                            MaterialTheme.colorScheme.onSurface,
 
                         fontSize =
                             14.sp,
@@ -1175,9 +1164,7 @@ private fun AttendanceDayCard(
                         },
 
                     color =
-                        Color(
-                            0xFF4D5775
-                        ),
+                        MaterialTheme.colorScheme.onSurfaceVariant,
 
                     fontSize =
                         11.sp,
@@ -1215,9 +1202,7 @@ private fun AttendanceDayCard(
                         null,
 
                     tint =
-                        Color(
-                            0xFF55617F
-                        )
+                        MaterialTheme.colorScheme.onSurfaceVariant
                 )
             }
 
@@ -1233,9 +1218,7 @@ private fun AttendanceDayCard(
                 HorizontalDivider(
 
                     color =
-                        Color(
-                            0xFFE7EDF6
-                        )
+                        MaterialTheme.colorScheme.outlineVariant
                 )
 
 
@@ -1255,9 +1238,7 @@ private fun AttendanceDayCard(
                             ),
 
                         color =
-                            Color(
-                                0xFF69728C
-                            ),
+                            MaterialTheme.colorScheme.onSurfaceVariant,
 
                         fontSize =
                             13.sp
@@ -1629,9 +1610,7 @@ private fun AttendanceTimelineRow(
                 ),
 
             color =
-                Color(
-                    0xFF626C88
-                ),
+                MaterialTheme.colorScheme.onSurfaceVariant,
 
             fontSize =
                 11.sp
@@ -1707,9 +1686,7 @@ private fun AttendanceTimelineRow(
                     title,
 
                 color =
-                    Color(
-                        0xFF121C45
-                    ),
+                    MaterialTheme.colorScheme.onSurface,
 
                 fontSize =
                     13.sp,
@@ -1725,9 +1702,7 @@ private fun AttendanceTimelineRow(
                     subtitle,
 
                 color =
-                    Color(
-                        0xFF737C96
-                    ),
+                    MaterialTheme.colorScheme.onSurfaceVariant,
 
                 fontSize =
                     10.sp
@@ -1790,9 +1765,7 @@ private fun AttendanceTimelineRow(
 
                     } else {
 
-                        Color(
-                            0xFF4F5874
-                        )
+                        MaterialTheme.colorScheme.onSurfaceVariant
                     },
 
                 fontSize =
@@ -1830,9 +1803,9 @@ private fun AttendanceDetailsScreenContent(
             Text(attendance.date, fontSize = 16.sp)
             if (attendance.status == "HOLIDAY") {
                 Text(attendance.holidayTitle ?: "Company Holiday", fontWeight = FontWeight.Bold, fontSize = 19.sp)
-                Text(attendance.holidayMessage ?: "Regular attendance is not required.", color = Color(0xFF68718C))
-                Text("Attendance status: Holiday — No attendance required", color = Color(0xFF68718C))
-            } else Text("No attendance record available for this date.", color = Color(0xFF68718C))
+                Text(attendance.holidayMessage ?: "Regular attendance is not required.", color = MaterialTheme.colorScheme.onSurfaceVariant)
+                Text("Attendance status: Holiday — No attendance required", color = MaterialTheme.colorScheme.onSurfaceVariant)
+            } else Text("No attendance record available for this date.", color = MaterialTheme.colorScheme.onSurfaceVariant)
         }
         return
     }
@@ -1896,9 +1869,7 @@ private fun AttendanceDetailsScreenContent(
                             "Back",
 
                         tint =
-                            Color(
-                                0xFF0B1744
-                            )
+                            MaterialTheme.colorScheme.onSurface
                     )
                 }
 
@@ -1911,9 +1882,7 @@ private fun AttendanceDetailsScreenContent(
                             "Attendance Details",
 
                         color =
-                            Color(
-                                0xFF0B1744
-                            ),
+                            MaterialTheme.colorScheme.onSurface,
 
                         fontSize =
                             22.sp,
@@ -1929,9 +1898,7 @@ private fun AttendanceDetailsScreenContent(
                             "Complete daily attendance activity",
 
                         color =
-                            Color(
-                                0xFF68718C
-                            ),
+                            MaterialTheme.colorScheme.onSurfaceVariant,
 
                         fontSize =
                             13.sp
@@ -1974,9 +1941,7 @@ private fun AttendanceDetailsScreenContent(
                                 attendance.date,
 
                             color =
-                                Color(
-                                    0xFF0B1744
-                                ),
+                                MaterialTheme.colorScheme.onSurface,
 
                             fontSize =
                                 19.sp,
@@ -1992,9 +1957,7 @@ private fun AttendanceDetailsScreenContent(
                                 attendance.day,
 
                             color =
-                                Color(
-                                    0xFF68718C
-                                ),
+                                MaterialTheme.colorScheme.onSurfaceVariant,
 
                             fontSize =
                                 13.sp
@@ -2348,9 +2311,7 @@ private fun BreakTimelineItem(
                     title,
 
                 color =
-                    Color(
-                        0xFF121C43
-                    ),
+                    MaterialTheme.colorScheme.onSurface,
 
                 fontSize =
                     14.sp,
@@ -2366,9 +2327,7 @@ private fun BreakTimelineItem(
                     "$start  →  $end",
 
                 color =
-                    Color(
-                        0xFF6E7690
-                    ),
+                    MaterialTheme.colorScheme.onSurfaceVariant,
 
                 fontSize =
                     12.sp
@@ -2399,9 +2358,7 @@ private fun DetailSectionCard(
                 title,
 
             color =
-                Color(
-                    0xFF0D1742
-                ),
+                MaterialTheme.colorScheme.onSurface,
 
             fontSize =
                 16.sp,
@@ -2502,9 +2459,7 @@ private fun DetailMetricCard(
                     label,
 
                 color =
-                    Color(
-                        0xFF707892
-                    ),
+                    MaterialTheme.colorScheme.onSurfaceVariant,
 
                 fontSize =
                     11.sp
@@ -2517,9 +2472,7 @@ private fun DetailMetricCard(
                     value,
 
                 color =
-                    Color(
-                        0xFF111A40
-                    ),
+                    MaterialTheme.colorScheme.onSurface,
 
                 fontSize =
                     15.sp,
@@ -2615,9 +2568,7 @@ private fun DetailInfoCard(
                         title,
 
                     color =
-                        Color(
-                            0xFF727A92
-                        ),
+                        MaterialTheme.colorScheme.onSurfaceVariant,
 
                     fontSize =
                         11.sp
@@ -2630,9 +2581,7 @@ private fun DetailInfoCard(
                         value,
 
                     color =
-                        Color(
-                            0xFF111A40
-                        ),
+                        MaterialTheme.colorScheme.onSurface,
 
                     fontSize =
                         15.sp,
@@ -2718,9 +2667,7 @@ private fun StatusChip(
                 )
 
             textColor =
-                Color(
-                    0xFF737C96
-                )
+                MaterialTheme.colorScheme.onSurfaceVariant
         }
 
 
@@ -2732,9 +2679,7 @@ private fun StatusChip(
                 )
 
             textColor =
-                Color(
-                    0xFF5E667E
-                )
+                MaterialTheme.colorScheme.onSurfaceVariant
         }
     }
 
@@ -2803,8 +2748,7 @@ private fun AttendanceBaseCard(
         colors =
             CardDefaults.cardColors(
 
-                containerColor =
-                    Color.White.copy(
+                containerColor = MaterialTheme.colorScheme.surface.copy(
                         alpha =
                             0.92f
                     )
@@ -2924,9 +2868,7 @@ private fun AttendanceFilterCard(
                     ),
 
                 color =
-                    Color(
-                        0xFFEAF3FF
-                    )
+                    MaterialTheme.colorScheme.surfaceVariant
 
             ) {
 
@@ -2978,9 +2920,7 @@ private fun AttendanceFilterCard(
                         "Attendance Period",
 
                     color =
-                        Color(
-                            0xFF727B95
-                        ),
+                        MaterialTheme.colorScheme.onSurfaceVariant,
 
                     fontSize =
                         11.sp
@@ -2995,9 +2935,7 @@ private fun AttendanceFilterCard(
                         ),
 
                     color =
-                        Color(
-                            0xFF101B46
-                        ),
+                        MaterialTheme.colorScheme.onSurface,
 
                     fontSize =
                         17.sp,
@@ -3017,9 +2955,7 @@ private fun AttendanceFilterCard(
                     ),
 
                 color =
-                    Color(
-                        0xFFF4F8FF
-                    ),
+                    MaterialTheme.colorScheme.surfaceVariant,
 
                 border =
                     BorderStroke(
@@ -3028,9 +2964,7 @@ private fun AttendanceFilterCard(
                             1.dp,
 
                         color =
-                            Color(
-                                0xFFD9E7FC
-                            )
+                            MaterialTheme.colorScheme.outlineVariant
                     )
 
             ) {
@@ -3049,9 +2983,7 @@ private fun AttendanceFilterCard(
                         ),
 
                     tint =
-                        Color(
-                            0xFF57617E
-                        )
+                        MaterialTheme.colorScheme.onSurfaceVariant
                 )
             }
         }
@@ -3069,9 +3001,7 @@ private fun AttendanceFilterCard(
         HorizontalDivider(
 
             color =
-                Color(
-                    0xFFE7EDF6
-                )
+                MaterialTheme.colorScheme.outlineVariant
         )
 
 
@@ -3126,9 +3056,7 @@ private fun AttendanceFilterCard(
                         CircleShape,
 
                     color =
-                        Color(
-                            0xFFF0F6FF
-                        )
+                        MaterialTheme.colorScheme.primaryContainer
 
                 ) {
 
@@ -3178,9 +3106,7 @@ private fun AttendanceFilterCard(
                             "Office",
 
                         color =
-                            Color(
-                                0xFF7A829A
-                            ),
+                            MaterialTheme.colorScheme.onSurfaceVariant,
 
                         fontSize =
                             10.sp
@@ -3193,9 +3119,7 @@ private fun AttendanceFilterCard(
                             "See attendance record",
 
                         color =
-                            Color(
-                                0xFF17214A
-                            ),
+                            MaterialTheme.colorScheme.onSurface,
 
                         fontSize =
                             12.sp,
@@ -3307,9 +3231,7 @@ private fun AttendanceFilterCard(
                 "Attendance is recorded automatically",
 
             color =
-                Color(
-                    0xFF7A829A
-                ),
+                MaterialTheme.colorScheme.onSurfaceVariant,
 
             fontSize =
                 10.sp

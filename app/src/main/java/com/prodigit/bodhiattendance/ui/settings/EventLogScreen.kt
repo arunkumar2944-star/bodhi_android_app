@@ -1,5 +1,7 @@
 package com.prodigit.bodhiattendance.ui.settings
 
+import androidx.compose.material3.MaterialTheme
+
 import androidx.compose.runtime.*
 import androidx.compose.material3.Text
 import androidx.compose.ui.platform.LocalContext

@@ -1,5 +1,7 @@
 package com.prodigit.bodhiattendance.ui.systemhealth
 
+import androidx.compose.material3.MaterialTheme
+
 import android.content.ActivityNotFoundException
 import android.content.Intent
 import android.os.SystemClock
@@ -33,10 +35,12 @@ import com.prodigit.bodhiattendance.core.monitoring.TrustedTimeMonitor
 import com.prodigit.bodhiattendance.core.monitoring.TrustedClockEvidence
 
 private val TimeBlue = Color(0xFF1769E8)
-private val TimeText = Color(0xFF142343)
-private val TimeMuted = Color(0xFF718098)
-private val TimeBorder = Color(0xFFDEE8F5)
-
+private val TimeText: Color
+    @Composable get() = MaterialTheme.colorScheme.onSurface
+private val TimeMuted: Color
+    @Composable get() = MaterialTheme.colorScheme.onSurfaceVariant
+private val TimeBorder: Color
+    @Composable get() = MaterialTheme.colorScheme.outlineVariant
 private data class LocalTimeSnapshot(
     val capturedAt: Long,
     val automaticTime: Boolean?,
@@ -130,7 +134,7 @@ fun TrustedTimeScreen(
         item {
             TimePanel {
                 Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                    Surface(color = Color(0xFFEAF3FF), shape = RoundedCornerShape(16.dp)) {
+                    Surface(color = MaterialTheme.colorScheme.surfaceVariant, shape = RoundedCornerShape(16.dp)) {
                         Box(Modifier.size(54.dp), contentAlignment = Alignment.Center) {
                             Icon(Icons.Outlined.Schedule, null, tint = TimeBlue, modifier = Modifier.size(28.dp))
                         }
@@ -198,7 +202,7 @@ fun TrustedTimeScreen(
             }
         }
         item {
-            TimePanel(background = Color(0xFFEBF4FF)) {
+            TimePanel(background = MaterialTheme.colorScheme.surfaceVariant) {
                 Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
                     Icon(Icons.Outlined.Info, null, tint = TimeBlue)
                     Column {
@@ -206,7 +210,7 @@ fun TrustedTimeScreen(
                         Spacer(Modifier.height(5.dp))
                         Text(
                             "Changing the phone's date or time must not allow employees to backdate attendance. When offline, records should keep their original capture time and monotonic elapsed-time evidence for later server validation.",
-                            color = Color(0xFF536985), fontSize = 12.sp, lineHeight = 18.sp
+                            color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 12.sp, lineHeight = 18.sp
                         )
                     }
                 }

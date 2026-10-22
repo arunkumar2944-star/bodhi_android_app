@@ -1,5 +1,7 @@
 package com.prodigit.bodhiattendance.ui.settings
 
+import androidx.compose.material3.MaterialTheme
+
 import android.app.ActivityManager
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
@@ -36,9 +38,12 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 
 private val BatteryBlue = Color(0xFF1769E8)
-private val BatteryInk = Color(0xFF142343)
-private val BatteryMuted = Color(0xFF728099)
-private val BatteryBorder = Color(0xFFDDE7F4)
+private val BatteryInk: Color
+    @Composable get() = MaterialTheme.colorScheme.onSurface
+private val BatteryMuted: Color
+    @Composable get() = MaterialTheme.colorScheme.onSurfaceVariant
+private val BatteryBorder: Color
+    @Composable get() = MaterialTheme.colorScheme.outlineVariant
 private val BatteryAmber = Color(0xFFB86B0B)
 private val BatteryGreen = Color(0xFF17804E)
 
@@ -124,7 +129,7 @@ fun BatteryOptimizationScreen(
         item {
             BatteryPanel {
                 Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                    Surface(color = Color(0xFFEAF3FF), shape = RoundedCornerShape(16.dp)) {
+                    Surface(color = MaterialTheme.colorScheme.surfaceVariant, shape = RoundedCornerShape(16.dp)) {
                         Box(Modifier.size(54.dp), contentAlignment = Alignment.Center) {
                             Icon(Icons.Outlined.BatteryChargingFull, contentDescription = null, tint = BatteryBlue, modifier = Modifier.size(28.dp))
                         }
@@ -221,7 +226,7 @@ fun BatteryOptimizationScreen(
         }
 
         item {
-            Surface(color = Color(0xFFEAF3FF), shape = RoundedCornerShape(18.dp)) {
+            Surface(color = MaterialTheme.colorScheme.surfaceVariant, shape = RoundedCornerShape(18.dp)) {
                 Row(Modifier.padding(15.dp), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
                     Icon(Icons.Outlined.Info, contentDescription = null, tint = BatteryBlue)
                     Column {
@@ -229,7 +234,7 @@ fun BatteryOptimizationScreen(
                         Spacer(Modifier.height(5.dp))
                         Text(
                             "Doze exemption, Battery Saver status and manufacturer-specific background restrictions are different. This page cannot detect or override every manufacturer restriction. Always use System Health to review the full attendance environment.",
-                            color = Color(0xFF536985), fontSize = 11.sp, lineHeight = 17.sp
+                            color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 11.sp, lineHeight = 17.sp
                         )
                     }
                 }
@@ -242,7 +247,7 @@ fun BatteryOptimizationScreen(
 private fun BatteryPanel(content: @Composable ColumnScope.() -> Unit) {
     Card(
         modifier = Modifier.fillMaxWidth(),
-        colors = CardDefaults.cardColors(containerColor = Color.White),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
         shape = RoundedCornerShape(21.dp),
         border = BorderStroke(1.dp, BatteryBorder),
         elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)

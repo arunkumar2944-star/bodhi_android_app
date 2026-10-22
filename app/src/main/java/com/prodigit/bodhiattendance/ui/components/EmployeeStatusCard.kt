@@ -97,7 +97,7 @@ fun EmployeeStatusCard(
                 .fillMaxWidth()
                 .border(
                     width = 1.dp,
-                    color = CardBorder,
+                    color = MaterialTheme.colorScheme.outlineVariant,
                     shape =
                         RoundedCornerShape(24.dp)
                 ),
@@ -108,9 +108,7 @@ fun EmployeeStatusCard(
         colors =
             CardDefaults.cardColors(
                 containerColor =
-                    Color.White.copy(
-                        alpha = 0.96f
-                    )
+                    MaterialTheme.colorScheme.surface
             ),
 
         elevation =
@@ -128,8 +126,8 @@ fun EmployeeStatusCard(
                             Brush.verticalGradient(
                                 colors =
                                     listOf(
-                                        statusInfo.backgroundColor,
-                                        Color.White
+                                        MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.28f),
+                                        MaterialTheme.colorScheme.surface
                                     )
                             )
                     )
@@ -394,9 +392,7 @@ fun EmployeeStatusCard(
                     RoundedCornerShape(16.dp),
 
                 color =
-                    Color.White.copy(
-                        alpha = 0.75f
-                    )
+                    MaterialTheme.colorScheme.surface
             ) {
 
                 Row(

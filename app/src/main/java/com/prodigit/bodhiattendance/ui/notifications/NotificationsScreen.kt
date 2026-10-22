@@ -1,5 +1,7 @@
 package com.prodigit.bodhiattendance.ui.notifications
 
+import androidx.compose.material3.MaterialTheme
+
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items

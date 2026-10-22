@@ -95,9 +95,7 @@ fun QuickAccessCard(
             colors =
                 CardDefaults.cardColors(
                     containerColor =
-                        Color.White.copy(
-                            alpha = 0.95f
-                        )
+                        MaterialTheme.colorScheme.surface
                 ),
 
             elevation =

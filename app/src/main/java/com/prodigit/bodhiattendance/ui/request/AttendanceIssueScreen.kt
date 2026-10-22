@@ -1,6 +1,8 @@
 
 package com.prodigit.bodhiattendance.ui.requests
 
+import androidx.compose.material3.MaterialTheme
+
 import android.app.DatePickerDialog
 import android.net.Uri
 import android.widget.Toast
@@ -37,10 +39,14 @@ import java.util.Locale
 private val IssueGreen = Color(0xFF15976D)
 private val IssueDarkGreen = Color(0xFF087A59)
 private val IssueLightGreen = Color(0xFFE9F9F1)
-private val PageBackground = Color(0xFFF6FAFF)
-private val DarkText = Color(0xFF17243D)
-private val SecondaryText = Color(0xFF78859A)
-private val FieldBorder = Color(0xFFE1E8F1)
+private val PageBackground: Color
+    @Composable get() = MaterialTheme.colorScheme.surfaceVariant
+private val DarkText: Color
+    @Composable get() = MaterialTheme.colorScheme.onSurface
+private val SecondaryText: Color
+    @Composable get() = MaterialTheme.colorScheme.onSurfaceVariant
+private val FieldBorder: Color
+    @Composable get() = MaterialTheme.colorScheme.outlineVariant
 private val BodhiBlue = Color(0xFF1769D8)
 
 // ====================================================
@@ -346,7 +352,7 @@ fun AttendanceIssueScreen(
                 shape = RoundedCornerShape(18.dp),
                 border = BorderStroke(1.dp, FieldBorder),
                 colors = CardDefaults.outlinedCardColors(
-                    containerColor = Color.White
+                    containerColor = MaterialTheme.colorScheme.surface
                 )
             ) {
                 Row(
@@ -423,7 +429,7 @@ fun AttendanceIssueScreen(
             Card(
                 shape = RoundedCornerShape(16.dp),
                 colors = CardDefaults.cardColors(
-                    containerColor = Color(0xFFEAF3FF)
+                    containerColor = MaterialTheme.colorScheme.surfaceVariant
                 )
             ) {
                 Row(
@@ -599,7 +605,7 @@ private fun IssueClickableField(
         onClick = onClick,
         shape = RoundedCornerShape(14.dp),
         colors = CardDefaults.outlinedCardColors(
-            containerColor = Color.White
+            containerColor = MaterialTheme.colorScheme.surface
         ),
         border = BorderStroke(1.dp, FieldBorder)
     ) {
@@ -653,7 +659,7 @@ private fun IssueDropdown(
             onClick = { expanded = true },
             shape = RoundedCornerShape(14.dp),
             colors = CardDefaults.outlinedCardColors(
-                containerColor = Color.White
+                containerColor = MaterialTheme.colorScheme.surface
             ),
             border = BorderStroke(1.dp, FieldBorder)
         ) {

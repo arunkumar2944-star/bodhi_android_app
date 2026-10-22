@@ -1,6 +1,8 @@
 
 package com.crm.attendance.ui.screens.request
 
+import androidx.compose.material3.MaterialTheme
+
 import android.app.DatePickerDialog
 import android.widget.Toast
 import androidx.compose.foundation.BorderStroke
@@ -41,14 +43,19 @@ import com.prodigit.bodhiattendance.ui.common.mouseWheelScroll
 
 private val PrimaryBlue = Color(0xFF0866E8)
 private val DeepBlue = Color(0xFF0349AC)
-private val LightBlue = Color(0xFFEAF3FF)
-private val PageBackground = Color(0xFFF7F9FD)
-private val DarkText = Color(0xFF142038)
-private val SecondaryText = Color(0xFF718096)
-private val BorderColor = Color(0xFFE2E8F0)
+private val LightBlue: Color
+    @Composable get() = MaterialTheme.colorScheme.surfaceVariant
+private val PageBackground: Color
+    @Composable get() = MaterialTheme.colorScheme.surfaceVariant
+private val DarkText: Color
+    @Composable get() = MaterialTheme.colorScheme.onSurface
+private val SecondaryText: Color
+    @Composable get() = MaterialTheme.colorScheme.onSurfaceVariant
+private val BorderColor: Color
+    @Composable get() = MaterialTheme.colorScheme.outlineVariant
 private val Orange = Color(0xFFFF762D)
-private val OrangeLight = Color(0xFFFFF2E8)
-
+private val OrangeLight: Color
+    @Composable get() = MaterialTheme.colorScheme.surfaceVariant
 // ======================================================
 // MODELS
 // ======================================================
@@ -222,7 +229,7 @@ fun PermissionShortTimeScreen(
                             "• Arriving late by 30–60 minutes\n" +
                                     "• Leaving 30–60 minutes before " +
                                     "the expected closing time",
-                            color = Color(0xFF526071),
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
                             fontSize = 12.sp,
                             lineHeight = 19.sp
                         )
@@ -548,7 +555,7 @@ private fun PermissionHeader(
 
                 Text(
                     "Late arrival or early leave request",
-                    color = Color.White.copy(alpha = 0.85f),
+                    color = MaterialTheme.colorScheme.surface,
                     fontSize = 12.sp
                 )
             }
@@ -636,7 +643,7 @@ private fun PermissionSelectionCard(
                         .clip(CircleShape)
                         .background(
                             if (selected)
-                                Color(0xFFD4E6FF)
+                                MaterialTheme.colorScheme.outlineVariant
                             else
                                 OrangeLight
                         ),
@@ -706,7 +713,7 @@ private fun PermissionInfoField(
         modifier = cardModifier,
         shape = RoundedCornerShape(16.dp),
         colors = CardDefaults.cardColors(
-            containerColor = Color.White
+            containerColor = MaterialTheme.colorScheme.surface
         ),
         border = BorderStroke(1.dp, BorderColor),
         elevation = CardDefaults.cardElevation(
