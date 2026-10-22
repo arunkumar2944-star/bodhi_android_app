@@ -881,9 +881,7 @@ private fun SummaryCard(
             CardDefaults.cardColors(
 
                 containerColor =
-                    if (MaterialTheme.colorScheme.background == Color(0xFF101827))
-                        MaterialTheme.colorScheme.surfaceVariant
-                    else background
+                    MaterialTheme.colorScheme.surfaceVariant
             ),
 
         border =

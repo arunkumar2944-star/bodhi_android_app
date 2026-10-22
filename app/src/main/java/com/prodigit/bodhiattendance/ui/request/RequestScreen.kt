@@ -1011,10 +1011,7 @@ private fun LightHeroMetric(
                 text =
                     label,
 
-                color =
-                    Color(
-                        0xFF646E89
-                    ),
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
 
                 fontSize =
                     10.sp
@@ -1161,8 +1158,7 @@ private fun PremiumRequestCard(
                         16.dp
                     ),
 
-                color =
-                    lightAccent
+                color = MaterialTheme.colorScheme.surfaceVariant
 
             ) {
 
@@ -1220,9 +1216,7 @@ private fun PremiumRequestCard(
                         title,
 
                     color =
-                        Color(
-                            0xFF111B44
-                        ),
+                        MaterialTheme.colorScheme.onSurface,
 
                     fontSize =
                         15.sp,
@@ -1268,8 +1262,7 @@ private fun PremiumRequestCard(
                             50
                         ),
 
-                    color =
-                        lightAccent
+                    color = MaterialTheme.colorScheme.surfaceVariant
 
                 ) {
 
@@ -1375,10 +1368,7 @@ private fun RequestAnalyticsCard(
         colors =
             CardDefaults.cardColors(
 
-                containerColor = MaterialTheme.colorScheme.surface.copy(
-                        alpha =
-                            0.95f
-                    )
+                containerColor = MaterialTheme.colorScheme.surface
             ),
 
         border =
@@ -1559,9 +1549,7 @@ private fun AnalyticsItem(
                 16.dp
             ),
 
-        color =
-            background
-
+        color = MaterialTheme.colorScheme.surfaceVariant
     ) {
 
         Column(
@@ -1624,10 +1612,7 @@ private fun AnalyticsItem(
                 text =
                     label,
 
-                color =
-                    Color(
-                        0xFF656E88
-                    ),
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
 
                 fontSize =
                     9.sp
@@ -2022,9 +2007,7 @@ private fun StatusChip(
                 50
             ),
 
-        color =
-            background
-
+        color = MaterialTheme.colorScheme.surfaceVariant
     ) {
 
         Text(

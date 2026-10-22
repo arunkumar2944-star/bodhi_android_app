@@ -1,5 +1,6 @@
 package com.prodigit.bodhiattendance.ui.components
 
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -97,6 +98,7 @@ fun AttendanceTimelineCard(
                     MaterialTheme.colorScheme.surface
             ),
 
+        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
         elevation =
             CardDefaults.cardElevation(
                 defaultElevation = 4.dp
