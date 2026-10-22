@@ -614,12 +614,7 @@ private fun RequestHeroCard(
             ),
 
         border =
-            BorderStroke(
-                1.dp,
-                Color(
-                    0xFFDCE8F7
-                )
-            ),
+            BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
 
         elevation =
             CardDefaults.cardElevation(
@@ -633,25 +628,7 @@ private fun RequestHeroCard(
             modifier =
                 Modifier
                     .fillMaxWidth()
-                    .background(
-
-                        brush =
-                            Brush.horizontalGradient(
-
-                                colors =
-                                    listOf(
-                                        Color(
-                                            0xFFF4F9FF
-                                        ),
-                                        Color(
-                                            0xFFEEF7FF
-                                        ),
-                                        Color(
-                                            0xFFF9FBFF
-                                        )
-                                    )
-                            )
-                    )
+                    .background(MaterialTheme.colorScheme.surfaceVariant)
                     .padding(
                         18.dp
                     )
@@ -744,8 +721,7 @@ private fun RequestHeroCard(
                         text =
                             "Employee Request Centre",
 
-                        color =
-                            MaterialTheme.colorScheme.onSurface,
+                        color = MaterialTheme.colorScheme.onSurface,
 
                         fontSize =
                             16.sp,
@@ -769,10 +745,7 @@ private fun RequestHeroCard(
                         text =
                             "Attendance-related requests only",
 
-                        color =
-                            Color(
-                                0xFF68728E
-                            ),
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
 
                         fontSize =
                             11.sp
@@ -875,10 +848,7 @@ private fun RequestHeroCard(
                 text =
                     "Submit attendance corrections, short-time permission and attendance issues.",
 
-                color =
-                    Color(
-                        0xFF65708B
-                    ),
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
 
                 fontSize =
                     11.sp
@@ -1074,9 +1044,7 @@ private fun SectionHeader(
                 title,
 
             color =
-                Color(
-                    0xFF111B46
-                ),
+                MaterialTheme.colorScheme.onSurface,
 
             fontSize =
                 17.sp,
@@ -1092,9 +1060,7 @@ private fun SectionHeader(
                 subtitle,
 
             color =
-                Color(
-                    0xFF747D97
-                ),
+                MaterialTheme.colorScheme.onSurfaceVariant,
 
             fontSize =
                 11.sp
