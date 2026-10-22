@@ -55,7 +55,7 @@ private val StatusGray =
     Color(0xFF64748B)
 
 private val CardBorder =
-    Color(0xFFDCE7F5)
+    MaterialTheme.colorScheme.outlineVariant
 
 
 // ============================================================

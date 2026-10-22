@@ -50,7 +50,7 @@ private val AttendanceGray =
     Color(0xFF64748B)
 
 private val AttendanceBorder =
-    Color(0xFFE1EAF5)
+    MaterialTheme.colorScheme.outlineVariant
 
 
 // ============================================================
@@ -80,7 +80,7 @@ fun TodayAttendanceCard(
                 .fillMaxWidth()
                 .border(
                     width = 1.dp,
-                    color = AttendanceBorder,
+                    color = MaterialTheme.colorScheme.outlineVariant,
                     shape = RoundedCornerShape(24.dp)
                 ),
 
