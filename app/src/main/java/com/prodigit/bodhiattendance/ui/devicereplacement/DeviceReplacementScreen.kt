@@ -105,7 +105,7 @@ fun DeviceReplacementScreen(onRecoveryCompleted: () -> Unit = {}) {
     LaunchedEffect(installationId, refreshSequence) {
         while (true) {
             try {
-                val token = tokenManager.usableAccessToken()
+                val token = tokenManager.recoveryAccessToken()
                 if (token.isNullOrBlank()) {
                     verified = false
                     message = "Session unavailable. Sign in again to check your request."
@@ -151,7 +151,7 @@ fun DeviceReplacementScreen(onRecoveryCompleted: () -> Unit = {}) {
                 .submitEvidence(context, installationId)
             if (request.status == "APPROVED" && evidenceSubmitted) {
                 try {
-                    val token = tokenManager.usableAccessToken()
+                    val token = tokenManager.recoveryAccessToken()
                     if (!token.isNullOrBlank()) {
                         val result = RetrofitClient.deviceReplacementApi.activate(
                             "Bearer $token", ActivationRequest(installationId)
@@ -296,7 +296,7 @@ fun DeviceReplacementScreen(onRecoveryCompleted: () -> Unit = {}) {
                         submitting = true
                         scope.launch {
                             try {
-                                val token = tokenManager.usableAccessToken()
+                                val token = tokenManager.recoveryAccessToken()
                                 if (token.isNullOrBlank()) {
                                     message = "Session unavailable. Sign in again."
                                 } else {

@@ -25,6 +25,19 @@ class AndroidTokenManager(context: Context) {
 
     fun hasRefreshCredential(): Boolean = credentials.get() != null
 
+    /**
+     * Authentication for the device-replacement endpoints ONLY.
+     *
+     * A successful password login creates a short-lived user-authenticated
+     * token before this installation is approved. The recovery endpoints
+     * must accept that token after server-side authentication and authorize
+     * only recovery actions. Never use this method for attendance APIs.
+     */
+    fun recoveryAccessToken(): String? {
+        val token = sessions.getToken() ?: return null
+        return token.takeUnless(JwtUtils::isTokenExpired)
+    }
+
     suspend fun usableAccessToken(): String? = rotationLock.withLock {
         lastHttpStatus = null
         val current = sessions.getToken() ?: return@withLock null
