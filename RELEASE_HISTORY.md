@@ -1,3 +1,22 @@
+## 1.0.1 (versionCode 14) — 2026-10-22 — internal testing candidate
+
+**Build metadata:** `versionName = "1.0.1"`, `versionCode = 14`. This is a candidate, not an approved published release. If any employee has already installed versionCode >=14, increment the code before distribution. Confirm signing-certificate continuity to update in place.
+
+**Improvements since 1.0 (13):**
+- Appearance setting: Light, Dark, and Follow Device with persisted preference; shared page surfaces, cards, text, navigation and contrast fixes.
+- Global icon-only page-data refresh beside notifications. Dashboard and Attendance background display polling; refreshing cannot create, amend, or backdate attendance events.
+- Requests screen contrast, Dashboard and Attendance monthly summary tile sizing and theme-aware borders/surfaces.
+- Secure device-replacement flow: authenticated recovery-only requests, manager approval, Android Keystore challenge signature, emulator non-attested key compatibility, CRM-side proof verification, and final server-authorized activation. **Do not claim recovery E2E passed** until CRM accepts proof and returns RECOVERY_COMPLETED.
+- Sanjai departure regression: preserve outside candidate evidence when GPS accuracy is poor, expedite recheck without inventing departure events.
+
+**Compatibility and outstanding validation:**
+- Backend must have a stable `DEVICE_FINGERPRINT_SECRET` (>=32 characters), recovery endpoints, approved manager decision, and fresh post-approval key proof. No automatic bypass of employee/device binding.
+- Validate in-place upgrade without uninstall or data reset, keep installation UUID and offline attendance, and test emulator and physical-device recovery, attendance operations, signed APK and version metadata.
+- The 2.x entries retained below describe earlier development milestones; they do not imply that 2.x was distributed. The actual Gradle version before this candidate was 1.0 (13).
+- GitHub Actions and local/emulator QA for this version candidate must be recorded before production distribution.
+
+---
+
 ## 2.1.6 — 2026-10-19
 
 - Attendance History now uses an exact rolling 90-calendar-day display window (today plus 89 preceding days).
