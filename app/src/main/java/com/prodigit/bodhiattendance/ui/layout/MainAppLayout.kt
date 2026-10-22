@@ -106,7 +106,9 @@ fun MainAppLayout(
 
                 AppMasterHeader(
                     notificationCount = notificationCount,
-                    onNotificationClick = onNotificationClick
+                    onNotificationClick = onNotificationClick,
+                    onRefresh = onRefresh,
+                    isRefreshing = isRefreshing
                 )
 
                 // =============================================
@@ -125,24 +127,7 @@ fun MainAppLayout(
                     content()
                 }
 
-                Row(
-                    modifier = Modifier.fillMaxWidth().padding(horizontal = 14.dp),
-                    horizontalArrangement = Arrangement.End,
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    TextButton(onClick = onRefresh, enabled = !isRefreshing) {
-                        if (isRefreshing) {
-                            CircularProgressIndicator(
-                                modifier = Modifier.padding(end = 8.dp).size(18.dp),
-                                strokeWidth = 2.dp
-                            )
-                            Text("Refreshing...")
-                        } else {
-                            Icon(Icons.Outlined.Refresh, contentDescription = null)
-                            Text(" Refresh")
-                        }
-                    }
-                }
+
             }
         }
     }
