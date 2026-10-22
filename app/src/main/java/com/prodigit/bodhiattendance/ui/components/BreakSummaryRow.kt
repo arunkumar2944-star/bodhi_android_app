@@ -10,6 +10,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.Coffee
@@ -221,8 +222,7 @@ private fun SummaryItem(
 ) {
 
     Card(
-        modifier =
-            modifier,
+        modifier = modifier.height(102.dp),
 
         shape =
             RoundedCornerShape(18.dp),
@@ -302,12 +302,12 @@ private fun SummaryItem(
             // VALUE
             // ====================================================
 
-            Column {
+            Column(modifier = Modifier.weight(1f)) {
 
                 Text(
-                    text =
-                        value,
-
+                    text = value,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
                     fontSize =
                         18.sp,
 
@@ -328,9 +328,10 @@ private fun SummaryItem(
 
 
                 Text(
-                    text =
-                        title,
-
+                    text = title,
+                    maxLines = 2,
+                    minLines = 2,
+                    overflow = TextOverflow.Ellipsis,
                     fontSize =
                         10.sp,
 

@@ -1,5 +1,6 @@
 package com.prodigit.bodhiattendance.ui.attendance.view
 
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -869,8 +870,7 @@ private fun SummaryCard(
 
     Card(
 
-        modifier =
-            modifier,
+        modifier = modifier.height(182.dp),
 
         shape =
             RoundedCornerShape(
@@ -911,9 +911,7 @@ private fun SummaryCard(
         Column(
 
             modifier =
-                Modifier.padding(
-                    14.dp
-                )
+                Modifier.fillMaxSize().padding(14.dp)
 
         ) {
 
@@ -973,8 +971,9 @@ private fun SummaryCard(
 
             Text(
 
-                text =
-                    title,
+                text = title,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
 
                 color =
                     MaterialTheme.colorScheme.onSurface,
@@ -989,24 +988,27 @@ private fun SummaryCard(
 
             Text(
 
-                text =
-                    value,
+                text = value,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
 
                 color =
                     accent,
 
                 fontSize =
-                    21.sp,
+                    if (value.length > 7) 15.sp else 21.sp,
 
                 fontWeight =
                     FontWeight.Bold
             )
 
 
+            Spacer(modifier = Modifier.weight(1f))
             Text(
-
-                text =
-                    subtitle,
+                text = subtitle,
+                minLines = 2,
+                maxLines = 2,
+                overflow = TextOverflow.Ellipsis,
 
                 color =
                     MaterialTheme.colorScheme.onSurfaceVariant,
