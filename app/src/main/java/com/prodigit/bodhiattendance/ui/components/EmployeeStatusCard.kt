@@ -54,8 +54,8 @@ private val StatusOrange =
 private val StatusGray =
     Color(0xFF64748B)
 
-private val CardBorder =
-    MaterialTheme.colorScheme.outlineVariant
+private val CardBorder: Color
+    @Composable get() = MaterialTheme.colorScheme.outlineVariant
 
 
 // ============================================================
