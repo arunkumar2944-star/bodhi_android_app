@@ -75,13 +75,19 @@ object DeviceSecurityEvidence {
     // Best-effort enrichment. Failure must never unlock a device or bypass manager approval.
     suspend fun submitEvidence(context: Context, installationId: String): Boolean {
         try {
-            val token = AndroidTokenManager(context).usableAccessToken() ?: return false
+            val token = AndroidTokenManager(context).recoveryAccessToken() ?: run {
+                android.util.Log.w("DEVICE_EVIDENCE", "Recovery proof deferred: login token unavailable")
+                return false
+            }
             val api = RetrofitClient.deviceEvidenceApi
             val challengeResponse = api.challenge(
                 "Bearer $token", DeviceChallengeRequest(installationId)
             )
             val c = challengeResponse.body()
-            if (!challengeResponse.isSuccessful || c?.success != true) return false
+            if (!challengeResponse.isSuccessful || c?.success != true) {
+                android.util.Log.w("DEVICE_EVIDENCE", "Challenge refused: HTTP ${challengeResponse.code()}, status=${c?.success}")
+                return false
+            }
             val id = c.challenge_id ?: return false
             val nonce = c.challenge ?: return false
             val androidId = Settings.Secure.getString(
@@ -104,7 +110,9 @@ object DeviceSecurityEvidence {
                 "Bearer $token",
                 DeviceEvidenceRequest(installationId, id, nonce, publicKey, signature, androidId, chain)
             )
-            return response.isSuccessful && response.body()?.status == "KEY_PROOF_VERIFIED"
+            val verified = response.isSuccessful && response.body()?.status == "KEY_PROOF_VERIFIED"
+            if (!verified) android.util.Log.w("DEVICE_EVIDENCE", "Proof refused: HTTP ${response.code()}, status=${response.body()?.status}")
+            return verified
         } catch (e: CancellationException) {
             throw e
         } catch (e: Exception) {
