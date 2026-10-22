@@ -1502,10 +1502,7 @@ private fun AttendanceDayCard(
                                     13.dp
                                 ),
 
-                            color =
-                                Color(
-                                    0xFFF3F8FF
-                                )
+                            color = MaterialTheme.colorScheme.surfaceVariant
 
                         ) {
 
@@ -1558,9 +1555,7 @@ private fun AttendanceDayCard(
                                         null,
 
                                     tint =
-                                        Color(
-                                            0xFF1267DF
-                                        )
+                                        MaterialTheme.colorScheme.onSurface
                                 )
                             }
                         }
