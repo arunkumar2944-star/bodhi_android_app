@@ -9,6 +9,9 @@ import androidx.compose.foundation.layout.width
 
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.Notifications
+import androidx.compose.material.icons.outlined.Refresh
+import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.foundation.layout.size
 import androidx.compose.material3.Badge
 import androidx.compose.material3.BadgedBox
 import androidx.compose.material3.Icon
@@ -42,7 +45,9 @@ fun AppMasterHeader(
 
     notificationCount: Int = 0,
 
-    onNotificationClick: () -> Unit = {}
+    onNotificationClick: () -> Unit = {},
+    onRefresh: (() -> Unit)? = null,
+    isRefreshing: Boolean = false
 
 ) {
 
@@ -144,6 +149,20 @@ fun AppMasterHeader(
             )
         }
 
+
+        if (onRefresh != null) {
+            IconButton(onClick = onRefresh, enabled = !isRefreshing) {
+                if (isRefreshing) {
+                    CircularProgressIndicator(modifier = Modifier.size(20.dp), strokeWidth = 2.dp)
+                } else {
+                    Icon(
+                        imageVector = Icons.Outlined.Refresh,
+                        contentDescription = "Refresh page",
+                        tint = MaterialTheme.colorScheme.onSurface
+                    )
+                }
+            }
+        }
 
         // ====================================================
         // NOTIFICATION ICON
