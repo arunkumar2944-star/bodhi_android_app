@@ -17,7 +17,8 @@ Historical device findings in the handover reported that `dumpsys activity servi
 3. `AttendanceMonitorStartGate.tryStart()` is called only after startup readiness and Activity visibility. It checks legacy automation cleanup, pre-start synchronization, daily eligibility/pause state, session/device credentials, engine reconciliation, and runtime readiness before requesting the service. Several early-return paths previously had no explicit persistent reason.
 4. `AttendancePresenceService.start()` returning true means Android accepted the foreground-service start request; it does not prove that `onStartCommand()` executed, that the worker remained alive, or that the evaluator produced an attendance event.
 5. The Android app posts attendance events to `POST /api/v1/attendance/event`. The backend's monitor heartbeat endpoint, `POST /api/v1/attendance/monitor/heartbeat`, updates monitoring-session/liveness records, not attendance itself. Diagnostics are uploaded to `POST /api/v1/attendance/diagnostics`, a separate endpoint.
-6. The actual failure stage remains unknown without a fresh device run, local Room evidence, backend response/log evidence and the matching server-side summary/API result.
+6. Git history gives a useful comparison window, but not a proven regression: commit `d9dda9a3` (15 October 2026) introduced the requirement for a visible app opening to start each workday; `c6e89286` (13 October 2026) gated foreground-service launch on validated startup and a resumed Activity; commit `57881ad9` (21 October 2026) connected the local Room/SQLite audit to the existing diagnostics upload. Compare these commits with the current source during root-cause review.
+7. The actual failure stage remains unknown without a fresh device run, local Room evidence, backend response/log evidence and the matching server-side summary/API result.
 
 ## Changes on the incident branch
 
