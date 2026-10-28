@@ -30,6 +30,14 @@ object AttendanceMonitorStartGate {
         AttendanceDiagnostics(context).auditLocalPersistence()
     }
 
+    /** Records a service-level startup rejection without changing attendance policy. */
+    @Synchronized fun onServiceStartRejected(context: Context, reason: String) {
+        rememberStartResult(context.applicationContext, "SERVICE_REJECTED:" + reason.take(250))
+        scope.launch {
+            AttendanceDiagnostics(context.applicationContext).auditLocalPersistence()
+        }
+    }
+
     @Synchronized fun onStartupReady(context: Context) {
         startupReady = true
         if (!activityResumed) rememberStartResult(context.applicationContext, "WAITING:ACTIVITY_NOT_RESUMED")
