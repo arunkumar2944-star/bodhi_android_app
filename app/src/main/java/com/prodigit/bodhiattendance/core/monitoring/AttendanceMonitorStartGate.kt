@@ -25,7 +25,9 @@ object AttendanceMonitorStartGate {
 
     private suspend fun traceStartResult(context: Context, result: String) {
         rememberStartResult(context, result)
-        AttendanceDiagnostics(context).record("MONITOR_START_GATE", result.take(1500))
+        // Keep the existing diagnostics category so the current Admin/Manager
+        // diagnostics view displays this state without a backend/UI change.
+        AttendanceDiagnostics(context).auditLocalPersistence()
     }
 
     @Synchronized fun onStartupReady(context: Context) {
