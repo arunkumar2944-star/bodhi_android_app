@@ -38,6 +38,14 @@ object AttendanceMonitorStartGate {
         }
     }
 
+    /** Confirms that the service worker passed daily eligibility and entered its monitor loop. */
+    @Synchronized fun onServiceMonitoringStarted(context: Context, workDate: String) {
+        rememberStartResult(context.applicationContext, "MONITOR_RUNNING:workDate=" + workDate.take(10))
+        scope.launch {
+            AttendanceDiagnostics(context.applicationContext).auditLocalPersistence()
+        }
+    }
+
     @Synchronized fun onStartupReady(context: Context) {
         startupReady = true
         if (!activityResumed) rememberStartResult(context.applicationContext, "WAITING:ACTIVITY_NOT_RESUMED")
