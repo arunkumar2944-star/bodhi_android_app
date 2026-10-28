@@ -29,6 +29,7 @@ Base commit: `af127869032e24bbc6f465f553cb9be543255567` on `android-ui-developme
 - `AttendanceMonitorStartGate.kt`: persists the latest startup outcome, including waiting for startup/activity visibility; pre-start sync failure; daily policy decision; missing device/token; reconciliation/runtime readiness; and service-start request outcome.
 - `AttendanceDiagnostics.kt`: includes `monitorRunning`, `verificationPending`, and `lastStartGateResult` in the existing local audit payload. It deliberately retains the existing `LOCAL_EVIDENCE_AUDIT` category so it remains visible through the current diagnostics UI/filter.
 - `AttendancePresenceService.kt`: records explicit reasons for immediate service rejection (invalid action, missing fine-location permission, paused privacy policy, missing work date), foreground start exception class, and monitoring-worker exception class.
+- Follow-up commit `907eabae858bba2e43bd696765dce0a927033337` requests diagnostic delivery after startup-gate and service state outcomes are persisted. This lets a blocked startup report its reason even if the foreground verification loop never runs; it does not create attendance events.
 
 Initial service-instrumentation commit: `5723949e1f4e471174e357ccca0ac221cf3254dd`. Follow-up commits record the positive transition `MONITOR_RUNNING:workDate=YYYY-MM-DD` after the service worker passes daily eligibility: start gate `00f7df41af3aef10ebf96f071aebc24a43297123`, service `28ebf8654a36a6068f3459004bcba686277baa06`. The current PR head also includes this checkpoint document.
 
@@ -38,9 +39,9 @@ These are observability changes only. They do not bypass eligibility/reconciliat
 
 - Android source is accessible through GitHub. The original `android-ui-development` branch is unchanged by this incident work.
 - Backend source is accessible as `arunkumar2944-star/CRM_TEST_Backend`, default branch `main`.
-- The expected backend branch `Android_Attendance` was not present when inspected.
+- The backend branch `Android_Attendance` is now verified at commit `60cef53a92fef7f0221494bf8fbfc9fa2d0068df`. Its comparison with `main` shows the prior separation checkpoint plus a CI-trigger update; the attendance runtime has not yet been extracted from CRM.
 - The frontend repository reference `nunnarivuai/crm` returned HTTP 404 through the connected GitHub account, and no local frontend checkout was available in the execution workspace.
-- No local Windows workspace, Android SDK/ADB executable, or connected physical device was accessible in this run. Consequently no Gradle compile, Android tests, backend test suite, current-device check, or end-to-end attendance run has been performed here.
+- No local Windows workspace, Android SDK/ADB executable, or connected physical device is accessible in this session. GitHub Actions ran the departure-engine regression suite successfully on incident commit `907eabae858bba2e43bd696765dce0a927033337` (run [40705054827](https://github.com/arunkumar2944-star/bodhi_android_app/actions/runs/40705054827)); the Android APK/unit-test build was still running at the last check ([40705054984](https://github.com/arunkumar2944-star/bodhi_android_app/actions/runs/40705054984)). Backend regression tests were triggered on the actual `Android_Attendance` branch and are queued ([40705334643](https://github.com/arunkumar2944-star/CRM_TEST_Backend/actions/runs/40705334643)). No current-device check, installed-APK validation, backend live DB check, or end-to-end attendance run has been performed in this session.
 - The incident is **not resolved** and a production deployment/APK publication has not been performed.
 
 ## Safe affected-device collection procedure
@@ -86,8 +87,8 @@ Attach the output plus the app's Event Log / diagnostics export and the latest `
 | ATT-INC-001 | Critical | Monitoring/attendance failure root cause unconfirmed | Open | Install/test the instrumented build in a controlled eligible session; inspect gate reason and current service state |
 | ATT-INC-002 | High | Physical-device service startup/rejection not verified | Blocked | Connected Android device and ADB output required |
 | ATT-INC-003 | High | Local Room event and sync result not correlated to backend persistence | Open | Correlate local event UUID, HTTP response, server DB row and summary API |
-| ATT-INC-004 | High | Android branch build/regression result unknown | Pending CI/device | Run Android unit tests and debug/release builds; complete physical-device acceptance |
-| SEP-001 | High | Standalone backend branch not created | Open | Inspect all migrations/contracts and create `Android_Attendance` only after source review |
+| ATT-INC-004 | High | Android branch build/regression result unknown | Partial: departure-engine CI passed; APK/unit-test CI in progress at last check | Confirm APK/unit-test CI result, then complete physical-device acceptance |
+| SEP-001 | High | Standalone backend branch exists but runtime extraction is not implemented | Open | Use checkpoint; design and test independent schema/auth/attendance APIs without modifying CRM main or production |
 | SEP-002 | High | Attendance-only frontend extraction blocked by repository access | Blocked | Grant access to `nunnarivuai/crm` or provide a verified repository/ZIP |
 | SEP-003 | Medium | Standalone DB/auth/runtime independence not implemented | Open | Design/version migrations and prove no runtime CRM dependency |
 
