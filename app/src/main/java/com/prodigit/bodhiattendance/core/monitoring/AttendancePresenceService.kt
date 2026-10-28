@@ -181,6 +181,7 @@ class AttendancePresenceService : Service() {
                         registered = true
                     }
                     AttendanceMonitorStatus.running()
+                    AttendanceMonitorStartGate.onServiceMonitoringStarted(this@AttendancePresenceService, day.date)
                     startHeartbeatLoop()
                     showVerificationNotification("Monitoring attendance for the work session you started")
                     arrivals.resetContinuity()
