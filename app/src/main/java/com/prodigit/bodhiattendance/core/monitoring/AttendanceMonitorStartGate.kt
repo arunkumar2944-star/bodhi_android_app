@@ -23,37 +23,52 @@ object AttendanceMonitorStartGate {
             .edit().putString(LAST_START_RESULT, result.take(300)).apply()
     }
 
+    private suspend fun auditAndDeliverStartResult(context: Context) {
+        // The monitor may never reach its own verification loop when startup is blocked.
+        // Persist and request diagnostics delivery here so the failure reason is not
+        // dependent on a successful foreground-service start.
+        if (AttendanceDiagnostics(context).auditLocalPersistence()) {
+            AttendanceDiagnosticDelivery.request(context.applicationContext)
+        }
+    }
+
     private suspend fun traceStartResult(context: Context, result: String) {
         rememberStartResult(context, result)
-        // Keep the existing diagnostics category so the current Admin/Manager
-        // diagnostics view displays this state without a backend/UI change.
-        AttendanceDiagnostics(context).auditLocalPersistence()
+        auditAndDeliverStartResult(context)
+    }
+
+    private fun traceStartResultAsync(context: Context, result: String) {
+        val app = context.applicationContext
+        rememberStartResult(app, result)
+        scope.launch {
+            try {
+                auditAndDeliverStartResult(app)
+            } catch (e: CancellationException) {
+                throw e
+            } catch (e: Exception) {
+                Log.w("ATTENDANCE_MONITOR", "Start-result diagnostics deferred: ${e.javaClass.simpleName}")
+            }
+        }
     }
 
     /** Records a service-level startup rejection without changing attendance policy. */
     @Synchronized fun onServiceStartRejected(context: Context, reason: String) {
-        rememberStartResult(context.applicationContext, "SERVICE_REJECTED:" + reason.take(250))
-        scope.launch {
-            AttendanceDiagnostics(context.applicationContext).auditLocalPersistence()
-        }
+        traceStartResultAsync(context, "SERVICE_REJECTED:" + reason.take(250))
     }
 
     /** Confirms that the service worker passed daily eligibility and entered its monitor loop. */
     @Synchronized fun onServiceMonitoringStarted(context: Context, workDate: String) {
-        rememberStartResult(context.applicationContext, "MONITOR_RUNNING:workDate=" + workDate.take(10))
-        scope.launch {
-            AttendanceDiagnostics(context.applicationContext).auditLocalPersistence()
-        }
+        traceStartResultAsync(context, "MONITOR_RUNNING:workDate=" + workDate.take(10))
     }
 
     @Synchronized fun onStartupReady(context: Context) {
         startupReady = true
-        if (!activityResumed) rememberStartResult(context.applicationContext, "WAITING:ACTIVITY_NOT_RESUMED")
+        if (!activityResumed) traceStartResultAsync(context, "WAITING:ACTIVITY_NOT_RESUMED")
         tryStart(context.applicationContext)
     }
     @Synchronized fun onActivityResumed(context: Context) {
         activityResumed = true
-        if (!startupReady) rememberStartResult(context.applicationContext, "WAITING:STARTUP_NOT_READY")
+        if (!startupReady) traceStartResultAsync(context, "WAITING:STARTUP_NOT_READY")
         tryStart(context.applicationContext)
     }
     @Synchronized fun onActivityPaused() { activityResumed = false; task?.cancel(); task = null }
