@@ -29,7 +29,7 @@ Base commit: `af127869032e24bbc6f465f553cb9be543255567` on `android-ui-developme
 - `AttendanceDiagnostics.kt`: includes `monitorRunning`, `verificationPending`, and `lastStartGateResult` in the existing local audit payload. It deliberately retains the existing `LOCAL_EVIDENCE_AUDIT` category so it remains visible through the current diagnostics UI/filter.
 - `AttendancePresenceService.kt`: records explicit reasons for immediate service rejection (invalid action, missing fine-location permission, paused privacy policy, missing work date), foreground start exception class, and monitoring-worker exception class.
 
-Latest source commit at checkpoint: `5723949e1f4e471174e357ccca0ac221cf3254dd`.
+Initial service-instrumentation commit: `5723949e1f4e471174e357ccca0ac221cf3254dd`. Follow-up commits record the positive transition `MONITOR_RUNNING:workDate=YYYY-MM-DD` after the service worker passes daily eligibility: start gate `00f7df41af3aef10ebf96f071aebc24a43297123`, service `28ebf8654a36a6068f3459004bcba686277baa06`. The current PR head also includes this checkpoint document.
 
 These are observability changes only. They do not bypass eligibility/reconciliation, infer attendance from diagnostics, or alter attendance event creation rules.
 
