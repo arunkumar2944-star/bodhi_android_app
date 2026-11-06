@@ -20,3 +20,4 @@ local.properties
 /skills-lock.json
 # Local release APK outputs
 /app/release/
+/release_handoff/
