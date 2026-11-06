@@ -56,8 +56,12 @@ class AttendanceDiagnostics(context: Context) {
             val starts = events.countLocalBreakStarts(user, device)
             val ends = events.countLocalBreakEnds(user, device)
             val unsettled = events.countUnsettledEvents(user, device)
+            val monitorState = AttendanceMonitorStatus.state.value
+            val lastStartGateResult = app.getSharedPreferences(
+                "attendance_monitor_start_diagnostics", Context.MODE_PRIVATE
+            ).getString("last_result", "NOT_RECORDED") ?: "NOT_RECORDED"
             recordPersisted("LOCAL_EVIDENCE_AUDIT",
-                "roomBreakStarts=$starts; roomBreakEnds=$ends; roomUnsettled=$unsettled; sqliteCandidates=${counts.first}; sqliteActiveCandidates=${counts.second}")
+                "roomBreakStarts=$starts; roomBreakEnds=$ends; roomUnsettled=$unsettled; sqliteCandidates=${counts.first}; sqliteActiveCandidates=${counts.second}; monitorRunning=${monitorState.running}; verificationPending=${monitorState.verificationPending}; lastStartGateResult=${lastStartGateResult.take(300)}")
         } catch (e: CancellationException) { throw e }
         catch (_: Exception) { false }
     }

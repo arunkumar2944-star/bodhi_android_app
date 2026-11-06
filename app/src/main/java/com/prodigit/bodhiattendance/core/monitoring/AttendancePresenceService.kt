@@ -131,11 +131,23 @@ class AttendancePresenceService : Service() {
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
         if (worker?.isActive == true) return START_NOT_STICKY
-        if (intent?.action != ACTION_VISIBLE_START || !hasFineLocation() || AttendancePrivacyPolicy.isPaused(this)) {
+        if (intent?.action != ACTION_VISIBLE_START) {
+            AttendanceMonitorStartGate.onServiceStartRejected(this, "INVALID_START_ACTION")
+            stopSelf(); return START_NOT_STICKY
+        }
+        if (!hasFineLocation()) {
+            AttendanceMonitorStartGate.onServiceStartRejected(this, "FINE_LOCATION_PERMISSION_MISSING")
+            stopSelf(); return START_NOT_STICKY
+        }
+        if (AttendancePrivacyPolicy.isPaused(this)) {
+            AttendanceMonitorStartGate.onServiceStartRejected(this, "PRIVACY_POLICY_PAUSED")
             stopSelf(); return START_NOT_STICKY
         }
         workDate = intent?.getStringExtra("work_date")
-        if (workDate == null) { stopSelf(); return START_NOT_STICKY }
+        if (workDate == null) {
+            AttendanceMonitorStartGate.onServiceStartRejected(this, "WORK_DATE_MISSING")
+            stopSelf(); return START_NOT_STICKY
+        }
         try {
             val notification = NotificationCompat.Builder(this, CHANNEL_ID)
                 .setSmallIcon(com.prodigit.bodhiattendance.R.mipmap.ic_launcher)
@@ -169,6 +181,7 @@ class AttendancePresenceService : Service() {
                         registered = true
                     }
                     AttendanceMonitorStatus.running()
+                    AttendanceMonitorStartGate.onServiceMonitoringStarted(this@AttendancePresenceService, day.date)
                     startHeartbeatLoop()
                     showVerificationNotification("Monitoring attendance for the work session you started")
                     arrivals.resetContinuity()
@@ -177,12 +190,16 @@ class AttendancePresenceService : Service() {
                     } catch (e: CancellationException) { throw e }
                     catch (e: Exception) {
                         Log.e(tag, "Monitoring worker stopped", e)
+                        AttendanceMonitorStartGate.onServiceStartRejected(
+                            this@AttendancePresenceService, "MONITORING_WORKER_EXCEPTION:" + e.javaClass.simpleName
+                        )
                         stopSelf()
                     }
                 }
             }
         } catch (e: RuntimeException) {
             Log.e(tag, "Monitoring start blocked", e)
+            AttendanceMonitorStartGate.onServiceStartRejected(this, "FOREGROUND_START_EXCEPTION:" + e.javaClass.simpleName)
             stopSelf(); return START_NOT_STICKY
         }
         return START_NOT_STICKY
