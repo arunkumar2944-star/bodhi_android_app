@@ -20,6 +20,15 @@ import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.compose.LocalLifecycleOwner
 
+import android.content.ContextWrapper
+import androidx.activity.compose.LocalActivity
+
+private tailrec fun Context.findActivity(): Activity? = when (this) {
+    is Activity -> this
+    is ContextWrapper -> baseContext.findActivity()
+    else -> null
+}
+
 private const val LOCK_PREFS = "bodhi_app_access"
 
 @Composable
@@ -42,7 +51,8 @@ fun accessPreference(prefs: SharedPreferences, key: String): Boolean {
 /** System authentication only: the app never receives or stores a phone PIN. */
 @Composable
 fun rememberAppAuthentication(useBiometric: Boolean, onSuccess: () -> Unit, onError: (String) -> Unit): () -> Unit {
-    val activity = LocalContext.current as FragmentActivity
+    val context = LocalContext.current
+    val activity = (LocalActivity.current as? FragmentActivity) ?: (context.findActivity() as? FragmentActivity) ?: return {}
     val success by rememberUpdatedState(onSuccess)
     val failure by rememberUpdatedState(onError)
     val keyguard = remember(activity) { requireNotNull(activity.getSystemService(KeyguardManager::class.java)) }
@@ -79,7 +89,12 @@ fun AppAccessGate(content: @Composable () -> Unit) {
     val prefs = rememberAccessPreferences()
     val enabled = accessPreference(prefs,"lock_enabled")
     val biometric = accessPreference(prefs,"biometric_enabled")
-    val activity = LocalContext.current as FragmentActivity
+    val context = LocalContext.current
+    val activity = (LocalActivity.current as? FragmentActivity) ?: (context.findActivity() as? FragmentActivity)
+    if (activity == null) {
+        content()
+        return
+    }
     val access: AppAccessViewModel = androidx.lifecycle.viewmodel.compose.viewModel(viewModelStoreOwner = activity)
     LaunchedEffect(enabled) { access.configure(enabled) }
     DisposableEffect(activity, access) {

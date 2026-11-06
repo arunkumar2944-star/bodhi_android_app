@@ -1,10 +1,10 @@
 package com.prodigit.bodhiattendance
 
 import android.os.Bundle
+import androidx.activity.enableEdgeToEdge
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.collectAsState
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.imePadding
 import androidx.compose.ui.Modifier
 import androidx.lifecycle.lifecycleScope
 import kotlinx.coroutines.launch
@@ -70,6 +70,7 @@ class MainActivity : FragmentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
 
         installSplashScreen()
+        enableEdgeToEdge()
 
         super.onCreate(savedInstanceState)
         com.prodigit.bodhiattendance.core.monitoring.AttendancePrivacyPolicy.removeLegacyAutomation(applicationContext)
@@ -99,7 +100,7 @@ class MainActivity : FragmentActivity() {
             }
             CRMAttendanceTheme(darkTheme = isDark, dynamicColor = false) {
                 Surface(
-                    modifier = Modifier.fillMaxSize().imePadding(),
+                    modifier = Modifier.fillMaxSize(),
                     color = MaterialTheme.colorScheme.background
                 ) {
 

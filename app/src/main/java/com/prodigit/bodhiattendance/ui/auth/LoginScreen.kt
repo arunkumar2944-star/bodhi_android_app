@@ -45,7 +45,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
@@ -59,6 +58,8 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import com.prodigit.bodhiattendance.BuildConfig
 import com.prodigit.bodhiattendance.R
 
+
+import androidx.compose.foundation.layout.statusBarsPadding
 
 // ============================================================
 // BODHI THEME COLORS
@@ -112,10 +113,12 @@ fun LoginScreen(
     // RESPONSIVE PHONE HEIGHT
     // ========================================================
 
-    val configuration = LocalConfiguration.current
+    val windowInfo = androidx.compose.ui.platform.LocalWindowInfo.current
+    val density = androidx.compose.ui.platform.LocalDensity.current
 
-    val screenHeightDp =
-        configuration.screenHeightDp
+    val screenHeightDp = with(density) {
+        windowInfo.containerSize.height.toDp().value.toInt()
+    }
 
     val isVerySmallScreen =
         screenHeightDp < 620
@@ -279,6 +282,7 @@ fun LoginScreen(
         Column(
             modifier = Modifier
                 .fillMaxSize()
+                .statusBarsPadding()
                 .imePadding()
                 .verticalScroll(
                     rememberScrollState()

@@ -62,5 +62,9 @@ object AttendancePrivacyPolicy {
 
 /** Kept only to consume/cancel pending broadcasts from previous APKs. */
 class AttendanceMorningReceiver : BroadcastReceiver() {
-    override fun onReceive(context: Context, intent: Intent) { AttendancePrivacyPolicy.removeLegacyAutomation(context) }
+    override fun onReceive(context: Context, intent: Intent) {
+        if (intent.action == Intent.ACTION_MY_PACKAGE_REPLACED) {
+            AttendancePrivacyPolicy.removeLegacyAutomation(context)
+        }
+    }
 }

@@ -20,7 +20,7 @@ class OfficeGeofenceReceiver : BroadcastReceiver() {
             return
         }
         if (AttendancePrivacyPolicy.isPaused(context)) return
-        // Alerts wake an already validated monitoring loop; never start a new location service in the background.
-        AttendanceVerificationSignals.request("geofence transition")
+        Log.i("ATTENDANCE_MONITOR", "Geofence transition received: transitionType=${event.geofenceTransition}")
+        AttendanceMonitorStartGate.onGeofenceTransition(context)
     }
 }

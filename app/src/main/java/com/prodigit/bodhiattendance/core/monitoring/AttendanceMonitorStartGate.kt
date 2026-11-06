@@ -8,13 +8,14 @@ import com.prodigit.bodhiattendance.core.session.*
 import com.prodigit.bodhiattendance.domain.attendance.*
 import kotlinx.coroutines.*
 
-/** Only a visible Activity may authorize a new monitoring session. */
+/** Coordinates attendance monitoring startup, foreground activity state, and background recovery. */
 object AttendanceMonitorStartGate {
     private var startupReady = false
     private var activityResumed = false
     private var startRequested = false
     private var task: Job? = null
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Main.immediate)
+
     private const val START_DIAGNOSTICS_PREFS = "attendance_monitor_start_diagnostics"
     private const val LAST_START_RESULT = "last_result"
 
@@ -24,9 +25,6 @@ object AttendanceMonitorStartGate {
     }
 
     private suspend fun auditAndDeliverStartResult(context: Context) {
-        // The monitor may never reach its own verification loop when startup is blocked.
-        // Persist and request diagnostics delivery here so the failure reason is not
-        // dependent on a successful foreground-service start.
         if (AttendanceDiagnostics(context).auditLocalPersistence()) {
             AttendanceDiagnosticDelivery.request(context.applicationContext)
         }
@@ -71,12 +69,33 @@ object AttendanceMonitorStartGate {
         if (!startupReady) traceStartResultAsync(context, "WAITING:STARTUP_NOT_READY")
         tryStart(context.applicationContext)
     }
-    @Synchronized fun onActivityPaused() { activityResumed = false; task?.cancel(); task = null }
+    @Synchronized fun onActivityPaused() { activityResumed = false }
     @Synchronized fun onServiceStopped() { startRequested = false }
-    @Synchronized fun isVisible(): Boolean = startupReady && activityResumed
+    @Synchronized fun isVisible(): Boolean = activityResumed
+    @Synchronized fun canRunMonitoring(context: Context): Boolean =
+        SessionManager(context.applicationContext).getUserId() > 0 &&
+            !AttendancePrivacyPolicy.isPaused(context.applicationContext)
+
     @Synchronized fun reset() { task?.cancel(); task = null; startupReady = false; startRequested = false }
-    private fun tryStart(context: Context) {
-        if (!isVisible() || task?.isActive == true) return
+
+    fun onSystemRecovery(context: Context) {
+        val app = context.applicationContext
+        if (!canRunMonitoring(app)) return
+        tryStart(app, allowBackground = true)
+    }
+
+    fun onGeofenceTransition(context: Context) {
+        val app = context.applicationContext
+        if (!canRunMonitoring(app)) return
+        AttendanceVerificationSignals.request("geofence transition")
+        if (!AttendanceMonitorStatus.state.value.running) {
+            tryStart(app, allowBackground = true)
+        }
+    }
+
+    private fun tryStart(context: Context, allowBackground: Boolean = false) {
+        if (!allowBackground && !startupReady && !activityResumed) return
+        if (task?.isActive == true) return
         task = scope.launch {
             try {
                 rememberStartResult(context, "ATTEMPT:VISIBLE_START_GATE")
@@ -95,7 +114,7 @@ object AttendanceMonitorStartGate {
                 }
                 if (startRequested && AttendanceMonitorStatus.state.value.running) {
                     traceStartResult(context, "ALREADY_RUNNING:VERIFY_REQUESTED")
-                    AttendanceVerificationSignals.request("Visible app opened; refresh CRM attendance state")
+                    AttendanceVerificationSignals.request("Session active; refresh CRM state")
                     return@launch
                 }
                 val session = SessionManager(context)
@@ -140,7 +159,7 @@ object AttendanceMonitorStartGate {
                 currentCoroutineContext().ensureActive()
                 var serviceStartRequested: Boolean? = null
                 synchronized(this@AttendanceMonitorStartGate) {
-                    if (isVisible()) {
+                    if (canRunMonitoring(context)) {
                         AttendancePrivacyPolicy.resumeAfterServerValidation(context)
                         serviceStartRequested = AttendancePresenceService.start(context, day.date)
                         startRequested = serviceStartRequested == true
@@ -154,7 +173,7 @@ object AttendanceMonitorStartGate {
             } catch (e: CancellationException) { throw e }
             catch (e: Exception) {
                 traceStartResult(context, "DEFERRED:EXCEPTION_" + e.javaClass.simpleName)
-                Log.w("ATTENDANCE_MONITOR", "Open-app monitoring start deferred", e)
+                Log.w("ATTENDANCE_MONITOR", "Monitoring start deferred", e)
             }
         }
     }

@@ -1,6 +1,7 @@
 package com.prodigit.bodhiattendance.domain.attendance
 
 import junit.framework.TestCase.assertEquals
+import junit.framework.TestCase.assertNotNull
 import junit.framework.TestCase.assertTrue
 import org.junit.Test
 
@@ -62,6 +63,59 @@ class AttendancePresenceDecisionEngineTest {
             OfficePresenceSnapshot(true, true, capturedAtElapsedRealtimeMs = 280000L),
             AttendanceEnginePolicy(180000L, 5400000L, true, false)) as AttendanceEngineDecision.NoAttendanceEvent
         assertEquals(AttendanceEnginePhase.Present, result.nextPhase)
+    }
+
+    @Test
+    fun repeatedCallbacksDuringGrace_doNotResetGraceTimer() {
+        val originalDeparture = 1000L
+        val policy = AttendanceEnginePolicy(180000L, 5400000L, true, false)
+        // Callback 1 at +30s
+        val call1 = AttendancePresenceDecisionEngine.evaluate(
+            AttendanceState.WORKING,
+            AttendanceEnginePhase.AbsenceGrace(originalDeparture),
+            OfficePresenceSnapshot(false, false, capturedAtElapsedRealtimeMs = 31000L),
+            policy
+        ) as AttendanceEngineDecision.NoAttendanceEvent
+        assertEquals(AttendanceEnginePhase.AbsenceGrace(originalDeparture), call1.nextPhase)
+
+        // Callback 2 at +90s
+        val call2 = AttendancePresenceDecisionEngine.evaluate(
+            AttendanceState.WORKING,
+            call1.nextPhase,
+            OfficePresenceSnapshot(false, false, capturedAtElapsedRealtimeMs = 91000L),
+            policy
+        ) as AttendanceEngineDecision.NoAttendanceEvent
+        assertEquals(AttendanceEnginePhase.AbsenceGrace(originalDeparture), call2.nextPhase)
+
+        // Callback 3 at +180s (3 minutes reached)
+        val call3 = AttendancePresenceDecisionEngine.evaluate(
+            AttendanceState.WORKING,
+            call2.nextPhase,
+            OfficePresenceSnapshot(false, false, capturedAtElapsedRealtimeMs = 181000L),
+            policy
+        ) as AttendanceEngineDecision.CreateAttendanceEvent
+        assertEquals(AttendanceEventType.BREAK_START, call3.eventType)
+        assertEquals(originalDeparture, call3.eventElapsedRealtimeMs)
+    }
+
+    @Test
+    fun processRecoveryDuringGrace_retainsOriginalAbsenceTime() {
+        val originalDeparture = 10000L
+        val recoveredPhase = DeparturePhaseRecovery.compatible(
+            AttendanceState.WORKING,
+            AttendanceEnginePhase.AbsenceGrace(originalDeparture)
+        )
+        assertNotNull(recoveredPhase)
+        val policy = AttendanceEnginePolicy(180000L, 5400000L, true, false)
+        // Evaluates at +180s from original departure after process recovery
+        val result = AttendancePresenceDecisionEngine.evaluate(
+            AttendanceState.WORKING,
+            recoveredPhase!!,
+            OfficePresenceSnapshot(false, false, capturedAtElapsedRealtimeMs = 190001L),
+            policy
+        ) as AttendanceEngineDecision.CreateAttendanceEvent
+        assertEquals(AttendanceEventType.BREAK_START, result.eventType)
+        assertEquals(originalDeparture, result.eventElapsedRealtimeMs)
     }
 
     // ========================================================

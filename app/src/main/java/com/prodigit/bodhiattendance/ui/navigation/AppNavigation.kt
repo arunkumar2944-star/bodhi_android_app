@@ -370,16 +370,16 @@ private fun MainApplication(onSignedOut: () -> Unit) {
 
     // Refresh shared CRM state whenever the employee opens another screen.
     // This is read-only and does not modify local attendance or server decisions.
-    val hostLifecycle = (LocalContext.current as? androidx.lifecycle.LifecycleOwner)?.lifecycle
+    val hostLifecycle = androidx.lifecycle.compose.LocalLifecycleOwner.current.lifecycle
     LaunchedEffect(currentRoute) {
         if (currentRoute != null) liveModel.refresh()
         // Poll only while the Activity is resumed, never as a background attendance worker.
         if (currentRoute == ROUTE_DASHBOARD || currentRoute == ROUTE_ATTENDANCE) {
             while (true) {
                 kotlinx.coroutines.delay(30_000L)
-                if (hostLifecycle?.currentState?.isAtLeast(
+                if (hostLifecycle.currentState.isAtLeast(
                         androidx.lifecycle.Lifecycle.State.RESUMED
-                    ) == true) {
+                    )) {
                     liveModel.refresh()
                 }
             }

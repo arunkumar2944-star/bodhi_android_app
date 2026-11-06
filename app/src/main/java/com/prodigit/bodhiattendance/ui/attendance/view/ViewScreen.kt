@@ -177,7 +177,7 @@ fun ViewScreen(
 
     val todayKey = remember(live.attendance.today) { com.prodigit.bodhiattendance.ui.live.displayDate(live.attendance.today) }
     var selectedDate by remember(todayKey) { mutableStateOf<String?>(todayKey) }
-    var visibleWeekOffset by remember(todayKey) { mutableStateOf(0) }
+    var visibleWeekOffset by remember(todayKey) { androidx.compose.runtime.mutableIntStateOf(0) }
     val parser = remember { SimpleDateFormat("dd MMM yyyy", Locale.ENGLISH) }
     val baseSunday = remember(todayKey) {
         Calendar.getInstance().apply {
@@ -185,8 +185,8 @@ fun ViewScreen(
             add(Calendar.DAY_OF_MONTH, -(get(Calendar.DAY_OF_WEEK) - Calendar.SUNDAY))
         }
     }
-    var displayedMonth by remember { mutableStateOf(baseSunday.get(Calendar.MONTH)) }
-    var displayedYear by remember { mutableStateOf(baseSunday.get(Calendar.YEAR)) }
+    var displayedMonth by remember { androidx.compose.runtime.mutableIntStateOf(baseSunday.get(Calendar.MONTH)) }
+    var displayedYear by remember { androidx.compose.runtime.mutableIntStateOf(baseSunday.get(Calendar.YEAR)) }
     // Always open the actual current month/week, even when no attendance event exists today.
     val firstRecord = remember(todayKey) { Calendar.getInstance().apply {
         time = parser.parse(todayKey) ?: java.util.Date()
@@ -2746,7 +2746,7 @@ private fun AttendanceFilterCard(
     onMonthSelected: (Int, Int) -> Unit
 ) {
     var showPicker by remember { mutableStateOf(false) }
-    var pickerYear by remember(displayedYear) { mutableStateOf(displayedYear) }
+    var pickerYear by remember(displayedYear) { androidx.compose.runtime.mutableIntStateOf(displayedYear) }
     val currentMonth = java.time.YearMonth.parse(todayKey.let { java.time.LocalDate.parse(it, java.time.format.DateTimeFormatter.ofPattern("dd MMM yyyy", Locale.ENGLISH)).toString().substring(0, 7) })
     val earliestMonth = java.time.YearMonth.from(java.time.LocalDate.parse(todayKey, java.time.format.DateTimeFormatter.ofPattern("dd MMM yyyy", Locale.ENGLISH)).minusDays(89))
     val earliestYear = earliestMonth.year

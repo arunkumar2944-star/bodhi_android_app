@@ -199,6 +199,17 @@ class StartupViewModel(
 
 
             // ====================================================
+            // CHECK SESSION BEFORE WAITING FOR INTERNET
+            // ====================================================
+
+            val savedToken = sessionManager.getToken()
+            if (savedToken.isNullOrBlank() && !tokenManager.hasRefreshCredential()) {
+                Log.w("STARTUP_DEBUG", "No valid access or refresh token; login required")
+                _destination.value = StartupDestination.LOGIN
+                return@launch
+            }
+
+            // ====================================================
             // WAIT FOR INTERNET
             // ====================================================
 
@@ -1150,9 +1161,6 @@ class StartupViewModel(
 
         return capabilities.hasCapability(
             NetworkCapabilities.NET_CAPABILITY_INTERNET
-        ) &&
-                capabilities.hasCapability(
-                    NetworkCapabilities.NET_CAPABILITY_VALIDATED
-                )
+        )
     }
 }

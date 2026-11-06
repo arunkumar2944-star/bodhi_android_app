@@ -240,7 +240,6 @@ class AutomaticAttendanceEvaluator(context: Context, private val workDate: Strin
                 // Keep the first fresh outside fix and request a second one promptly.
                 needsContinuityChecks = true
                 nextVerificationElapsedMs = android.os.SystemClock.elapsedRealtime() + 20_000L
-                departureEvidence.confirmOutside(now)
                 return@withLock
             }
         } else {
