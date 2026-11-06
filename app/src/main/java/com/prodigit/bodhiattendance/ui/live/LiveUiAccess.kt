@@ -1,6 +1,10 @@
 package com.prodigit.bodhiattendance.ui.live
 
+import android.app.Activity
+import android.content.Context
+import android.content.ContextWrapper
 import androidx.activity.ComponentActivity
+import androidx.activity.compose.LocalActivity
 import androidx.compose.runtime.*
 import androidx.compose.ui.platform.LocalContext
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -9,8 +13,22 @@ import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.repeatOnLifecycle
 import kotlinx.coroutines.delay
 
+private tailrec fun Context.findActivity(): Activity? = when (this) {
+    is Activity -> this
+    is ContextWrapper -> baseContext.findActivity()
+    else -> null
+}
+
 @Composable
-fun liveUiViewModel(): LiveUiViewModel = viewModel(viewModelStoreOwner = LocalContext.current as ComponentActivity)
+fun liveUiViewModel(): LiveUiViewModel {
+    val activity = (LocalActivity.current as? ComponentActivity)
+        ?: (LocalContext.current.findActivity() as? ComponentActivity)
+    return if (activity != null) {
+        viewModel(viewModelStoreOwner = activity)
+    } else {
+        viewModel()
+    }
+}
 
 @Composable
 fun liveUiState(): LiveUiState {

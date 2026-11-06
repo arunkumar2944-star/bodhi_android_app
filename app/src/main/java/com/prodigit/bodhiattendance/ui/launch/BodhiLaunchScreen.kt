@@ -52,6 +52,7 @@ fun BodhiLaunchScreen(
     networkError: Boolean = false,
     startupError: String? = null
 ) {
+    val density = androidx.compose.ui.platform.LocalDensity.current
 
     // =========================================================
     // ENTRANCE ANIMATION VALUES
@@ -289,9 +290,9 @@ fun BodhiLaunchScreen(
                             top = 20.dp,
                             bottom = 18.dp
                         )
-                        .offset(
-                            y = titleOffset.value.dp
-                        )
+                        .offset {
+                            androidx.compose.ui.unit.IntOffset(0, with(density) { titleOffset.value.dp.roundToPx() })
+                        }
             ) {
 
 
@@ -339,10 +340,9 @@ fun BodhiLaunchScreen(
                         Alignment.CenterHorizontally,
 
                     modifier =
-                        Modifier.offset(
-                            y =
-                                subtitleOffset.value.dp
-                        )
+                        Modifier.offset {
+                            androidx.compose.ui.unit.IntOffset(0, with(density) { subtitleOffset.value.dp.roundToPx() })
+                        }
                 ) {
 
 
@@ -435,11 +435,9 @@ fun BodhiLaunchScreen(
                     Modifier
                         .fillMaxWidth()
                         .weight(1f)
-                        .offset(
-                            y =
-                                (-25).dp +
-                                        logoOffset.value.dp
-                        ),
+                        .offset {
+                            androidx.compose.ui.unit.IntOffset(0, with(density) { ((-25).dp + logoOffset.value.dp).roundToPx() })
+                        },
 
                 contentScale =
                     ContentScale.Fit,
@@ -462,11 +460,9 @@ fun BodhiLaunchScreen(
                         .padding(
                             bottom = 45.dp
                         )
-                        .offset(
-                            y =
-                                (-10).dp +
-                                        bottomOffset.value.dp
-                        )
+                        .offset {
+                            androidx.compose.ui.unit.IntOffset(0, with(density) { ((-10).dp + bottomOffset.value.dp).roundToPx() })
+                        }
             ) {
 
 
