@@ -8,21 +8,43 @@ import com.prodigit.bodhiattendance.core.session.*
 import com.prodigit.bodhiattendance.domain.attendance.*
 import kotlinx.coroutines.*
 
-/** Only a visible Activity may authorize a new monitoring session. */
+/** Coordinates attendance monitoring startup, foreground activity state, and background recovery. */
 object AttendanceMonitorStartGate {
     private var startupReady = false
     private var activityResumed = false
     private var startRequested = false
     private var task: Job? = null
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Main.immediate)
+
     @Synchronized fun onStartupReady(context: Context) { startupReady = true; tryStart(context.applicationContext) }
     @Synchronized fun onActivityResumed(context: Context) { activityResumed = true; tryStart(context.applicationContext) }
-    @Synchronized fun onActivityPaused() { activityResumed = false; task?.cancel(); task = null }
+    @Synchronized fun onActivityPaused() { activityResumed = false }
     @Synchronized fun onServiceStopped() { startRequested = false }
-    @Synchronized fun isVisible(): Boolean = startupReady && activityResumed
+    @Synchronized fun isVisible(): Boolean = activityResumed
+    @Synchronized fun canRunMonitoring(context: Context): Boolean =
+        SessionManager(context.applicationContext).getUserId() > 0 &&
+            !AttendancePrivacyPolicy.isPaused(context.applicationContext)
+
     @Synchronized fun reset() { task?.cancel(); task = null; startupReady = false; startRequested = false }
-    private fun tryStart(context: Context) {
-        if (!isVisible() || task?.isActive == true) return
+
+    fun onSystemRecovery(context: Context) {
+        val app = context.applicationContext
+        if (!canRunMonitoring(app)) return
+        tryStart(app, allowBackground = true)
+    }
+
+    fun onGeofenceTransition(context: Context) {
+        val app = context.applicationContext
+        if (!canRunMonitoring(app)) return
+        AttendanceVerificationSignals.request("geofence transition")
+        if (!AttendanceMonitorStatus.state.value.running) {
+            tryStart(app, allowBackground = true)
+        }
+    }
+
+    private fun tryStart(context: Context, allowBackground: Boolean = false) {
+        if (!allowBackground && !startupReady && !activityResumed) return
+        if (task?.isActive == true) return
         task = scope.launch {
             try {
                 AttendancePrivacyPolicy.removeLegacyAutomation(context)
@@ -34,7 +56,7 @@ object AttendanceMonitorStartGate {
                     return@launch
                 }
                 if (startRequested && AttendanceMonitorStatus.state.value.running) {
-                    AttendanceVerificationSignals.request("Visible app opened; refresh CRM attendance state")
+                    AttendanceVerificationSignals.request("Session active; refresh CRM state")
                     return@launch
                 }
                 val session = SessionManager(context)
@@ -63,13 +85,13 @@ object AttendanceMonitorStartGate {
                 }
                 currentCoroutineContext().ensureActive()
                 synchronized(this@AttendanceMonitorStartGate) {
-                    if (isVisible()) {
+                    if (canRunMonitoring(context)) {
                         AttendancePrivacyPolicy.resumeAfterServerValidation(context)
                         startRequested = AttendancePresenceService.start(context, day.date)
                     }
                 }
             } catch (e: CancellationException) { throw e }
-            catch (e: Exception) { Log.w("ATTENDANCE_MONITOR", "Open-app monitoring start deferred", e) }
+            catch (e: Exception) { Log.w("ATTENDANCE_MONITOR", "Monitoring start deferred", e) }
         }
     }
 }

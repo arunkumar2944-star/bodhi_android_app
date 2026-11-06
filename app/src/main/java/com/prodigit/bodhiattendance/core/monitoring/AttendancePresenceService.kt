@@ -131,11 +131,12 @@ class AttendancePresenceService : Service() {
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
         if (worker?.isActive == true) return START_NOT_STICKY
-        if (intent?.action != ACTION_VISIBLE_START || !hasFineLocation() || AttendancePrivacyPolicy.isPaused(this)) {
+        if (!hasFineLocation() || AttendancePrivacyPolicy.isPaused(this)) {
             stopSelf(); return START_NOT_STICKY
         }
         workDate = intent?.getStringExtra("work_date")
-        if (workDate == null) { stopSelf(); return START_NOT_STICKY }
+            ?: getSharedPreferences("attendance_day_gate", Context.MODE_PRIVATE).getString("date", null)
+            ?: java.time.LocalDate.now(java.time.ZoneId.of("Asia/Kolkata")).toString()
         try {
             val notification = NotificationCompat.Builder(this, CHANNEL_ID)
                 .setSmallIcon(com.prodigit.bodhiattendance.R.mipmap.ic_launcher)
@@ -436,9 +437,11 @@ class AttendancePresenceService : Service() {
                 } catch (e: CancellationException) { throw e }
                 catch (e: Exception) { Log.w("ARRIVAL_EVIDENCE", "Arrival evidence retained for retry", e) }
                 if (AttendancePrivacyPolicy.isPaused(this@AttendancePresenceService)) { stopSelf(); return }
+                if (!hasFineLocation()) { waitMs = MIN_RETRY_MS; continue }
                 val sensorBudget = if (OfflineWorkSessionStore.isOffline()) offlineSession.sensorBudgetMs() else 35_000L
                 if (sensorBudget <= 0L) { waitMs = MIN_RETRY_MS; continue }
                 val source = CancellationTokenSource()
+                @android.annotation.SuppressLint("MissingPermission")
                 val location = try {
                     withTimeoutOrNull(sensorBudget.coerceAtMost(35_000L)) {
                         fused.getCurrentLocation(CurrentLocationRequest.Builder()
@@ -680,7 +683,9 @@ class AttendancePresenceService : Service() {
     override fun onBind(intent: Intent?): IBinder? = null
 
     companion object {
-        private const val ACTION_VISIBLE_START = "com.prodigit.bodhiattendance.VISIBLE_WORK_SESSION"
+        const val ACTION_VISIBLE_START = "com.prodigit.bodhiattendance.VISIBLE_WORK_SESSION"
+        const val ACTION_GEOFENCE_START = "com.prodigit.bodhiattendance.GEOFENCE_WORK_SESSION"
+        const val ACTION_BOOT_RECOVERY = "com.prodigit.bodhiattendance.BOOT_RECOVERY"
         private const val CHANNEL_ID = "attendance_presence"
         private const val NOTIFICATION_ID = 2401
         private const val HEARTBEAT_INTERVAL_MS = 2 * 60_000L
@@ -691,16 +696,19 @@ class AttendancePresenceService : Service() {
         private const val REFINE_TARGET_METERS = 10f
         private const val REFINE_WINDOW_MS = 12_000L
         private const val MAX_GPS_RETRIES = 3
-        fun start(context: Context, workDate: String): Boolean {
-            if (!AttendanceMonitorStartGate.isVisible()) return false
+        fun start(context: Context, workDate: String, action: String = ACTION_VISIBLE_START): Boolean {
             if (AttendancePrivacyPolicy.isPaused(context)) return false
             if (ContextCompat.checkSelfPermission(context, Manifest.permission.ACCESS_FINE_LOCATION) !=
                 PackageManager.PERMISSION_GRANTED) return false
             return try {
                 ContextCompat.startForegroundService(context, Intent(context, AttendancePresenceService::class.java)
-                    .setAction(ACTION_VISIBLE_START).putExtra("work_date", workDate))
+                    .setAction(action).putExtra("work_date", workDate))
                 true
-            } catch (e: RuntimeException) { Log.e("ATTENDANCE_MONITOR", "Monitoring start blocked", e); false }
+            } catch (e: RuntimeException) {
+                Log.e("ATTENDANCE_MONITOR", "Monitoring start blocked: ${e.javaClass.simpleName}", e)
+                AttendanceBackgroundSync.schedule(context)
+                false
+            }
         }
     }
 }
