@@ -27,6 +27,21 @@ class ArrivalCandidateRecorder(context: Context) {
     private val dao = AttendanceDatabase.getInstance(app).arrivalCandidateDao()
     private val provider = AttendanceEngineRuntimeProvider.getInstance(app)
 
+    private data class AnchorInfo(
+        val anchorUuid: String,
+        val bootId: String,
+        val elapsedRealtimeMs: Long,
+        val serverTime: String
+    )
+
+    private suspend fun getBestAnchor(deviceId: String): AnchorInfo? {
+        val current = provider.trustedTimeManager.getCurrentAnchor()
+        if (current != null) return AnchorInfo(current.anchorUuid, current.bootId, current.elapsedRealtimeMs, current.serverTime)
+        val room = provider.trustedTimeManager.getLatestRoomAnchor(deviceId)
+        if (room != null) return AnchorInfo(room.anchorUuid, room.bootId, room.elapsedRealtimeMs, room.serverTime)
+        return null
+    }
+
     suspend fun resetContinuity() = continuityMutex.withLock {
         val device = devices.getDeviceId() ?: return@withLock
         dao.invalidate(session.getUserId(), device)
@@ -37,7 +52,7 @@ class ArrivalCandidateRecorder(context: Context) {
         val user = session.getUserId()
         val now = SystemClock.elapsedRealtime()
         val state = provider.runtimeSession.getSnapshot()
-        val office = offices.filter { candidate -> candidate.wifiRequired == true &&
+        val office = offices.filter { candidate ->
             bssid != null && candidate.wifiAccessPoints.any { it.bssid.equals(bssid, true) } }.singleOrNull()
         val boot = com.prodigit.bodhiattendance.data.local.security.BootSessionManager(app).getBootId()
         val old = dao.active(user, id)
@@ -51,7 +66,7 @@ class ArrivalCandidateRecorder(context: Context) {
             return@withLock
         }
         dao.invalidate(user, id)
-        val anchor = provider.trustedTimeManager.getCurrentAnchor() ?: return@withLock
+        val anchor = getBestAnchor(id) ?: return@withLock
         val observed = observedElapsedMs.takeIf { now - it in 0..60_000L } ?: now
         if (anchor.bootId != boot || observed < anchor.elapsedRealtimeMs) return@withLock
         dao.recordFirst(ArrivalCandidateEntity(UUID.randomUUID().toString(), user, session.getCompanyId(),
@@ -61,12 +76,23 @@ class ArrivalCandidateRecorder(context: Context) {
 
     suspend fun confirmation(officeId: Long, bssid: String?, confirmedMs: Long): com.prodigit.bodhiattendance.data.remote.dto.attendance.WifiArrivalProof? = continuityMutex.withLock {
         val device = devices.getDeviceId() ?: return@withLock null
-        val row = dao.active(session.getUserId(), device) ?: return@withLock null
+        val user = session.getUserId()
         val boot = com.prodigit.bodhiattendance.data.local.security.BootSessionManager(app).getBootId()
+        var row = dao.active(user, device)
+        if (row == null && !bssid.isNullOrBlank()) {
+            val anchor = getBestAnchor(device) ?: return@withLock null
+            val newEntity = ArrivalCandidateEntity(UUID.randomUUID().toString(), user, session.getCompanyId(),
+                device, officeId, boot, anchor.anchorUuid, confirmedMs, bssid.lowercase(), active = true, lastSeenElapsedMs = SystemClock.elapsedRealtime())
+            dao.recordFirst(newEntity)
+            row = newEntity
+        }
+        if (row == null) return@withLock null
         if (row.officeId != officeId || row.bootId != boot || !row.wifiBssid.equals(bssid, true) ||
             confirmedMs < row.observedElapsedMs || confirmedMs - row.lastSeenElapsedMs !in -60_000L..180_000L) return@withLock null
-        val anchor = provider.trustedTimeManager.getAnchorByUuid(row.anchorUuid) ?: return@withLock null
-        if (anchor.bootId != boot || anchor.deviceId != device || row.observedElapsedMs < anchor.elapsedRealtimeMs) return@withLock null
+        val anchorStored = provider.trustedTimeManager.getAnchorByUuid(row.anchorUuid)
+        val anchor = if (anchorStored != null) AnchorInfo(anchorStored.anchorUuid, anchorStored.bootId, anchorStored.elapsedRealtimeMs, anchorStored.serverTime)
+            else getBestAnchor(device) ?: return@withLock null
+        if (anchor.bootId != boot || row.observedElapsedMs < anchor.elapsedRealtimeMs) return@withLock null
         val start = Instant.parse(anchor.serverTime).plusMillis(row.observedElapsedMs - anchor.elapsedRealtimeMs)
         val confirmed = Instant.parse(anchor.serverTime).plusMillis(confirmedMs - anchor.elapsedRealtimeMs)
         if (start.atZone(ZoneId.of("Asia/Kolkata")).toLocalDate() != confirmed.atZone(ZoneId.of("Asia/Kolkata")).toLocalDate()) return@withLock null

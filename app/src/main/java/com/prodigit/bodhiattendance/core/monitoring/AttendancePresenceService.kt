@@ -116,6 +116,7 @@ class AttendancePresenceService : Service() {
             diagnostics.record("WIFI_TRIGGER", reason)
             if (reason == "Wi-Fi lost") arrivals.resetContinuity()
             try {
+                if (arrivalOffices.isEmpty()) refreshOfficeConfiguration()
                 if (!HomeLocationCalibration.requested && observed != null) arrivals.record(observed.first.takeUnless { isWifiDisconnected() }, observed.second, arrivalOffices)
             } catch (e: CancellationException) { throw e }
             catch (e: Exception) { Log.w("ARRIVAL_EVIDENCE", "Arrival observation deferred", e) }
