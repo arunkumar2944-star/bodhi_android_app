@@ -100,9 +100,10 @@ object AttendanceMonitorStartGate {
             try {
                 rememberStartResult(context, "ATTEMPT:VISIBLE_START_GATE")
                 AttendancePrivacyPolicy.removeLegacyAutomation(context)
-                if (!AttendanceBackgroundSync.run(context, diagnostics = false)) {
-                    traceStartResult(context, "BLOCKED:PRESTART_SYNC_NOT_SETTLED")
-                    return@launch
+                try {
+                    AttendanceBackgroundSync.run(context, diagnostics = false)
+                } catch (e: Exception) {
+                    Log.w("ATTENDANCE_MONITOR", "Pre-start sync deferred", e)
                 }
                 traceStartResult(context, "PASS:PRESTART_SYNC")
                 val day = AttendanceDayGate.fetch(context)
