@@ -76,6 +76,7 @@ fun SystemHealthScreen(
     val live = com.prodigit.bodhiattendance.ui.live.liveUiState()
     val day = live.attendance?.let { read -> read.days.firstOrNull { it.date == read.today } }
     val office = live.configuration?.locations?.firstOrNull { it.id == day?.officeId }
+        ?: live.configuration?.locations?.firstOrNull()
     val holidayToday = live.attendance?.let { read -> com.prodigit.bodhiattendance.ui.live.holidayPresentation(read.today, read, live.onDuty) != null } == true
     val wifiRequired = if (holidayToday) false else office?.wifiRequired
     val bleRequired = if (holidayToday) false else office?.bleRequired

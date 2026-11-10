@@ -385,29 +385,24 @@ class SystemHealthViewModel(
                         registeredDevice =
                             registeredDevice,
 
-
-                        // ============================================
-                        // ATTENDANCE CONFIGURATION
-                        //
-                        // CRM configuration API is still pending.
-                        //
-                        // Do NOT report READY until real configuration
-                        // has been downloaded and validated.
-                        // ============================================
-
-                        attendanceConfiguration =
-                            HealthItemState(
-
-                                status =
-                                    HealthStatus.NOT_CONFIGURED,
-
-                                title =
-                                    "Attendance Configuration",
-
-                                message =
-                                    "Attendance configuration not available"
-                            ),
-
+                        attendanceConfiguration = run {
+                            val cachedOffices = com.prodigit.bodhiattendance.data.local.repository.AttendanceConfigCacheRepository(
+                                com.prodigit.bodhiattendance.data.local.database.AttendanceDatabase.getInstance(appContext).attendanceConfigDao()
+                            ).getCachedConfiguration()
+                            if (cachedOffices.isNotEmpty()) {
+                                HealthItemState(
+                                    status = HealthStatus.READY,
+                                    title = "Attendance Configuration",
+                                    message = "${cachedOffices.size} CRM offices loaded (${cachedOffices.first().locationName})"
+                                )
+                            } else {
+                                HealthItemState(
+                                    status = HealthStatus.NOT_CONFIGURED,
+                                    title = "Attendance Configuration",
+                                    message = "Attendance configuration not available"
+                                )
+                            }
+                        },
 
                         // The screen resolves the current office requirement from CRM.
                         officeBeacon = HealthItemState(
