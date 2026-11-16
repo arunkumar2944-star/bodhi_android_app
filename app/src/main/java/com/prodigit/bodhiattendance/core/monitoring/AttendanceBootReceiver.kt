@@ -32,8 +32,9 @@ class AttendanceBootReceiver : BroadcastReceiver() {
                 Log.i("ATTENDANCE_BOOT", "Boot/Update recovery triggered: $action")
                 val appContext = context.applicationContext
                 val userId = SessionManager(appContext).getUserId()
-                if (userId <= 0 || AttendancePrivacyPolicy.isPaused(appContext)) {
-                    Log.i("ATTENDANCE_BOOT", "User not logged in or monitoring paused; skipping service start")
+                val todayStr = java.time.LocalDate.now(java.time.ZoneId.of("Asia/Kolkata")).toString()
+                if (userId <= 0 || !AttendancePrivacyPolicy.canResumeOn(appContext, todayStr)) {
+                    Log.i("ATTENDANCE_BOOT", "User not logged in or monitoring paused for today; skipping service start")
                     return@launch
                 }
 

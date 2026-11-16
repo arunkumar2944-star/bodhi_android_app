@@ -72,9 +72,13 @@ object AttendanceMonitorStartGate {
     @Synchronized fun onActivityPaused() { activityResumed = false }
     @Synchronized fun onServiceStopped() { startRequested = false }
     @Synchronized fun isVisible(): Boolean = activityResumed
-    @Synchronized fun canRunMonitoring(context: Context): Boolean =
-        SessionManager(context.applicationContext).getUserId() > 0 &&
-            !AttendancePrivacyPolicy.isPaused(context.applicationContext)
+    @Synchronized fun canRunMonitoring(context: Context, workDate: String? = null): Boolean {
+        val app = context.applicationContext
+        if (SessionManager(app).getUserId() <= 0) return false
+        if (workDate != null) return AttendancePrivacyPolicy.canResumeOn(app, workDate)
+        val todayStr = java.time.LocalDate.now(java.time.ZoneId.of("Asia/Kolkata")).toString()
+        return AttendancePrivacyPolicy.canResumeOn(app, todayStr)
+    }
 
     @Synchronized fun reset() { task?.cancel(); task = null; startupReady = false; startRequested = false }
 

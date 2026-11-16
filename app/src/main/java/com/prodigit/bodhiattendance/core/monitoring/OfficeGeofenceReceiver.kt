@@ -19,7 +19,8 @@ class OfficeGeofenceReceiver : BroadcastReceiver() {
             Log.w("ATTENDANCE_MONITOR", "Geofence error=" + event.errorCode)
             return
         }
-        if (AttendancePrivacyPolicy.isPaused(context)) return
+        val todayStr = java.time.LocalDate.now(java.time.ZoneId.of("Asia/Kolkata")).toString()
+        if (!AttendancePrivacyPolicy.canResumeOn(context, todayStr)) return
         Log.i("ATTENDANCE_MONITOR", "Geofence transition received: transitionType=${event.geofenceTransition}")
         AttendanceMonitorStartGate.onGeofenceTransition(context)
     }
