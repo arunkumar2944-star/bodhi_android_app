@@ -12,7 +12,19 @@ object AttendancePrivacyPolicy {
     @Volatile private var checkoutShutdownRequested = false
     private fun prefs(c: Context) = c.getSharedPreferences("attendance_privacy", Context.MODE_PRIVATE)
     const val CLOSE_AFTER_CHECKOUT = "com.prodigit.bodhiattendance.CLOSE_AFTER_CHECKOUT"
-    fun isPaused(c: Context): Boolean = prefs(c).getBoolean("paused", false)
+    fun isPaused(c: Context): Boolean {
+        val paused = prefs(c).getBoolean("paused", false)
+        if (!paused) return false
+        val checkoutDay = prefs(c).getString("checkout_day", null) ?: return false
+        val today = try {
+            LocalDate.now(ZoneId.of("Asia/Kolkata")).toString()
+        } catch (_: Exception) { return true }
+        if (WorkdayPrivacySchedule.canResume(checkoutDay, today)) {
+            prefs(c).edit().putBoolean("paused", false).apply()
+            return false
+        }
+        return true
+    }
     fun canResumeOn(c: Context, serverDay: String): Boolean = !isPaused(c) ||
         WorkdayPrivacySchedule.canResume(prefs(c).getString("checkout_day", null), serverDay)
     fun pauseAfterCheckout(c: Context, serverDay: String = LocalDate.now(ZoneId.of("Asia/Kolkata")).toString()) =
