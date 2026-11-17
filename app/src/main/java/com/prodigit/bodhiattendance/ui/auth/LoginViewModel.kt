@@ -212,6 +212,10 @@ class LoginViewModel(
                             companyId = user.company_id
                         )
 
+                        // Register Firebase Cloud Messaging token after login
+                        com.prodigit.bodhiattendance.core.messaging.BodhiFirebaseMessagingService
+                            .fetchAndRegisterFcmToken(getApplication())
+
 
                         Log.d(
                             "LOGIN_DEBUG",

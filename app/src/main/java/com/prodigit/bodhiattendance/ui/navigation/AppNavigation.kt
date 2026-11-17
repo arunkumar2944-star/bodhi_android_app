@@ -350,6 +350,22 @@ private fun MainApplication(onSignedOut: () -> Unit) {
     val mainNavController =
         rememberNavController()
 
+    val activity = LocalContext.current as? android.app.Activity
+    var prefilledDate by remember { mutableStateOf<String?>(null) }
+    var prefilledTime by remember { mutableStateOf<String?>(null) }
+
+    LaunchedEffect(activity?.intent) {
+        val intent = activity?.intent
+        if (intent != null && intent.getStringExtra("type") == "MISSING_CHECKIN_REGULARIZATION") {
+            prefilledDate = intent.getStringExtra("attendance_date")
+            prefilledTime = intent.getStringExtra("arrival_time")
+            intent.removeExtra("type")
+            mainNavController.navigate(ROUTE_ATTENDANCE_REGULARIZATION) {
+                launchSingleTop = true
+            }
+        }
+    }
+
     var showLogoutDialog by remember { mutableStateOf(false) }
     val logoutScope = androidx.compose.runtime.rememberCoroutineScope()
 
@@ -998,11 +1014,17 @@ private fun MainApplication(onSignedOut: () -> Unit) {
             composable(ROUTE_ATTENDANCE_REGULARIZATION) {
 
                 AttendanceRegularizationScreen(
+                    initialDate = prefilledDate,
+                    initialTime = prefilledTime,
                     onBack = {
+                        prefilledDate = null
+                        prefilledTime = null
                         mainNavController.popBackStack()
                     },
 
                     onSubmit = { request ->
+                        prefilledDate = null
+                        prefilledTime = null
                         if (request.evidenceUri != null) message("Attachment upload is not supported yet; remove the attachment to submit text")
                         else liveModel.submit("REGULARIZATION", request.attendanceDate, request.reason,
                             subtype = request.correctionType.name, requestedTime = request.requestedTime, result = ::message)

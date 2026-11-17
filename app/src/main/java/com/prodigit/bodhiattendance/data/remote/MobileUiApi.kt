@@ -34,4 +34,6 @@ data class MobileDuty(val date: String, val dutyType: String, val startTime: Str
 data class DailyEligibility(val userId: Int, val date: String, val serverTimeMs: Long,
     val status: String, val monitoringMode: String, val hasCheckIn: Boolean,
     val attendanceState: String, val validUntilMs: Long,
-    val offlinePermit: String? = null, val offlineValidUntilMs: Long? = null, val companyId: Int? = null)
+    val offlinePermit: String? = null, val offlineValidUntilMs: Long? = null, val companyId: Int? = null,
+    val shiftStartTime: String? = "08:30:00", val shiftEndTime: String? = "17:30:00",
+    val halfDayPeriod: String? = null, val timezone: String? = "Asia/Kolkata", val policyVersion: Int? = 2)

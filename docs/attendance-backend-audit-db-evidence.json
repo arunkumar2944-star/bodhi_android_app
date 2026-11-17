@@ -1,0 +1,218 @@
+{
+  "targetFingerprint": "9dd1a59da011b996fc1797c97d5f9bb06a2d52fbc2261634a11eaaeab17278fe",
+  "targetHost": "ep-bitter-cake-az2yqe72-pooler.c-3.ap-southeast-1.aws.neon.tech",
+  "databasePath": "/neondb",
+  "environmentClassification": "local env configured hosted Neon database; test/staging/production linkage unverified",
+  "identity": [
+    {
+      "database_name": "neondb",
+      "schema": "public",
+      "search_path": "\"$user\", public",
+      "session_zone": "GMT",
+      "read_only": "on",
+      "captured_at": "2026-11-02T12:33:09.469Z"
+    }
+  ],
+  "relations": [
+    {
+      "table_schema": "public",
+      "table_name": "attendance",
+      "table_type": "BASE TABLE"
+    },
+    {
+      "table_schema": "public",
+      "table_name": "attendance_arrival_candidates",
+      "table_type": "BASE TABLE"
+    },
+    {
+      "table_schema": "public",
+      "table_name": "attendance_day_audit",
+      "table_type": "BASE TABLE"
+    },
+    {
+      "table_schema": "public",
+      "table_name": "attendance_day_closures",
+      "table_type": "BASE TABLE"
+    },
+    {
+      "table_schema": "public",
+      "table_name": "attendance_day_overrides",
+      "table_type": "BASE TABLE"
+    },
+    {
+      "table_schema": "public",
+      "table_name": "attendance_day_policy",
+      "table_type": "BASE TABLE"
+    },
+    {
+      "table_schema": "public",
+      "table_name": "attendance_diagnostics",
+      "table_type": "BASE TABLE"
+    },
+    {
+      "table_schema": "public",
+      "table_name": "attendance_duty_notification_reads",
+      "table_type": "BASE TABLE"
+    },
+    {
+      "table_schema": "public",
+      "table_name": "attendance_effective_events",
+      "table_type": "VIEW"
+    },
+    {
+      "table_schema": "public",
+      "table_name": "attendance_events",
+      "table_type": "BASE TABLE"
+    },
+    {
+      "table_schema": "public",
+      "table_name": "attendance_location_beacons",
+      "table_type": "BASE TABLE"
+    },
+    {
+      "table_schema": "public",
+      "table_name": "attendance_location_wifi",
+      "table_type": "BASE TABLE"
+    },
+    {
+      "table_schema": "public",
+      "table_name": "attendance_location_wifi_bssids",
+      "table_type": "BASE TABLE"
+    },
+    {
+      "table_schema": "public",
+      "table_name": "attendance_locations",
+      "table_type": "BASE TABLE"
+    },
+    {
+      "table_schema": "public",
+      "table_name": "attendance_monitor_gaps",
+      "table_type": "BASE TABLE"
+    },
+    {
+      "table_schema": "public",
+      "table_name": "attendance_monitor_reviews",
+      "table_type": "BASE TABLE"
+    },
+    {
+      "table_schema": "public",
+      "table_name": "attendance_monitor_sessions",
+      "table_type": "BASE TABLE"
+    },
+    {
+      "table_schema": "public",
+      "table_name": "attendance_notification_reads",
+      "table_type": "BASE TABLE"
+    },
+    {
+      "table_schema": "public",
+      "table_name": "attendance_on_duty",
+      "table_type": "BASE TABLE"
+    },
+    {
+      "table_schema": "public",
+      "table_name": "attendance_on_duty_assignments",
+      "table_type": "BASE TABLE"
+    },
+    {
+      "table_schema": "public",
+      "table_name": "attendance_presence_evidence",
+      "table_type": "BASE TABLE"
+    },
+    {
+      "table_schema": "public",
+      "table_name": "attendance_regularization_events",
+      "table_type": "BASE TABLE"
+    },
+    {
+      "table_schema": "public",
+      "table_name": "attendance_regularization_requests",
+      "table_type": "BASE TABLE"
+    },
+    {
+      "table_schema": "public",
+      "table_name": "attendance_request_review_audit",
+      "table_type": "BASE TABLE"
+    },
+    {
+      "table_schema": "public",
+      "table_name": "attendance_requests",
+      "table_type": "BASE TABLE"
+    }
+  ],
+  "user": [
+    {
+      "id": 7,
+      "company_id": 1,
+      "role": "Manager",
+      "is_active": true
+    }
+  ],
+  "master": [
+    {
+      "id": 52,
+      "user_id": 7,
+      "company_id": 1,
+      "attendance_date": "2026-11-02",
+      "login_time": "2026-11-02 09:36:01.32",
+      "logout_time": null,
+      "total_work_minutes": null,
+      "gross_work_minutes": 0,
+      "total_break_minutes": 0,
+      "attendance_state": "WORKING",
+      "first_presence_at": "2026-11-02T09:36:01.320Z",
+      "last_presence_at": "2026-11-02T09:36:01.320Z"
+    }
+  ],
+  "raw": [
+    {
+      "id": "96",
+      "event_uuid": "580ec82c-9810-4855-8eb6-c2f5018dbb91",
+      "user_id": 7,
+      "company_id": 1,
+      "attendance_id": 52,
+      "event_type": "CHECK_IN",
+      "is_active": true,
+      "effective_event_time": "2026-11-02T09:36:01.320Z",
+      "presence_verified_at": "2026-11-02T09:36:29.042Z",
+      "server_received_at": "2026-11-02T09:36:30.910Z",
+      "time_anchor_id": "161",
+      "event_elapsed_realtime_ms": "387164748",
+      "arrival_candidate_id": "0a05b8c1-c8e0-4bc6-ada1-60e9ab729dd1",
+      "attendance_reason": "Office Wi-Fi arrival confirmed by GPS"
+    }
+  ],
+  "effective": [
+    {
+      "id": "96",
+      "event_uuid": "580ec82c-9810-4855-8eb6-c2f5018dbb91",
+      "attendance_id": 52,
+      "event_type": "CHECK_IN",
+      "is_active": true,
+      "effective_event_time": "2026-11-02T09:36:01.320Z",
+      "event_origin": "DEVICE"
+    }
+  ],
+  "closure": [],
+  "corrections": [],
+  "requests": [],
+  "view": [
+    {
+      "definition": " SELECT e.id,\n    e.event_uuid,\n    e.attendance_id,\n    e.user_id,\n    e.company_id,\n    e.user_device_id,\n    e.device_id,\n    e.event_type,\n    e.device_event_time,\n    e.server_received_at,\n    e.latitude,\n    e.longitude,\n    e.accuracy_meters,\n    e.inside_geofence,\n    e.beacon_detected,\n    e.beacon_id,\n    e.beacon_rssi,\n    e.wifi_verified,\n    e.wifi_bssid,\n    e.created_by,\n    e.created_at,\n    e.updated_by,\n    e.updated_at,\n    e.is_active,\n    e.time_anchor_id,\n    e.event_elapsed_realtime_ms,\n    e.effective_event_time,\n    e.time_drift_seconds,\n    e.time_source,\n    e.time_confidence,\n    e.attendance_location_id,\n    e.wifi_ssid,\n    e.on_duty_bypass,\n    e.presence_lost_at,\n    e.metadata,\n    e.arrival_candidate_id,\n    e.presence_verified_at,\n    e.attendance_reason,\n    'DEVICE'::text AS event_origin,\n    NULL::uuid AS regularization_request_id\n   FROM attendance_events e\n  WHERE NOT (EXISTS ( SELECT 1\n           FROM attendance_regularization_events r\n          WHERE r.replaces_event_uuid = e.event_uuid))\nUNION ALL\n SELECT accepted.id,\n    accepted.event_uuid,\n    accepted.attendance_id,\n    accepted.user_id,\n    accepted.company_id,\n    accepted.user_device_id,\n    accepted.device_id,\n    accepted.event_type,\n    accepted.device_event_time,\n    accepted.server_received_at,\n    accepted.latitude,\n    accepted.longitude,\n    accepted.accuracy_meters,\n    accepted.inside_geofence,\n    accepted.beacon_detected,\n    accepted.beacon_id,\n    accepted.beacon_rssi,\n    accepted.wifi_verified,\n    accepted.wifi_bssid,\n    accepted.created_by,\n    accepted.created_at,\n    accepted.updated_by,\n    accepted.updated_at,\n    accepted.is_active,\n    accepted.time_anchor_id,\n    accepted.event_elapsed_realtime_ms,\n    accepted.effective_event_time,\n    accepted.time_drift_seconds,\n    accepted.time_source,\n    accepted.time_confidence,\n    accepted.attendance_location_id,\n    accepted.wifi_ssid,\n    accepted.on_duty_bypass,\n    accepted.presence_lost_at,\n    accepted.metadata,\n    accepted.arrival_candidate_id,\n    accepted.presence_verified_at,\n    accepted.attendance_reason,\n    'REGULARIZATION'::text AS event_origin,\n    r.request_id AS regularization_request_id\n   FROM attendance_regularization_events r\n     CROSS JOIN LATERAL jsonb_populate_record(NULL::attendance_events, jsonb_build_object('id', - r.id, 'event_uuid', r.request_id, 'attendance_id', r.attendance_id, 'user_id', r.user_id, 'company_id', r.company_id, 'event_type', r.event_type, 'effective_event_time', r.effective_event_time, 'server_received_at', r.applied_at, 'attendance_location_id', r.attendance_location_id, 'created_by', r.approved_by, 'created_at', r.applied_at, 'updated_by', r.applied_by, 'updated_at', r.applied_at, 'is_active', true)) accepted(id, event_uuid, attendance_id, user_id, company_id, user_device_id, device_id, event_type, device_event_time, server_received_at, latitude, longitude, accuracy_meters, inside_geofence, beacon_detected, beacon_id, beacon_rssi, wifi_verified, wifi_bssid, created_by, created_at, updated_by, updated_at, is_active, time_anchor_id, event_elapsed_realtime_ms, effective_event_time, time_drift_seconds, time_source, time_confidence, attendance_location_id, wifi_ssid, on_duty_bypass, presence_lost_at, metadata, arrival_candidate_id, presence_verified_at, attendance_reason)\n  WHERE r.action <> 'VOID'::text AND NOT (EXISTS ( SELECT 1\n           FROM attendance_regularization_events newer\n          WHERE newer.replaces_event_uuid = r.request_id))\nUNION ALL\n SELECT accepted.id,\n    accepted.event_uuid,\n    accepted.attendance_id,\n    accepted.user_id,\n    accepted.company_id,\n    accepted.user_device_id,\n    accepted.device_id,\n    accepted.event_type,\n    accepted.device_event_time,\n    accepted.server_received_at,\n    accepted.latitude,\n    accepted.longitude,\n    accepted.accuracy_meters,\n    accepted.inside_geofence,\n    accepted.beacon_detected,\n    accepted.beacon_id,\n    accepted.beacon_rssi,\n    accepted.wifi_verified,\n    accepted.wifi_bssid,\n    accepted.created_by,\n    accepted.created_at,\n    accepted.updated_by,\n    accepted.updated_at,\n    accepted.is_active,\n    accepted.time_anchor_id,\n    accepted.event_elapsed_realtime_ms,\n    accepted.effective_event_time,\n    accepted.time_drift_seconds,\n    accepted.time_source,\n    accepted.time_confidence,\n    accepted.attendance_location_id,\n    accepted.wifi_ssid,\n    accepted.on_duty_bypass,\n    accepted.presence_lost_at,\n    accepted.metadata,\n    accepted.arrival_candidate_id,\n    accepted.presence_verified_at,\n    accepted.attendance_reason,\n    'SYSTEM_DAY_END'::text AS event_origin,\n    NULL::uuid AS regularization_request_id\n   FROM attendance_day_closures c\n     CROSS JOIN LATERAL jsonb_populate_record(NULL::attendance_events, jsonb_build_object('id', (- '1000000000000'::bigint) - c.attendance_id, 'event_uuid', c.event_uuid, 'attendance_id', c.attendance_id, 'user_id', c.user_id, 'company_id', c.company_id, 'event_type', 'CHECK_OUT', 'effective_event_time', c.effective_event_time, 'server_received_at', c.recorded_at, 'created_at', c.recorded_at, 'is_active', true, 'attendance_reason', c.reason, 'time_source', 'SERVER_DAY_END_POLICY', 'time_confidence', 'REVIEW_REQUIRED', 'metadata', jsonb_build_object('requiresReview', true, 'physicalDepartureConfirmed', false, 'workDate', c.work_date))) accepted(id, event_uuid, attendance_id, user_id, company_id, user_device_id, device_id, event_type, device_event_time, server_received_at, latitude, longitude, accuracy_meters, inside_geofence, beacon_detected, beacon_id, beacon_rssi, wifi_verified, wifi_bssid, created_by, created_at, updated_by, updated_at, is_active, time_anchor_id, event_elapsed_realtime_ms, effective_event_time, time_drift_seconds, time_source, time_confidence, attendance_location_id, wifi_ssid, on_duty_bypass, presence_lost_at, metadata, arrival_candidate_id, presence_verified_at, attendance_reason)\n  WHERE NOT (EXISTS ( SELECT 1\n           FROM attendance_regularization_events r\n          WHERE r.replaces_event_uuid = c.event_uuid)) AND NOT (EXISTS ( SELECT 1\n           FROM attendance_events e\n          WHERE e.attendance_id = c.attendance_id AND e.is_active = true AND e.event_type::text = 'CHECK_OUT'::text AND NOT (EXISTS ( SELECT 1\n                   FROM attendance_regularization_events r\n                  WHERE r.replaces_event_uuid = e.event_uuid)))) AND NOT (EXISTS ( SELECT 1\n           FROM attendance_regularization_events r\n          WHERE r.attendance_id = c.attendance_id AND r.action <> 'VOID'::text AND r.event_type = 'CHECK_OUT'::text AND NOT (EXISTS ( SELECT 1\n                   FROM attendance_regularization_events newer\n                  WHERE newer.replaces_event_uuid = r.request_id))));"
+    }
+  ],
+  "castReproduction": {
+    "UTC": [
+      {
+        "naive_binding": "2026-11-02 09:36:01.32",
+        "explicit_ist": "2026-11-02 15:06:01.32"
+      }
+    ],
+    "Asia/Kolkata": [
+      {
+        "naive_binding": "2026-11-02 15:06:01.32",
+        "explicit_ist": "2026-11-02 20:36:01.32"
+      }
+    ]
+  }
+}

@@ -1,0 +1,25 @@
+{
+  "presenceCounts": [
+    {
+      "received_date": "2026-11-02",
+      "classification": "ABSENT_CANDIDATE",
+      "rows": 1
+    },
+    {
+      "received_date": "2026-11-02",
+      "classification": "PRESENT",
+      "rows": 14
+    },
+    {
+      "received_date": "2026-11-02",
+      "classification": "UNCERTAIN",
+      "rows": 19
+    }
+  ],
+  "timestampCastDemonstration": [
+    {
+      "implicit_naive": "2026-11-02 15:06:01.32",
+      "explicit_ist": "2026-11-02T15:06:01.320Z"
+    }
+  ]
+}

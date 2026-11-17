@@ -1,0 +1,173 @@
+{
+  "clock": [
+    {
+      "captured_at": "2026-11-02T11:30:20.618Z",
+      "database_session_timezone": "GMT",
+      "read_only": "on"
+    }
+  ],
+  "nearby": [
+    {
+      "attendance_date": "2026-10-29",
+      "rows": 1
+    },
+    {
+      "attendance_date": "2026-11-02",
+      "rows": 1
+    }
+  ],
+  "wifi": [
+    {
+      "attendance_location_id": 2,
+      "bssid": "BE:B8:D6:82:F0:59"
+    },
+    {
+      "attendance_location_id": 1,
+      "bssid": "0E:36:23:2A:42:3A"
+    }
+  ],
+  "additional_schema": [
+    {
+      "table_name": "attendance_day_closures",
+      "column_name": "attendance_id",
+      "data_type": "integer"
+    },
+    {
+      "table_name": "attendance_day_closures",
+      "column_name": "event_uuid",
+      "data_type": "uuid"
+    },
+    {
+      "table_name": "attendance_day_closures",
+      "column_name": "user_id",
+      "data_type": "integer"
+    },
+    {
+      "table_name": "attendance_day_closures",
+      "column_name": "company_id",
+      "data_type": "integer"
+    },
+    {
+      "table_name": "attendance_day_closures",
+      "column_name": "work_date",
+      "data_type": "date"
+    },
+    {
+      "table_name": "attendance_day_closures",
+      "column_name": "effective_event_time",
+      "data_type": "timestamp with time zone"
+    },
+    {
+      "table_name": "attendance_day_closures",
+      "column_name": "recorded_at",
+      "data_type": "timestamp with time zone"
+    },
+    {
+      "table_name": "attendance_day_closures",
+      "column_name": "reason",
+      "data_type": "text"
+    },
+    {
+      "table_name": "attendance_day_closures",
+      "column_name": "before_summary",
+      "data_type": "jsonb"
+    },
+    {
+      "table_name": "attendance_presence_evidence",
+      "column_name": "id",
+      "data_type": "uuid"
+    },
+    {
+      "table_name": "attendance_presence_evidence",
+      "column_name": "user_id",
+      "data_type": "integer"
+    },
+    {
+      "table_name": "attendance_presence_evidence",
+      "column_name": "company_id",
+      "data_type": "integer"
+    },
+    {
+      "table_name": "attendance_presence_evidence",
+      "column_name": "device_id",
+      "data_type": "character varying"
+    },
+    {
+      "table_name": "attendance_presence_evidence",
+      "column_name": "office_id",
+      "data_type": "integer"
+    },
+    {
+      "table_name": "attendance_presence_evidence",
+      "column_name": "observed_elapsed_ms",
+      "data_type": "bigint"
+    },
+    {
+      "table_name": "attendance_presence_evidence",
+      "column_name": "received_at",
+      "data_type": "timestamp with time zone"
+    },
+    {
+      "table_name": "attendance_presence_evidence",
+      "column_name": "latitude",
+      "data_type": "double precision"
+    },
+    {
+      "table_name": "attendance_presence_evidence",
+      "column_name": "longitude",
+      "data_type": "double precision"
+    },
+    {
+      "table_name": "attendance_presence_evidence",
+      "column_name": "accuracy_meters",
+      "data_type": "double precision"
+    },
+    {
+      "table_name": "attendance_presence_evidence",
+      "column_name": "wifi_matched",
+      "data_type": "boolean"
+    },
+    {
+      "table_name": "attendance_presence_evidence",
+      "column_name": "classification",
+      "data_type": "character varying"
+    },
+    {
+      "table_name": "attendance_presence_evidence",
+      "column_name": "verification_status",
+      "data_type": "character varying"
+    },
+    {
+      "table_name": "attendance_presence_evidence",
+      "column_name": "presence_verified_at",
+      "data_type": "timestamp with time zone"
+    },
+    {
+      "table_name": "attendance_presence_evidence",
+      "column_name": "effective_check_in_at",
+      "data_type": "timestamp with time zone"
+    },
+    {
+      "table_name": "attendance_presence_evidence",
+      "column_name": "created_at",
+      "data_type": "timestamp with time zone"
+    }
+  ],
+  "triggers": [],
+  "diagnostic_dates": [
+    {
+      "device_date": "2026-11-02",
+      "rows": 166
+    }
+  ],
+  "effective_view": [
+    {
+      "id": "96",
+      "event_uuid": "580ec82c-9810-4855-8eb6-c2f5018dbb91",
+      "event_type": "CHECK_IN",
+      "effective_event_time": "2026-11-02T09:36:01.320Z",
+      "server_received_at": "2026-11-02T09:36:30.910Z",
+      "event_origin": "DEVICE"
+    }
+  ]
+}

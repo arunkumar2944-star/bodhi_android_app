@@ -111,8 +111,14 @@ object AttendanceMonitorStartGate {
                 }
                 traceStartResult(context, "PASS:PRESTART_SYNC")
                 val day = AttendanceDayGate.fetch(context)
+                val scheduledMs = AttendanceWorkdayScheduler.calculateNextShiftStartMs(
+                    shiftStartTimeStr = day.shiftStartTime ?: "08:30:00"
+                )
+                AttendanceWorkdayScheduler.recordScheduledStart(context, scheduledMs)
+
                 if (day.monitoringMode == "PAUSED" || !AttendancePrivacyPolicy.canResumeOn(context, day.date)) {
                     traceStartResult(context, "BLOCKED:DAILY_POLICY:status=" + day.status + ";mode=" + day.monitoringMode)
+                    AttendanceWorkdayScheduler.recordStopReason(context, "PAUSED:" + day.status)
                     if (day.status == "CHECKED_OUT") AttendancePrivacyPolicy.pauseAfterCheckout(context, day.date)
                     context.stopService(Intent(context, AttendancePresenceService::class.java))
                     return@launch
@@ -171,7 +177,10 @@ object AttendanceMonitorStartGate {
                     }
                 }
                 when (serviceStartRequested) {
-                    true -> traceStartResult(context, "START_REQUEST_ACCEPTED:workDate=" + day.date + "; service execution not yet confirmed")
+                    true -> {
+                        AttendanceWorkdayScheduler.recordActualStart(context)
+                        traceStartResult(context, "START_REQUEST_ACCEPTED:workDate=" + day.date + "; service execution not yet confirmed")
+                    }
                     false -> traceStartResult(context, "BLOCKED:SERVICE_START_RETURNED_FALSE")
                     null -> traceStartResult(context, "BLOCKED:ACTIVITY_NOT_VISIBLE_AT_SERVICE_START")
                 }

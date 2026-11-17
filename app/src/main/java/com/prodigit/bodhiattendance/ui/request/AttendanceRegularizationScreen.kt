@@ -80,6 +80,8 @@ data class AttendanceRegularizationRequestData(
 @Composable
 fun AttendanceRegularizationScreen(
     modifier: Modifier = Modifier,
+    initialDate: String? = null,
+    initialTime: String? = null,
     onBack: () -> Unit = {},
     onSubmit: (AttendanceRegularizationRequestData) -> Unit = {}
 ) {
@@ -96,19 +98,22 @@ fun AttendanceRegularizationScreen(
         SimpleDateFormat("dd MMM yyyy", Locale.ENGLISH)
     }
 
-    var attendanceDate by remember {
-        mutableStateOf(apiDateFormat.format(today.time))
+    var attendanceDate by remember(initialDate) {
+        mutableStateOf(initialDate?.takeIf { it.isNotBlank() } ?: apiDateFormat.format(today.time))
     }
 
-    var displayDate by remember {
-        mutableStateOf(displayDateFormat.format(today.time))
+    var displayDate by remember(initialDate) {
+        val parsed = initialDate?.let { runCatching { apiDateFormat.parse(it) }.getOrNull() }
+        mutableStateOf(parsed?.let { displayDateFormat.format(it) } ?: displayDateFormat.format(today.time))
     }
 
     var correctionType by remember {
         mutableStateOf(RegularizationType.MISSED_CHECK_IN)
     }
 
-    var requestedTime by remember { mutableStateOf("") }
+    var requestedTime by remember(initialTime) {
+        mutableStateOf(initialTime?.takeIf { it.isNotBlank() } ?: "")
+    }
     var reason by remember { mutableStateOf("") }
     var evidenceUri by remember { mutableStateOf<Uri?>(null) }
 

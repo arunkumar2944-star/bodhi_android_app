@@ -7,6 +7,8 @@ plugins {
 
     // Room annotation/code generation
     alias(libs.plugins.ksp)
+
+    id("com.google.gms.google-services")
 }
 
 
@@ -21,6 +23,10 @@ val hostedApiUrl = providers.gradleProperty("bodhiApiBaseUrl").orNull?.trim()?.l
 // Release APKs use the hosted CRM test backend unless explicitly overridden.
 val releaseApiUrl = hostedApiUrl
     ?: "https://crm-test-backend-phi.vercel.app/"
+
+require(releaseApiUrl.startsWith("https://")) {
+    "RELEASE BUILD FAILED: Production API endpoint MUST use secure HTTPS. Provided: $releaseApiUrl"
+}
 
 
 android {
@@ -47,9 +53,9 @@ android {
         targetSdk =
             36
 
-        versionCode = 19
+        versionCode = 20
 
-        versionName = "1.0.6"
+        versionName = "1.0.7"
 
         testInstrumentationRunner =
             "androidx.test.runner.AndroidJUnitRunner"
@@ -73,6 +79,11 @@ android {
                 "String",
                 "BASE_URL",
                 "\"${releaseApiUrl}\""
+            )
+
+            proguardFiles(
+                getDefaultProguardFile("proguard-android-optimize.txt"),
+                "proguard-rules.pro"
             )
 
             optimization {
@@ -216,6 +227,19 @@ dependencies {
 
     implementation(
         libs.androidx.lifecycle.runtime.ktx
+    )
+
+
+    // ============================================================
+    // FIREBASE MESSAGING
+    // ============================================================
+
+    implementation(
+        platform("com.google.firebase:firebase-bom:33.9.0")
+    )
+
+    implementation(
+        "com.google.firebase:firebase-messaging"
     )
 
 

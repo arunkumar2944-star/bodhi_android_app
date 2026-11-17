@@ -1,0 +1,133 @@
+{
+  "capturedAt": "2026-11-02T13:55:22.838Z",
+  "scenarios": [
+    {
+      "nodeTZ": "UTC",
+      "dbTZ": "GMT",
+      "instant": "2026-11-02T09:36:01.320Z",
+      "serializedDate": "2026-11-02T09:36:01.320+00:00",
+      "insert_work_date": "2026-11-02",
+      "insert_implicit_session_cast": "2026-11-02 09:36:01.32",
+      "update_naive_binding": "2026-11-02 09:36:01.32",
+      "proposed_ist": "2026-11-02 15:06:01.32"
+    },
+    {
+      "nodeTZ": "UTC",
+      "dbTZ": "GMT",
+      "instant": "2026-11-01T18:29:59.999Z",
+      "serializedDate": "2026-11-01T18:29:59.999+00:00",
+      "insert_work_date": "2026-11-01",
+      "insert_implicit_session_cast": "2026-11-01 18:29:59.999",
+      "update_naive_binding": "2026-11-01 18:29:59.999",
+      "proposed_ist": "2026-11-01 23:59:59.999"
+    },
+    {
+      "nodeTZ": "UTC",
+      "dbTZ": "GMT",
+      "instant": "2026-11-01T18:30:00.000Z",
+      "serializedDate": "2026-11-01T18:30:00.000+00:00",
+      "insert_work_date": "2026-11-02",
+      "insert_implicit_session_cast": "2026-11-01 18:30:00",
+      "update_naive_binding": "2026-11-01 18:30:00",
+      "proposed_ist": "2026-11-02 00:00:00"
+    },
+    {
+      "nodeTZ": "UTC",
+      "dbTZ": "Asia/Kolkata",
+      "instant": "2026-11-02T09:36:01.320Z",
+      "serializedDate": "2026-11-02T09:36:01.320+00:00",
+      "insert_work_date": "2026-11-02",
+      "insert_implicit_session_cast": "2026-11-02 15:06:01.32",
+      "update_naive_binding": "2026-11-02 09:36:01.32",
+      "proposed_ist": "2026-11-02 15:06:01.32"
+    },
+    {
+      "nodeTZ": "UTC",
+      "dbTZ": "Asia/Kolkata",
+      "instant": "2026-11-01T18:29:59.999Z",
+      "serializedDate": "2026-11-01T18:29:59.999+00:00",
+      "insert_work_date": "2026-11-01",
+      "insert_implicit_session_cast": "2026-11-01 23:59:59.999",
+      "update_naive_binding": "2026-11-01 18:29:59.999",
+      "proposed_ist": "2026-11-01 23:59:59.999"
+    },
+    {
+      "nodeTZ": "UTC",
+      "dbTZ": "Asia/Kolkata",
+      "instant": "2026-11-01T18:30:00.000Z",
+      "serializedDate": "2026-11-01T18:30:00.000+00:00",
+      "insert_work_date": "2026-11-02",
+      "insert_implicit_session_cast": "2026-11-02 00:00:00",
+      "update_naive_binding": "2026-11-01 18:30:00",
+      "proposed_ist": "2026-11-02 00:00:00"
+    },
+    {
+      "nodeTZ": "Asia/Kolkata",
+      "dbTZ": "GMT",
+      "instant": "2026-11-02T09:36:01.320Z",
+      "serializedDate": "2026-11-02T15:06:01.320+05:30",
+      "insert_work_date": "2026-11-02",
+      "insert_implicit_session_cast": "2026-11-02 09:36:01.32",
+      "update_naive_binding": "2026-11-02 15:06:01.32",
+      "proposed_ist": "2026-11-02 15:06:01.32"
+    },
+    {
+      "nodeTZ": "Asia/Kolkata",
+      "dbTZ": "GMT",
+      "instant": "2026-11-01T18:29:59.999Z",
+      "serializedDate": "2026-11-01T23:59:59.999+05:30",
+      "insert_work_date": "2026-11-01",
+      "insert_implicit_session_cast": "2026-11-01 18:29:59.999",
+      "update_naive_binding": "2026-11-01 23:59:59.999",
+      "proposed_ist": "2026-11-01 23:59:59.999"
+    },
+    {
+      "nodeTZ": "Asia/Kolkata",
+      "dbTZ": "GMT",
+      "instant": "2026-11-01T18:30:00.000Z",
+      "serializedDate": "2026-11-02T00:00:00.000+05:30",
+      "insert_work_date": "2026-11-02",
+      "insert_implicit_session_cast": "2026-11-01 18:30:00",
+      "update_naive_binding": "2026-11-02 00:00:00",
+      "proposed_ist": "2026-11-02 00:00:00"
+    },
+    {
+      "nodeTZ": "Asia/Kolkata",
+      "dbTZ": "Asia/Kolkata",
+      "instant": "2026-11-02T09:36:01.320Z",
+      "serializedDate": "2026-11-02T15:06:01.320+05:30",
+      "insert_work_date": "2026-11-02",
+      "insert_implicit_session_cast": "2026-11-02 15:06:01.32",
+      "update_naive_binding": "2026-11-02 15:06:01.32",
+      "proposed_ist": "2026-11-02 15:06:01.32"
+    },
+    {
+      "nodeTZ": "Asia/Kolkata",
+      "dbTZ": "Asia/Kolkata",
+      "instant": "2026-11-01T18:29:59.999Z",
+      "serializedDate": "2026-11-01T23:59:59.999+05:30",
+      "insert_work_date": "2026-11-01",
+      "insert_implicit_session_cast": "2026-11-01 23:59:59.999",
+      "update_naive_binding": "2026-11-01 23:59:59.999",
+      "proposed_ist": "2026-11-01 23:59:59.999"
+    },
+    {
+      "nodeTZ": "Asia/Kolkata",
+      "dbTZ": "Asia/Kolkata",
+      "instant": "2026-11-01T18:30:00.000Z",
+      "serializedDate": "2026-11-02T00:00:00.000+05:30",
+      "insert_work_date": "2026-11-02",
+      "insert_implicit_session_cast": "2026-11-02 00:00:00",
+      "update_naive_binding": "2026-11-02 00:00:00",
+      "proposed_ist": "2026-11-02 00:00:00"
+    }
+  ],
+  "sharedImpact": [
+    {
+      "days_with_checkin": 24,
+      "users_with_checkin": 5,
+      "login_mismatch_days": 20,
+      "login_mismatch_users": 5
+    }
+  ]
+}

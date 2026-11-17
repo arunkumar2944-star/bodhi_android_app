@@ -13,6 +13,8 @@ class SessionManager(
             Context.MODE_PRIVATE
         )
 
+    private val secureAccessTokenStore = SecureAccessTokenStore(preferencesContext)
+
 
     // ============================================================
     // SAVE LOGIN SESSION
@@ -32,9 +34,10 @@ class SessionManager(
 
         // A new interactive login must never inherit another device session.
         SecureAndroidRefreshStore(preferencesContext).clear()
+        secureAccessTokenStore.put(token)
         preferences
             .edit()
-            .putString(KEY_TOKEN, token)
+            .remove(KEY_TOKEN)
             .putInt(KEY_USER_ID, userId)
             .putString(KEY_FIRST_NAME, firstName)
             .putString(KEY_LAST_NAME, lastName)
@@ -51,18 +54,26 @@ class SessionManager(
     // ============================================================
 
     fun getToken(): String? {
+        val secureToken = secureAccessTokenStore.get()
+        if (!secureToken.isNullOrBlank()) {
+            return secureToken
+        }
 
-        return preferences.getString(
-            KEY_TOKEN,
-            null
-        )
+        // Migrate legacy unencrypted token if present
+        val legacyToken = preferences.getString(KEY_TOKEN, null)
+        if (!legacyToken.isNullOrBlank()) {
+            secureAccessTokenStore.put(legacyToken)
+            preferences.edit().remove(KEY_TOKEN).apply()
+            return legacyToken
+        }
+
+        return null
     }
 
 
     fun updateAccessToken(token: String) {
-        check(preferences.edit().putString(KEY_TOKEN, token).commit()) {
-            "Access token persistence failed"
-        }
+        secureAccessTokenStore.put(token)
+        preferences.edit().remove(KEY_TOKEN).apply()
     }
 
     // ============================================================
@@ -177,6 +188,7 @@ class SessionManager(
         preferencesContext.stopService(android.content.Intent(preferencesContext, com.prodigit.bodhiattendance.core.monitoring.AttendancePresenceService::class.java))
 
         SecureAndroidRefreshStore(preferencesContext).clear()
+        secureAccessTokenStore.clear()
         preferences
             .edit()
             .clear()

@@ -1,0 +1,2207 @@
+{
+  "cast": {
+    "UTC": [
+      {
+        "direct_naive": "2026-11-02 09:36:01.32",
+        "explicit_ist": "2026-11-02 15:06:01.32"
+      }
+    ],
+    "Asia/Kolkata": [
+      {
+        "direct_naive": "2026-11-02 15:06:01.32",
+        "explicit_ist": "2026-11-02 15:06:01.32"
+      }
+    ]
+  },
+  "saturdayCounts": [
+    {
+      "table": "public.attendance",
+      "anyDateColumn": true,
+      "rows": 0
+    },
+    {
+      "table": "public.attendance_arrival_candidates",
+      "anyDateColumn": true,
+      "rows": 0
+    },
+    {
+      "table": "public.attendance_day_audit",
+      "anyDateColumn": true,
+      "rows": 0
+    },
+    {
+      "table": "public.attendance_day_closures",
+      "anyDateColumn": true,
+      "rows": 0
+    },
+    {
+      "table": "public.attendance_day_overrides",
+      "anyDateColumn": true,
+      "rows": 0
+    },
+    {
+      "table": "public.attendance_diagnostics",
+      "anyDateColumn": true,
+      "rows": 0
+    },
+    {
+      "table": "public.attendance_duty_notification_reads",
+      "anyDateColumn": true,
+      "rows": 0
+    },
+    {
+      "table": "public.attendance_effective_events",
+      "anyDateColumn": true,
+      "rows": 0
+    },
+    {
+      "table": "public.attendance_events",
+      "anyDateColumn": true,
+      "rows": 0
+    },
+    {
+      "table": "public.attendance_monitor_gaps",
+      "anyDateColumn": true,
+      "rows": 0
+    },
+    {
+      "table": "public.attendance_monitor_reviews",
+      "anyDateColumn": true,
+      "rows": 0
+    },
+    {
+      "table": "public.attendance_monitor_sessions",
+      "anyDateColumn": true,
+      "rows": 0
+    },
+    {
+      "table": "public.attendance_notification_reads",
+      "anyDateColumn": true,
+      "rows": 0
+    },
+    {
+      "table": "public.attendance_on_duty",
+      "anyDateColumn": true,
+      "rows": 0
+    },
+    {
+      "table": "public.attendance_on_duty_assignments",
+      "anyDateColumn": true,
+      "rows": 0
+    },
+    {
+      "table": "public.attendance_presence_evidence",
+      "anyDateColumn": true,
+      "rows": 0
+    },
+    {
+      "table": "public.attendance_regularization_events",
+      "anyDateColumn": true,
+      "rows": 0
+    },
+    {
+      "table": "public.attendance_regularization_requests",
+      "anyDateColumn": true,
+      "rows": 0
+    },
+    {
+      "table": "public.attendance_request_review_audit",
+      "anyDateColumn": true,
+      "rows": 0
+    },
+    {
+      "table": "public.attendance_requests",
+      "anyDateColumn": true,
+      "rows": 0
+    }
+  ],
+  "schema": [
+    {
+      "table_schema": "public",
+      "table_name": "attendance",
+      "column_name": "id",
+      "data_type": "integer"
+    },
+    {
+      "table_schema": "public",
+      "table_name": "attendance",
+      "column_name": "user_id",
+      "data_type": "integer"
+    },
+    {
+      "table_schema": "public",
+      "table_name": "attendance",
+      "column_name": "attendance_date",
+      "data_type": "date"
+    },
+    {
+      "table_schema": "public",
+      "table_name": "attendance",
+      "column_name": "login_time",
+      "data_type": "timestamp without time zone"
+    },
+    {
+      "table_schema": "public",
+      "table_name": "attendance",
+      "column_name": "logout_time",
+      "data_type": "timestamp without time zone"
+    },
+    {
+      "table_schema": "public",
+      "table_name": "attendance",
+      "column_name": "total_work_minutes",
+      "data_type": "integer"
+    },
+    {
+      "table_schema": "public",
+      "table_name": "attendance",
+      "column_name": "status",
+      "data_type": "character varying"
+    },
+    {
+      "table_schema": "public",
+      "table_name": "attendance",
+      "column_name": "created_at",
+      "data_type": "timestamp without time zone"
+    },
+    {
+      "table_schema": "public",
+      "table_name": "attendance",
+      "column_name": "updated_at",
+      "data_type": "timestamp without time zone"
+    },
+    {
+      "table_schema": "public",
+      "table_name": "attendance",
+      "column_name": "gross_work_minutes",
+      "data_type": "integer"
+    },
+    {
+      "table_schema": "public",
+      "table_name": "attendance",
+      "column_name": "total_break_minutes",
+      "data_type": "integer"
+    },
+    {
+      "table_schema": "public",
+      "table_name": "attendance",
+      "column_name": "company_id",
+      "data_type": "integer"
+    },
+    {
+      "table_schema": "public",
+      "table_name": "attendance",
+      "column_name": "attendance_location_id",
+      "data_type": "integer"
+    },
+    {
+      "table_schema": "public",
+      "table_name": "attendance",
+      "column_name": "attendance_state",
+      "data_type": "character varying"
+    },
+    {
+      "table_schema": "public",
+      "table_name": "attendance",
+      "column_name": "first_presence_at",
+      "data_type": "timestamp with time zone"
+    },
+    {
+      "table_schema": "public",
+      "table_name": "attendance",
+      "column_name": "last_presence_at",
+      "data_type": "timestamp with time zone"
+    },
+    {
+      "table_schema": "public",
+      "table_name": "attendance",
+      "column_name": "on_duty",
+      "data_type": "boolean"
+    },
+    {
+      "table_schema": "public",
+      "table_name": "attendance_arrival_candidates",
+      "column_name": "id",
+      "data_type": "uuid"
+    },
+    {
+      "table_schema": "public",
+      "table_name": "attendance_arrival_candidates",
+      "column_name": "user_id",
+      "data_type": "integer"
+    },
+    {
+      "table_schema": "public",
+      "table_name": "attendance_arrival_candidates",
+      "column_name": "company_id",
+      "data_type": "integer"
+    },
+    {
+      "table_schema": "public",
+      "table_name": "attendance_arrival_candidates",
+      "column_name": "device_id",
+      "data_type": "character varying"
+    },
+    {
+      "table_schema": "public",
+      "table_name": "attendance_arrival_candidates",
+      "column_name": "office_id",
+      "data_type": "integer"
+    },
+    {
+      "table_schema": "public",
+      "table_name": "attendance_arrival_candidates",
+      "column_name": "boot_id",
+      "data_type": "uuid"
+    },
+    {
+      "table_schema": "public",
+      "table_name": "attendance_arrival_candidates",
+      "column_name": "anchor_uuid",
+      "data_type": "uuid"
+    },
+    {
+      "table_schema": "public",
+      "table_name": "attendance_arrival_candidates",
+      "column_name": "observed_elapsed_ms",
+      "data_type": "bigint"
+    },
+    {
+      "table_schema": "public",
+      "table_name": "attendance_arrival_candidates",
+      "column_name": "wifi_bssid",
+      "data_type": "character varying"
+    },
+    {
+      "table_schema": "public",
+      "table_name": "attendance_arrival_candidates",
+      "column_name": "first_presence_evidence_at",
+      "data_type": "timestamp with time zone"
+    },
+    {
+      "table_schema": "public",
+      "table_name": "attendance_arrival_candidates",
+      "column_name": "presence_verified_at",
+      "data_type": "timestamp with time zone"
+    },
+    {
+      "table_schema": "public",
+      "table_name": "attendance_arrival_candidates",
+      "column_name": "effective_check_in_at",
+      "data_type": "timestamp with time zone"
+    },
+    {
+      "table_schema": "public",
+      "table_name": "attendance_arrival_candidates",
+      "column_name": "verification_status",
+      "data_type": "character varying"
+    },
+    {
+      "table_schema": "public",
+      "table_name": "attendance_arrival_candidates",
+      "column_name": "verification_method",
+      "data_type": "character varying"
+    },
+    {
+      "table_schema": "public",
+      "table_name": "attendance_arrival_candidates",
+      "column_name": "received_at",
+      "data_type": "timestamp with time zone"
+    },
+    {
+      "table_schema": "public",
+      "table_name": "attendance_day_audit",
+      "column_name": "id",
+      "data_type": "bigint"
+    },
+    {
+      "table_schema": "public",
+      "table_name": "attendance_day_audit",
+      "column_name": "company_id",
+      "data_type": "integer"
+    },
+    {
+      "table_schema": "public",
+      "table_name": "attendance_day_audit",
+      "column_name": "user_id",
+      "data_type": "integer"
+    },
+    {
+      "table_schema": "public",
+      "table_name": "attendance_day_audit",
+      "column_name": "work_date",
+      "data_type": "date"
+    },
+    {
+      "table_schema": "public",
+      "table_name": "attendance_day_audit",
+      "column_name": "actor_id",
+      "data_type": "integer"
+    },
+    {
+      "table_schema": "public",
+      "table_name": "attendance_day_audit",
+      "column_name": "previous_status",
+      "data_type": "character varying"
+    },
+    {
+      "table_schema": "public",
+      "table_name": "attendance_day_audit",
+      "column_name": "next_status",
+      "data_type": "character varying"
+    },
+    {
+      "table_schema": "public",
+      "table_name": "attendance_day_audit",
+      "column_name": "reason",
+      "data_type": "character varying"
+    },
+    {
+      "table_schema": "public",
+      "table_name": "attendance_day_audit",
+      "column_name": "created_at",
+      "data_type": "timestamp with time zone"
+    },
+    {
+      "table_schema": "public",
+      "table_name": "attendance_day_closures",
+      "column_name": "attendance_id",
+      "data_type": "integer"
+    },
+    {
+      "table_schema": "public",
+      "table_name": "attendance_day_closures",
+      "column_name": "event_uuid",
+      "data_type": "uuid"
+    },
+    {
+      "table_schema": "public",
+      "table_name": "attendance_day_closures",
+      "column_name": "user_id",
+      "data_type": "integer"
+    },
+    {
+      "table_schema": "public",
+      "table_name": "attendance_day_closures",
+      "column_name": "company_id",
+      "data_type": "integer"
+    },
+    {
+      "table_schema": "public",
+      "table_name": "attendance_day_closures",
+      "column_name": "work_date",
+      "data_type": "date"
+    },
+    {
+      "table_schema": "public",
+      "table_name": "attendance_day_closures",
+      "column_name": "effective_event_time",
+      "data_type": "timestamp with time zone"
+    },
+    {
+      "table_schema": "public",
+      "table_name": "attendance_day_closures",
+      "column_name": "recorded_at",
+      "data_type": "timestamp with time zone"
+    },
+    {
+      "table_schema": "public",
+      "table_name": "attendance_day_closures",
+      "column_name": "reason",
+      "data_type": "text"
+    },
+    {
+      "table_schema": "public",
+      "table_name": "attendance_day_closures",
+      "column_name": "before_summary",
+      "data_type": "jsonb"
+    },
+    {
+      "table_schema": "public",
+      "table_name": "attendance_day_overrides",
+      "column_name": "company_id",
+      "data_type": "integer"
+    },
+    {
+      "table_schema": "public",
+      "table_name": "attendance_day_overrides",
+      "column_name": "user_id",
+      "data_type": "integer"
+    },
+    {
+      "table_schema": "public",
+      "table_name": "attendance_day_overrides",
+      "column_name": "work_date",
+      "data_type": "date"
+    },
+    {
+      "table_schema": "public",
+      "table_name": "attendance_day_overrides",
+      "column_name": "status",
+      "data_type": "character varying"
+    },
+    {
+      "table_schema": "public",
+      "table_name": "attendance_day_overrides",
+      "column_name": "reason",
+      "data_type": "character varying"
+    },
+    {
+      "table_schema": "public",
+      "table_name": "attendance_day_overrides",
+      "column_name": "revision",
+      "data_type": "integer"
+    },
+    {
+      "table_schema": "public",
+      "table_name": "attendance_day_overrides",
+      "column_name": "updated_by",
+      "data_type": "integer"
+    },
+    {
+      "table_schema": "public",
+      "table_name": "attendance_day_overrides",
+      "column_name": "updated_at",
+      "data_type": "timestamp with time zone"
+    },
+    {
+      "table_schema": "public",
+      "table_name": "attendance_day_policy",
+      "column_name": "company_id",
+      "data_type": "integer"
+    },
+    {
+      "table_schema": "public",
+      "table_name": "attendance_day_policy",
+      "column_name": "arrival_deadline",
+      "data_type": "time without time zone"
+    },
+    {
+      "table_schema": "public",
+      "table_name": "attendance_day_policy",
+      "column_name": "updated_by",
+      "data_type": "integer"
+    },
+    {
+      "table_schema": "public",
+      "table_name": "attendance_day_policy",
+      "column_name": "updated_at",
+      "data_type": "timestamp with time zone"
+    },
+    {
+      "table_schema": "public",
+      "table_name": "attendance_diagnostics",
+      "column_name": "id",
+      "data_type": "uuid"
+    },
+    {
+      "table_schema": "public",
+      "table_name": "attendance_diagnostics",
+      "column_name": "user_id",
+      "data_type": "bigint"
+    },
+    {
+      "table_schema": "public",
+      "table_name": "attendance_diagnostics",
+      "column_name": "company_id",
+      "data_type": "bigint"
+    },
+    {
+      "table_schema": "public",
+      "table_name": "attendance_diagnostics",
+      "column_name": "device_id",
+      "data_type": "character varying"
+    },
+    {
+      "table_schema": "public",
+      "table_name": "attendance_diagnostics",
+      "column_name": "boot_id",
+      "data_type": "uuid"
+    },
+    {
+      "table_schema": "public",
+      "table_name": "attendance_diagnostics",
+      "column_name": "observed_elapsed_ms",
+      "data_type": "bigint"
+    },
+    {
+      "table_schema": "public",
+      "table_name": "attendance_diagnostics",
+      "column_name": "device_time",
+      "data_type": "timestamp with time zone"
+    },
+    {
+      "table_schema": "public",
+      "table_name": "attendance_diagnostics",
+      "column_name": "category",
+      "data_type": "character varying"
+    },
+    {
+      "table_schema": "public",
+      "table_name": "attendance_diagnostics",
+      "column_name": "message",
+      "data_type": "character varying"
+    },
+    {
+      "table_schema": "public",
+      "table_name": "attendance_diagnostics",
+      "column_name": "received_at",
+      "data_type": "timestamp with time zone"
+    },
+    {
+      "table_schema": "public",
+      "table_name": "attendance_duty_notification_reads",
+      "column_name": "user_id",
+      "data_type": "integer"
+    },
+    {
+      "table_schema": "public",
+      "table_name": "attendance_duty_notification_reads",
+      "column_name": "company_id",
+      "data_type": "integer"
+    },
+    {
+      "table_schema": "public",
+      "table_name": "attendance_duty_notification_reads",
+      "column_name": "duty_id",
+      "data_type": "bigint"
+    },
+    {
+      "table_schema": "public",
+      "table_name": "attendance_duty_notification_reads",
+      "column_name": "version_ms",
+      "data_type": "bigint"
+    },
+    {
+      "table_schema": "public",
+      "table_name": "attendance_duty_notification_reads",
+      "column_name": "read_at",
+      "data_type": "timestamp with time zone"
+    },
+    {
+      "table_schema": "public",
+      "table_name": "attendance_effective_events",
+      "column_name": "id",
+      "data_type": "bigint"
+    },
+    {
+      "table_schema": "public",
+      "table_name": "attendance_effective_events",
+      "column_name": "event_uuid",
+      "data_type": "uuid"
+    },
+    {
+      "table_schema": "public",
+      "table_name": "attendance_effective_events",
+      "column_name": "attendance_id",
+      "data_type": "integer"
+    },
+    {
+      "table_schema": "public",
+      "table_name": "attendance_effective_events",
+      "column_name": "user_id",
+      "data_type": "integer"
+    },
+    {
+      "table_schema": "public",
+      "table_name": "attendance_effective_events",
+      "column_name": "company_id",
+      "data_type": "integer"
+    },
+    {
+      "table_schema": "public",
+      "table_name": "attendance_effective_events",
+      "column_name": "user_device_id",
+      "data_type": "integer"
+    },
+    {
+      "table_schema": "public",
+      "table_name": "attendance_effective_events",
+      "column_name": "device_id",
+      "data_type": "character varying"
+    },
+    {
+      "table_schema": "public",
+      "table_name": "attendance_effective_events",
+      "column_name": "event_type",
+      "data_type": "character varying"
+    },
+    {
+      "table_schema": "public",
+      "table_name": "attendance_effective_events",
+      "column_name": "device_event_time",
+      "data_type": "timestamp with time zone"
+    },
+    {
+      "table_schema": "public",
+      "table_name": "attendance_effective_events",
+      "column_name": "server_received_at",
+      "data_type": "timestamp with time zone"
+    },
+    {
+      "table_schema": "public",
+      "table_name": "attendance_effective_events",
+      "column_name": "latitude",
+      "data_type": "double precision"
+    },
+    {
+      "table_schema": "public",
+      "table_name": "attendance_effective_events",
+      "column_name": "longitude",
+      "data_type": "double precision"
+    },
+    {
+      "table_schema": "public",
+      "table_name": "attendance_effective_events",
+      "column_name": "accuracy_meters",
+      "data_type": "real"
+    },
+    {
+      "table_schema": "public",
+      "table_name": "attendance_effective_events",
+      "column_name": "inside_geofence",
+      "data_type": "boolean"
+    },
+    {
+      "table_schema": "public",
+      "table_name": "attendance_effective_events",
+      "column_name": "beacon_detected",
+      "data_type": "boolean"
+    },
+    {
+      "table_schema": "public",
+      "table_name": "attendance_effective_events",
+      "column_name": "beacon_id",
+      "data_type": "character varying"
+    },
+    {
+      "table_schema": "public",
+      "table_name": "attendance_effective_events",
+      "column_name": "beacon_rssi",
+      "data_type": "integer"
+    },
+    {
+      "table_schema": "public",
+      "table_name": "attendance_effective_events",
+      "column_name": "wifi_verified",
+      "data_type": "boolean"
+    },
+    {
+      "table_schema": "public",
+      "table_name": "attendance_effective_events",
+      "column_name": "wifi_bssid",
+      "data_type": "character varying"
+    },
+    {
+      "table_schema": "public",
+      "table_name": "attendance_effective_events",
+      "column_name": "created_by",
+      "data_type": "integer"
+    },
+    {
+      "table_schema": "public",
+      "table_name": "attendance_effective_events",
+      "column_name": "created_at",
+      "data_type": "timestamp with time zone"
+    },
+    {
+      "table_schema": "public",
+      "table_name": "attendance_effective_events",
+      "column_name": "updated_by",
+      "data_type": "integer"
+    },
+    {
+      "table_schema": "public",
+      "table_name": "attendance_effective_events",
+      "column_name": "updated_at",
+      "data_type": "timestamp with time zone"
+    },
+    {
+      "table_schema": "public",
+      "table_name": "attendance_effective_events",
+      "column_name": "is_active",
+      "data_type": "boolean"
+    },
+    {
+      "table_schema": "public",
+      "table_name": "attendance_effective_events",
+      "column_name": "time_anchor_id",
+      "data_type": "bigint"
+    },
+    {
+      "table_schema": "public",
+      "table_name": "attendance_effective_events",
+      "column_name": "event_elapsed_realtime_ms",
+      "data_type": "bigint"
+    },
+    {
+      "table_schema": "public",
+      "table_name": "attendance_effective_events",
+      "column_name": "effective_event_time",
+      "data_type": "timestamp with time zone"
+    },
+    {
+      "table_schema": "public",
+      "table_name": "attendance_effective_events",
+      "column_name": "time_drift_seconds",
+      "data_type": "integer"
+    },
+    {
+      "table_schema": "public",
+      "table_name": "attendance_effective_events",
+      "column_name": "time_source",
+      "data_type": "character varying"
+    },
+    {
+      "table_schema": "public",
+      "table_name": "attendance_effective_events",
+      "column_name": "time_confidence",
+      "data_type": "character varying"
+    },
+    {
+      "table_schema": "public",
+      "table_name": "attendance_effective_events",
+      "column_name": "attendance_location_id",
+      "data_type": "integer"
+    },
+    {
+      "table_schema": "public",
+      "table_name": "attendance_effective_events",
+      "column_name": "wifi_ssid",
+      "data_type": "character varying"
+    },
+    {
+      "table_schema": "public",
+      "table_name": "attendance_effective_events",
+      "column_name": "on_duty_bypass",
+      "data_type": "boolean"
+    },
+    {
+      "table_schema": "public",
+      "table_name": "attendance_effective_events",
+      "column_name": "presence_lost_at",
+      "data_type": "timestamp with time zone"
+    },
+    {
+      "table_schema": "public",
+      "table_name": "attendance_effective_events",
+      "column_name": "metadata",
+      "data_type": "jsonb"
+    },
+    {
+      "table_schema": "public",
+      "table_name": "attendance_effective_events",
+      "column_name": "arrival_candidate_id",
+      "data_type": "uuid"
+    },
+    {
+      "table_schema": "public",
+      "table_name": "attendance_effective_events",
+      "column_name": "presence_verified_at",
+      "data_type": "timestamp with time zone"
+    },
+    {
+      "table_schema": "public",
+      "table_name": "attendance_effective_events",
+      "column_name": "attendance_reason",
+      "data_type": "text"
+    },
+    {
+      "table_schema": "public",
+      "table_name": "attendance_effective_events",
+      "column_name": "event_origin",
+      "data_type": "text"
+    },
+    {
+      "table_schema": "public",
+      "table_name": "attendance_effective_events",
+      "column_name": "regularization_request_id",
+      "data_type": "uuid"
+    },
+    {
+      "table_schema": "public",
+      "table_name": "attendance_events",
+      "column_name": "id",
+      "data_type": "bigint"
+    },
+    {
+      "table_schema": "public",
+      "table_name": "attendance_events",
+      "column_name": "event_uuid",
+      "data_type": "uuid"
+    },
+    {
+      "table_schema": "public",
+      "table_name": "attendance_events",
+      "column_name": "attendance_id",
+      "data_type": "integer"
+    },
+    {
+      "table_schema": "public",
+      "table_name": "attendance_events",
+      "column_name": "user_id",
+      "data_type": "integer"
+    },
+    {
+      "table_schema": "public",
+      "table_name": "attendance_events",
+      "column_name": "company_id",
+      "data_type": "integer"
+    },
+    {
+      "table_schema": "public",
+      "table_name": "attendance_events",
+      "column_name": "user_device_id",
+      "data_type": "integer"
+    },
+    {
+      "table_schema": "public",
+      "table_name": "attendance_events",
+      "column_name": "device_id",
+      "data_type": "character varying"
+    },
+    {
+      "table_schema": "public",
+      "table_name": "attendance_events",
+      "column_name": "event_type",
+      "data_type": "character varying"
+    },
+    {
+      "table_schema": "public",
+      "table_name": "attendance_events",
+      "column_name": "device_event_time",
+      "data_type": "timestamp with time zone"
+    },
+    {
+      "table_schema": "public",
+      "table_name": "attendance_events",
+      "column_name": "server_received_at",
+      "data_type": "timestamp with time zone"
+    },
+    {
+      "table_schema": "public",
+      "table_name": "attendance_events",
+      "column_name": "latitude",
+      "data_type": "double precision"
+    },
+    {
+      "table_schema": "public",
+      "table_name": "attendance_events",
+      "column_name": "longitude",
+      "data_type": "double precision"
+    },
+    {
+      "table_schema": "public",
+      "table_name": "attendance_events",
+      "column_name": "accuracy_meters",
+      "data_type": "real"
+    },
+    {
+      "table_schema": "public",
+      "table_name": "attendance_events",
+      "column_name": "inside_geofence",
+      "data_type": "boolean"
+    },
+    {
+      "table_schema": "public",
+      "table_name": "attendance_events",
+      "column_name": "beacon_detected",
+      "data_type": "boolean"
+    },
+    {
+      "table_schema": "public",
+      "table_name": "attendance_events",
+      "column_name": "beacon_id",
+      "data_type": "character varying"
+    },
+    {
+      "table_schema": "public",
+      "table_name": "attendance_events",
+      "column_name": "beacon_rssi",
+      "data_type": "integer"
+    },
+    {
+      "table_schema": "public",
+      "table_name": "attendance_events",
+      "column_name": "wifi_verified",
+      "data_type": "boolean"
+    },
+    {
+      "table_schema": "public",
+      "table_name": "attendance_events",
+      "column_name": "wifi_bssid",
+      "data_type": "character varying"
+    },
+    {
+      "table_schema": "public",
+      "table_name": "attendance_events",
+      "column_name": "created_by",
+      "data_type": "integer"
+    },
+    {
+      "table_schema": "public",
+      "table_name": "attendance_events",
+      "column_name": "created_at",
+      "data_type": "timestamp with time zone"
+    },
+    {
+      "table_schema": "public",
+      "table_name": "attendance_events",
+      "column_name": "updated_by",
+      "data_type": "integer"
+    },
+    {
+      "table_schema": "public",
+      "table_name": "attendance_events",
+      "column_name": "updated_at",
+      "data_type": "timestamp with time zone"
+    },
+    {
+      "table_schema": "public",
+      "table_name": "attendance_events",
+      "column_name": "is_active",
+      "data_type": "boolean"
+    },
+    {
+      "table_schema": "public",
+      "table_name": "attendance_events",
+      "column_name": "time_anchor_id",
+      "data_type": "bigint"
+    },
+    {
+      "table_schema": "public",
+      "table_name": "attendance_events",
+      "column_name": "event_elapsed_realtime_ms",
+      "data_type": "bigint"
+    },
+    {
+      "table_schema": "public",
+      "table_name": "attendance_events",
+      "column_name": "effective_event_time",
+      "data_type": "timestamp with time zone"
+    },
+    {
+      "table_schema": "public",
+      "table_name": "attendance_events",
+      "column_name": "time_drift_seconds",
+      "data_type": "integer"
+    },
+    {
+      "table_schema": "public",
+      "table_name": "attendance_events",
+      "column_name": "time_source",
+      "data_type": "character varying"
+    },
+    {
+      "table_schema": "public",
+      "table_name": "attendance_events",
+      "column_name": "time_confidence",
+      "data_type": "character varying"
+    },
+    {
+      "table_schema": "public",
+      "table_name": "attendance_events",
+      "column_name": "attendance_location_id",
+      "data_type": "integer"
+    },
+    {
+      "table_schema": "public",
+      "table_name": "attendance_events",
+      "column_name": "wifi_ssid",
+      "data_type": "character varying"
+    },
+    {
+      "table_schema": "public",
+      "table_name": "attendance_events",
+      "column_name": "on_duty_bypass",
+      "data_type": "boolean"
+    },
+    {
+      "table_schema": "public",
+      "table_name": "attendance_events",
+      "column_name": "presence_lost_at",
+      "data_type": "timestamp with time zone"
+    },
+    {
+      "table_schema": "public",
+      "table_name": "attendance_events",
+      "column_name": "metadata",
+      "data_type": "jsonb"
+    },
+    {
+      "table_schema": "public",
+      "table_name": "attendance_events",
+      "column_name": "arrival_candidate_id",
+      "data_type": "uuid"
+    },
+    {
+      "table_schema": "public",
+      "table_name": "attendance_events",
+      "column_name": "presence_verified_at",
+      "data_type": "timestamp with time zone"
+    },
+    {
+      "table_schema": "public",
+      "table_name": "attendance_events",
+      "column_name": "attendance_reason",
+      "data_type": "text"
+    },
+    {
+      "table_schema": "public",
+      "table_name": "attendance_location_beacons",
+      "column_name": "id",
+      "data_type": "integer"
+    },
+    {
+      "table_schema": "public",
+      "table_name": "attendance_location_beacons",
+      "column_name": "attendance_location_id",
+      "data_type": "integer"
+    },
+    {
+      "table_schema": "public",
+      "table_name": "attendance_location_beacons",
+      "column_name": "beacon_name",
+      "data_type": "character varying"
+    },
+    {
+      "table_schema": "public",
+      "table_name": "attendance_location_beacons",
+      "column_name": "beacon_identifier",
+      "data_type": "character varying"
+    },
+    {
+      "table_schema": "public",
+      "table_name": "attendance_location_beacons",
+      "column_name": "expected_min_rssi",
+      "data_type": "integer"
+    },
+    {
+      "table_schema": "public",
+      "table_name": "attendance_location_beacons",
+      "column_name": "is_enabled",
+      "data_type": "boolean"
+    },
+    {
+      "table_schema": "public",
+      "table_name": "attendance_location_beacons",
+      "column_name": "is_active",
+      "data_type": "boolean"
+    },
+    {
+      "table_schema": "public",
+      "table_name": "attendance_location_beacons",
+      "column_name": "created_by",
+      "data_type": "integer"
+    },
+    {
+      "table_schema": "public",
+      "table_name": "attendance_location_beacons",
+      "column_name": "created_at",
+      "data_type": "timestamp without time zone"
+    },
+    {
+      "table_schema": "public",
+      "table_name": "attendance_location_beacons",
+      "column_name": "updated_by",
+      "data_type": "integer"
+    },
+    {
+      "table_schema": "public",
+      "table_name": "attendance_location_beacons",
+      "column_name": "updated_at",
+      "data_type": "timestamp without time zone"
+    },
+    {
+      "table_schema": "public",
+      "table_name": "attendance_location_wifi",
+      "column_name": "id",
+      "data_type": "integer"
+    },
+    {
+      "table_schema": "public",
+      "table_name": "attendance_location_wifi",
+      "column_name": "attendance_location_id",
+      "data_type": "integer"
+    },
+    {
+      "table_schema": "public",
+      "table_name": "attendance_location_wifi",
+      "column_name": "wifi_name",
+      "data_type": "character varying"
+    },
+    {
+      "table_schema": "public",
+      "table_name": "attendance_location_wifi",
+      "column_name": "ssid",
+      "data_type": "character varying"
+    },
+    {
+      "table_schema": "public",
+      "table_name": "attendance_location_wifi",
+      "column_name": "bssid",
+      "data_type": "character varying"
+    },
+    {
+      "table_schema": "public",
+      "table_name": "attendance_location_wifi",
+      "column_name": "is_enabled",
+      "data_type": "boolean"
+    },
+    {
+      "table_schema": "public",
+      "table_name": "attendance_location_wifi",
+      "column_name": "is_active",
+      "data_type": "boolean"
+    },
+    {
+      "table_schema": "public",
+      "table_name": "attendance_location_wifi",
+      "column_name": "created_by",
+      "data_type": "integer"
+    },
+    {
+      "table_schema": "public",
+      "table_name": "attendance_location_wifi",
+      "column_name": "created_at",
+      "data_type": "timestamp without time zone"
+    },
+    {
+      "table_schema": "public",
+      "table_name": "attendance_location_wifi",
+      "column_name": "updated_by",
+      "data_type": "integer"
+    },
+    {
+      "table_schema": "public",
+      "table_name": "attendance_location_wifi",
+      "column_name": "updated_at",
+      "data_type": "timestamp without time zone"
+    },
+    {
+      "table_schema": "public",
+      "table_name": "attendance_location_wifi_bssids",
+      "column_name": "id",
+      "data_type": "integer"
+    },
+    {
+      "table_schema": "public",
+      "table_name": "attendance_location_wifi_bssids",
+      "column_name": "attendance_location_id",
+      "data_type": "integer"
+    },
+    {
+      "table_schema": "public",
+      "table_name": "attendance_location_wifi_bssids",
+      "column_name": "ssid",
+      "data_type": "character varying"
+    },
+    {
+      "table_schema": "public",
+      "table_name": "attendance_location_wifi_bssids",
+      "column_name": "bssid",
+      "data_type": "character varying"
+    },
+    {
+      "table_schema": "public",
+      "table_name": "attendance_location_wifi_bssids",
+      "column_name": "description",
+      "data_type": "character varying"
+    },
+    {
+      "table_schema": "public",
+      "table_name": "attendance_location_wifi_bssids",
+      "column_name": "is_active",
+      "data_type": "boolean"
+    },
+    {
+      "table_schema": "public",
+      "table_name": "attendance_location_wifi_bssids",
+      "column_name": "created_by",
+      "data_type": "integer"
+    },
+    {
+      "table_schema": "public",
+      "table_name": "attendance_location_wifi_bssids",
+      "column_name": "created_at",
+      "data_type": "timestamp with time zone"
+    },
+    {
+      "table_schema": "public",
+      "table_name": "attendance_location_wifi_bssids",
+      "column_name": "updated_by",
+      "data_type": "integer"
+    },
+    {
+      "table_schema": "public",
+      "table_name": "attendance_location_wifi_bssids",
+      "column_name": "updated_at",
+      "data_type": "timestamp with time zone"
+    },
+    {
+      "table_schema": "public",
+      "table_name": "attendance_locations",
+      "column_name": "id",
+      "data_type": "integer"
+    },
+    {
+      "table_schema": "public",
+      "table_name": "attendance_locations",
+      "column_name": "company_id",
+      "data_type": "integer"
+    },
+    {
+      "table_schema": "public",
+      "table_name": "attendance_locations",
+      "column_name": "location_code",
+      "data_type": "character varying"
+    },
+    {
+      "table_schema": "public",
+      "table_name": "attendance_locations",
+      "column_name": "location_name",
+      "data_type": "character varying"
+    },
+    {
+      "table_schema": "public",
+      "table_name": "attendance_locations",
+      "column_name": "latitude",
+      "data_type": "double precision"
+    },
+    {
+      "table_schema": "public",
+      "table_name": "attendance_locations",
+      "column_name": "longitude",
+      "data_type": "double precision"
+    },
+    {
+      "table_schema": "public",
+      "table_name": "attendance_locations",
+      "column_name": "geofence_radius_meters",
+      "data_type": "real"
+    },
+    {
+      "table_schema": "public",
+      "table_name": "attendance_locations",
+      "column_name": "wifi_required",
+      "data_type": "boolean"
+    },
+    {
+      "table_schema": "public",
+      "table_name": "attendance_locations",
+      "column_name": "ble_required",
+      "data_type": "boolean"
+    },
+    {
+      "table_schema": "public",
+      "table_name": "attendance_locations",
+      "column_name": "is_active",
+      "data_type": "boolean"
+    },
+    {
+      "table_schema": "public",
+      "table_name": "attendance_locations",
+      "column_name": "created_by",
+      "data_type": "integer"
+    },
+    {
+      "table_schema": "public",
+      "table_name": "attendance_locations",
+      "column_name": "created_at",
+      "data_type": "timestamp with time zone"
+    },
+    {
+      "table_schema": "public",
+      "table_name": "attendance_locations",
+      "column_name": "updated_by",
+      "data_type": "integer"
+    },
+    {
+      "table_schema": "public",
+      "table_name": "attendance_locations",
+      "column_name": "updated_at",
+      "data_type": "timestamp with time zone"
+    },
+    {
+      "table_schema": "public",
+      "table_name": "attendance_locations",
+      "column_name": "max_accuracy_meters",
+      "data_type": "integer"
+    },
+    {
+      "table_schema": "public",
+      "table_name": "attendance_locations",
+      "column_name": "is_enabled",
+      "data_type": "boolean"
+    },
+    {
+      "table_schema": "public",
+      "table_name": "attendance_locations",
+      "column_name": "grace_period_minutes",
+      "data_type": "integer"
+    },
+    {
+      "table_schema": "public",
+      "table_name": "attendance_locations",
+      "column_name": "maximum_absence_minutes",
+      "data_type": "integer"
+    },
+    {
+      "table_schema": "public",
+      "table_name": "attendance_monitor_gaps",
+      "column_name": "id",
+      "data_type": "bigint"
+    },
+    {
+      "table_schema": "public",
+      "table_name": "attendance_monitor_gaps",
+      "column_name": "company_id",
+      "data_type": "bigint"
+    },
+    {
+      "table_schema": "public",
+      "table_name": "attendance_monitor_gaps",
+      "column_name": "user_id",
+      "data_type": "bigint"
+    },
+    {
+      "table_schema": "public",
+      "table_name": "attendance_monitor_gaps",
+      "column_name": "device_id",
+      "data_type": "character varying"
+    },
+    {
+      "table_schema": "public",
+      "table_name": "attendance_monitor_gaps",
+      "column_name": "last_heartbeat_at",
+      "data_type": "timestamp with time zone"
+    },
+    {
+      "table_schema": "public",
+      "table_name": "attendance_monitor_gaps",
+      "column_name": "detected_at",
+      "data_type": "timestamp with time zone"
+    },
+    {
+      "table_schema": "public",
+      "table_name": "attendance_monitor_gaps",
+      "column_name": "recovered_at",
+      "data_type": "timestamp with time zone"
+    },
+    {
+      "table_schema": "public",
+      "table_name": "attendance_monitor_gaps",
+      "column_name": "reason",
+      "data_type": "character varying"
+    },
+    {
+      "table_schema": "public",
+      "table_name": "attendance_monitor_reviews",
+      "column_name": "id",
+      "data_type": "bigint"
+    },
+    {
+      "table_schema": "public",
+      "table_name": "attendance_monitor_reviews",
+      "column_name": "company_id",
+      "data_type": "bigint"
+    },
+    {
+      "table_schema": "public",
+      "table_name": "attendance_monitor_reviews",
+      "column_name": "user_id",
+      "data_type": "bigint"
+    },
+    {
+      "table_schema": "public",
+      "table_name": "attendance_monitor_reviews",
+      "column_name": "reviewer_id",
+      "data_type": "bigint"
+    },
+    {
+      "table_schema": "public",
+      "table_name": "attendance_monitor_reviews",
+      "column_name": "action",
+      "data_type": "character varying"
+    },
+    {
+      "table_schema": "public",
+      "table_name": "attendance_monitor_reviews",
+      "column_name": "note",
+      "data_type": "character varying"
+    },
+    {
+      "table_schema": "public",
+      "table_name": "attendance_monitor_reviews",
+      "column_name": "created_at",
+      "data_type": "timestamp with time zone"
+    },
+    {
+      "table_schema": "public",
+      "table_name": "attendance_monitor_reviews",
+      "column_name": "read_at",
+      "data_type": "timestamp with time zone"
+    },
+    {
+      "table_schema": "public",
+      "table_name": "attendance_monitor_sessions",
+      "column_name": "user_id",
+      "data_type": "bigint"
+    },
+    {
+      "table_schema": "public",
+      "table_name": "attendance_monitor_sessions",
+      "column_name": "company_id",
+      "data_type": "bigint"
+    },
+    {
+      "table_schema": "public",
+      "table_name": "attendance_monitor_sessions",
+      "column_name": "device_id",
+      "data_type": "character varying"
+    },
+    {
+      "table_schema": "public",
+      "table_name": "attendance_monitor_sessions",
+      "column_name": "last_heartbeat_at",
+      "data_type": "timestamp with time zone"
+    },
+    {
+      "table_schema": "public",
+      "table_name": "attendance_monitor_sessions",
+      "column_name": "last_evidence_at",
+      "data_type": "timestamp with time zone"
+    },
+    {
+      "table_schema": "public",
+      "table_name": "attendance_monitor_sessions",
+      "column_name": "status",
+      "data_type": "character varying"
+    },
+    {
+      "table_schema": "public",
+      "table_name": "attendance_monitor_sessions",
+      "column_name": "opened_gap_id",
+      "data_type": "bigint"
+    },
+    {
+      "table_schema": "public",
+      "table_name": "attendance_monitor_sessions",
+      "column_name": "updated_at",
+      "data_type": "timestamp with time zone"
+    },
+    {
+      "table_schema": "public",
+      "table_name": "attendance_notification_reads",
+      "column_name": "user_id",
+      "data_type": "integer"
+    },
+    {
+      "table_schema": "public",
+      "table_name": "attendance_notification_reads",
+      "column_name": "company_id",
+      "data_type": "integer"
+    },
+    {
+      "table_schema": "public",
+      "table_name": "attendance_notification_reads",
+      "column_name": "notification_id",
+      "data_type": "uuid"
+    },
+    {
+      "table_schema": "public",
+      "table_name": "attendance_notification_reads",
+      "column_name": "read_at",
+      "data_type": "timestamp with time zone"
+    },
+    {
+      "table_schema": "public",
+      "table_name": "attendance_on_duty",
+      "column_name": "id",
+      "data_type": "bigint"
+    },
+    {
+      "table_schema": "public",
+      "table_name": "attendance_on_duty",
+      "column_name": "company_id",
+      "data_type": "integer"
+    },
+    {
+      "table_schema": "public",
+      "table_name": "attendance_on_duty",
+      "column_name": "user_id",
+      "data_type": "integer"
+    },
+    {
+      "table_schema": "public",
+      "table_name": "attendance_on_duty",
+      "column_name": "duty_date",
+      "data_type": "date"
+    },
+    {
+      "table_schema": "public",
+      "table_name": "attendance_on_duty",
+      "column_name": "start_time",
+      "data_type": "time without time zone"
+    },
+    {
+      "table_schema": "public",
+      "table_name": "attendance_on_duty",
+      "column_name": "end_time",
+      "data_type": "time without time zone"
+    },
+    {
+      "table_schema": "public",
+      "table_name": "attendance_on_duty",
+      "column_name": "purpose",
+      "data_type": "text"
+    },
+    {
+      "table_schema": "public",
+      "table_name": "attendance_on_duty",
+      "column_name": "destination",
+      "data_type": "text"
+    },
+    {
+      "table_schema": "public",
+      "table_name": "attendance_on_duty",
+      "column_name": "status",
+      "data_type": "character varying"
+    },
+    {
+      "table_schema": "public",
+      "table_name": "attendance_on_duty",
+      "column_name": "created_by",
+      "data_type": "integer"
+    },
+    {
+      "table_schema": "public",
+      "table_name": "attendance_on_duty",
+      "column_name": "updated_by",
+      "data_type": "integer"
+    },
+    {
+      "table_schema": "public",
+      "table_name": "attendance_on_duty",
+      "column_name": "created_at",
+      "data_type": "timestamp with time zone"
+    },
+    {
+      "table_schema": "public",
+      "table_name": "attendance_on_duty",
+      "column_name": "updated_at",
+      "data_type": "timestamp with time zone"
+    },
+    {
+      "table_schema": "public",
+      "table_name": "attendance_on_duty_assignments",
+      "column_name": "id",
+      "data_type": "integer"
+    },
+    {
+      "table_schema": "public",
+      "table_name": "attendance_on_duty_assignments",
+      "column_name": "company_id",
+      "data_type": "integer"
+    },
+    {
+      "table_schema": "public",
+      "table_name": "attendance_on_duty_assignments",
+      "column_name": "user_id",
+      "data_type": "integer"
+    },
+    {
+      "table_schema": "public",
+      "table_name": "attendance_on_duty_assignments",
+      "column_name": "title",
+      "data_type": "character varying"
+    },
+    {
+      "table_schema": "public",
+      "table_name": "attendance_on_duty_assignments",
+      "column_name": "description",
+      "data_type": "text"
+    },
+    {
+      "table_schema": "public",
+      "table_name": "attendance_on_duty_assignments",
+      "column_name": "duty_location",
+      "data_type": "character varying"
+    },
+    {
+      "table_schema": "public",
+      "table_name": "attendance_on_duty_assignments",
+      "column_name": "start_at",
+      "data_type": "timestamp with time zone"
+    },
+    {
+      "table_schema": "public",
+      "table_name": "attendance_on_duty_assignments",
+      "column_name": "end_at",
+      "data_type": "timestamp with time zone"
+    },
+    {
+      "table_schema": "public",
+      "table_name": "attendance_on_duty_assignments",
+      "column_name": "status",
+      "data_type": "character varying"
+    },
+    {
+      "table_schema": "public",
+      "table_name": "attendance_on_duty_assignments",
+      "column_name": "assigned_by",
+      "data_type": "integer"
+    },
+    {
+      "table_schema": "public",
+      "table_name": "attendance_on_duty_assignments",
+      "column_name": "created_at",
+      "data_type": "timestamp with time zone"
+    },
+    {
+      "table_schema": "public",
+      "table_name": "attendance_on_duty_assignments",
+      "column_name": "updated_by",
+      "data_type": "integer"
+    },
+    {
+      "table_schema": "public",
+      "table_name": "attendance_on_duty_assignments",
+      "column_name": "updated_at",
+      "data_type": "timestamp with time zone"
+    },
+    {
+      "table_schema": "public",
+      "table_name": "attendance_presence_evidence",
+      "column_name": "id",
+      "data_type": "uuid"
+    },
+    {
+      "table_schema": "public",
+      "table_name": "attendance_presence_evidence",
+      "column_name": "user_id",
+      "data_type": "integer"
+    },
+    {
+      "table_schema": "public",
+      "table_name": "attendance_presence_evidence",
+      "column_name": "company_id",
+      "data_type": "integer"
+    },
+    {
+      "table_schema": "public",
+      "table_name": "attendance_presence_evidence",
+      "column_name": "device_id",
+      "data_type": "character varying"
+    },
+    {
+      "table_schema": "public",
+      "table_name": "attendance_presence_evidence",
+      "column_name": "office_id",
+      "data_type": "integer"
+    },
+    {
+      "table_schema": "public",
+      "table_name": "attendance_presence_evidence",
+      "column_name": "observed_elapsed_ms",
+      "data_type": "bigint"
+    },
+    {
+      "table_schema": "public",
+      "table_name": "attendance_presence_evidence",
+      "column_name": "received_at",
+      "data_type": "timestamp with time zone"
+    },
+    {
+      "table_schema": "public",
+      "table_name": "attendance_presence_evidence",
+      "column_name": "latitude",
+      "data_type": "double precision"
+    },
+    {
+      "table_schema": "public",
+      "table_name": "attendance_presence_evidence",
+      "column_name": "longitude",
+      "data_type": "double precision"
+    },
+    {
+      "table_schema": "public",
+      "table_name": "attendance_presence_evidence",
+      "column_name": "accuracy_meters",
+      "data_type": "double precision"
+    },
+    {
+      "table_schema": "public",
+      "table_name": "attendance_presence_evidence",
+      "column_name": "wifi_matched",
+      "data_type": "boolean"
+    },
+    {
+      "table_schema": "public",
+      "table_name": "attendance_presence_evidence",
+      "column_name": "classification",
+      "data_type": "character varying"
+    },
+    {
+      "table_schema": "public",
+      "table_name": "attendance_presence_evidence",
+      "column_name": "verification_status",
+      "data_type": "character varying"
+    },
+    {
+      "table_schema": "public",
+      "table_name": "attendance_presence_evidence",
+      "column_name": "presence_verified_at",
+      "data_type": "timestamp with time zone"
+    },
+    {
+      "table_schema": "public",
+      "table_name": "attendance_presence_evidence",
+      "column_name": "effective_check_in_at",
+      "data_type": "timestamp with time zone"
+    },
+    {
+      "table_schema": "public",
+      "table_name": "attendance_presence_evidence",
+      "column_name": "created_at",
+      "data_type": "timestamp with time zone"
+    },
+    {
+      "table_schema": "public",
+      "table_name": "attendance_regularization_events",
+      "column_name": "id",
+      "data_type": "bigint"
+    },
+    {
+      "table_schema": "public",
+      "table_name": "attendance_regularization_events",
+      "column_name": "request_id",
+      "data_type": "uuid"
+    },
+    {
+      "table_schema": "public",
+      "table_name": "attendance_regularization_events",
+      "column_name": "attendance_id",
+      "data_type": "integer"
+    },
+    {
+      "table_schema": "public",
+      "table_name": "attendance_regularization_events",
+      "column_name": "user_id",
+      "data_type": "integer"
+    },
+    {
+      "table_schema": "public",
+      "table_name": "attendance_regularization_events",
+      "column_name": "company_id",
+      "data_type": "integer"
+    },
+    {
+      "table_schema": "public",
+      "table_name": "attendance_regularization_events",
+      "column_name": "action",
+      "data_type": "text"
+    },
+    {
+      "table_schema": "public",
+      "table_name": "attendance_regularization_events",
+      "column_name": "event_type",
+      "data_type": "text"
+    },
+    {
+      "table_schema": "public",
+      "table_name": "attendance_regularization_events",
+      "column_name": "effective_event_time",
+      "data_type": "timestamp with time zone"
+    },
+    {
+      "table_schema": "public",
+      "table_name": "attendance_regularization_events",
+      "column_name": "replaces_event_uuid",
+      "data_type": "uuid"
+    },
+    {
+      "table_schema": "public",
+      "table_name": "attendance_regularization_events",
+      "column_name": "attendance_location_id",
+      "data_type": "integer"
+    },
+    {
+      "table_schema": "public",
+      "table_name": "attendance_regularization_events",
+      "column_name": "approved_by",
+      "data_type": "integer"
+    },
+    {
+      "table_schema": "public",
+      "table_name": "attendance_regularization_events",
+      "column_name": "applied_by",
+      "data_type": "integer"
+    },
+    {
+      "table_schema": "public",
+      "table_name": "attendance_regularization_events",
+      "column_name": "reason",
+      "data_type": "text"
+    },
+    {
+      "table_schema": "public",
+      "table_name": "attendance_regularization_events",
+      "column_name": "applied_at",
+      "data_type": "timestamp with time zone"
+    },
+    {
+      "table_schema": "public",
+      "table_name": "attendance_regularization_requests",
+      "column_name": "id",
+      "data_type": "integer"
+    },
+    {
+      "table_schema": "public",
+      "table_name": "attendance_regularization_requests",
+      "column_name": "company_id",
+      "data_type": "integer"
+    },
+    {
+      "table_schema": "public",
+      "table_name": "attendance_regularization_requests",
+      "column_name": "user_id",
+      "data_type": "integer"
+    },
+    {
+      "table_schema": "public",
+      "table_name": "attendance_regularization_requests",
+      "column_name": "attendance_id",
+      "data_type": "integer"
+    },
+    {
+      "table_schema": "public",
+      "table_name": "attendance_regularization_requests",
+      "column_name": "attendance_date",
+      "data_type": "date"
+    },
+    {
+      "table_schema": "public",
+      "table_name": "attendance_regularization_requests",
+      "column_name": "request_type",
+      "data_type": "character varying"
+    },
+    {
+      "table_schema": "public",
+      "table_name": "attendance_regularization_requests",
+      "column_name": "requested_login_time",
+      "data_type": "timestamp with time zone"
+    },
+    {
+      "table_schema": "public",
+      "table_name": "attendance_regularization_requests",
+      "column_name": "requested_logout_time",
+      "data_type": "timestamp with time zone"
+    },
+    {
+      "table_schema": "public",
+      "table_name": "attendance_regularization_requests",
+      "column_name": "reason",
+      "data_type": "text"
+    },
+    {
+      "table_schema": "public",
+      "table_name": "attendance_regularization_requests",
+      "column_name": "status",
+      "data_type": "character varying"
+    },
+    {
+      "table_schema": "public",
+      "table_name": "attendance_regularization_requests",
+      "column_name": "requested_at",
+      "data_type": "timestamp with time zone"
+    },
+    {
+      "table_schema": "public",
+      "table_name": "attendance_regularization_requests",
+      "column_name": "reviewed_by",
+      "data_type": "integer"
+    },
+    {
+      "table_schema": "public",
+      "table_name": "attendance_regularization_requests",
+      "column_name": "reviewed_at",
+      "data_type": "timestamp with time zone"
+    },
+    {
+      "table_schema": "public",
+      "table_name": "attendance_regularization_requests",
+      "column_name": "review_comment",
+      "data_type": "text"
+    },
+    {
+      "table_schema": "public",
+      "table_name": "attendance_request_review_audit",
+      "column_name": "id",
+      "data_type": "bigint"
+    },
+    {
+      "table_schema": "public",
+      "table_name": "attendance_request_review_audit",
+      "column_name": "request_id",
+      "data_type": "uuid"
+    },
+    {
+      "table_schema": "public",
+      "table_name": "attendance_request_review_audit",
+      "column_name": "company_id",
+      "data_type": "integer"
+    },
+    {
+      "table_schema": "public",
+      "table_name": "attendance_request_review_audit",
+      "column_name": "user_id",
+      "data_type": "integer"
+    },
+    {
+      "table_schema": "public",
+      "table_name": "attendance_request_review_audit",
+      "column_name": "actor_id",
+      "data_type": "integer"
+    },
+    {
+      "table_schema": "public",
+      "table_name": "attendance_request_review_audit",
+      "column_name": "action",
+      "data_type": "text"
+    },
+    {
+      "table_schema": "public",
+      "table_name": "attendance_request_review_audit",
+      "column_name": "previous_status",
+      "data_type": "text"
+    },
+    {
+      "table_schema": "public",
+      "table_name": "attendance_request_review_audit",
+      "column_name": "next_status",
+      "data_type": "text"
+    },
+    {
+      "table_schema": "public",
+      "table_name": "attendance_request_review_audit",
+      "column_name": "reason",
+      "data_type": "text"
+    },
+    {
+      "table_schema": "public",
+      "table_name": "attendance_request_review_audit",
+      "column_name": "before_summary",
+      "data_type": "jsonb"
+    },
+    {
+      "table_schema": "public",
+      "table_name": "attendance_request_review_audit",
+      "column_name": "after_summary",
+      "data_type": "jsonb"
+    },
+    {
+      "table_schema": "public",
+      "table_name": "attendance_request_review_audit",
+      "column_name": "created_at",
+      "data_type": "timestamp with time zone"
+    },
+    {
+      "table_schema": "public",
+      "table_name": "attendance_requests",
+      "column_name": "id",
+      "data_type": "uuid"
+    },
+    {
+      "table_schema": "public",
+      "table_name": "attendance_requests",
+      "column_name": "user_id",
+      "data_type": "integer"
+    },
+    {
+      "table_schema": "public",
+      "table_name": "attendance_requests",
+      "column_name": "company_id",
+      "data_type": "integer"
+    },
+    {
+      "table_schema": "public",
+      "table_name": "attendance_requests",
+      "column_name": "request_type",
+      "data_type": "text"
+    },
+    {
+      "table_schema": "public",
+      "table_name": "attendance_requests",
+      "column_name": "request_date",
+      "data_type": "date"
+    },
+    {
+      "table_schema": "public",
+      "table_name": "attendance_requests",
+      "column_name": "description",
+      "data_type": "text"
+    },
+    {
+      "table_schema": "public",
+      "table_name": "attendance_requests",
+      "column_name": "duration_minutes",
+      "data_type": "integer"
+    },
+    {
+      "table_schema": "public",
+      "table_name": "attendance_requests",
+      "column_name": "subtype",
+      "data_type": "text"
+    },
+    {
+      "table_schema": "public",
+      "table_name": "attendance_requests",
+      "column_name": "requested_time",
+      "data_type": "text"
+    },
+    {
+      "table_schema": "public",
+      "table_name": "attendance_requests",
+      "column_name": "status",
+      "data_type": "text"
+    },
+    {
+      "table_schema": "public",
+      "table_name": "attendance_requests",
+      "column_name": "created_at",
+      "data_type": "timestamp with time zone"
+    },
+    {
+      "table_schema": "public",
+      "table_name": "attendance_requests",
+      "column_name": "reviewed_by",
+      "data_type": "integer"
+    },
+    {
+      "table_schema": "public",
+      "table_name": "attendance_requests",
+      "column_name": "reviewed_at",
+      "data_type": "timestamp with time zone"
+    },
+    {
+      "table_schema": "public",
+      "table_name": "attendance_requests",
+      "column_name": "review_remarks",
+      "data_type": "text"
+    },
+    {
+      "table_schema": "public",
+      "table_name": "attendance_requests",
+      "column_name": "provisional_arrival",
+      "data_type": "jsonb"
+    }
+  ],
+  "auditColumns": [
+    {
+      "table_name": "attendance_day_audit",
+      "column_name": "id",
+      "data_type": "bigint"
+    },
+    {
+      "table_name": "attendance_day_audit",
+      "column_name": "company_id",
+      "data_type": "integer"
+    },
+    {
+      "table_name": "attendance_day_audit",
+      "column_name": "user_id",
+      "data_type": "integer"
+    },
+    {
+      "table_name": "attendance_day_audit",
+      "column_name": "work_date",
+      "data_type": "date"
+    },
+    {
+      "table_name": "attendance_day_audit",
+      "column_name": "actor_id",
+      "data_type": "integer"
+    },
+    {
+      "table_name": "attendance_day_audit",
+      "column_name": "previous_status",
+      "data_type": "character varying"
+    },
+    {
+      "table_name": "attendance_day_audit",
+      "column_name": "next_status",
+      "data_type": "character varying"
+    },
+    {
+      "table_name": "attendance_day_audit",
+      "column_name": "reason",
+      "data_type": "character varying"
+    },
+    {
+      "table_name": "attendance_day_audit",
+      "column_name": "created_at",
+      "data_type": "timestamp with time zone"
+    },
+    {
+      "table_name": "attendance_request_review_audit",
+      "column_name": "id",
+      "data_type": "bigint"
+    },
+    {
+      "table_name": "attendance_request_review_audit",
+      "column_name": "request_id",
+      "data_type": "uuid"
+    },
+    {
+      "table_name": "attendance_request_review_audit",
+      "column_name": "company_id",
+      "data_type": "integer"
+    },
+    {
+      "table_name": "attendance_request_review_audit",
+      "column_name": "user_id",
+      "data_type": "integer"
+    },
+    {
+      "table_name": "attendance_request_review_audit",
+      "column_name": "actor_id",
+      "data_type": "integer"
+    },
+    {
+      "table_name": "attendance_request_review_audit",
+      "column_name": "action",
+      "data_type": "text"
+    },
+    {
+      "table_name": "attendance_request_review_audit",
+      "column_name": "previous_status",
+      "data_type": "text"
+    },
+    {
+      "table_name": "attendance_request_review_audit",
+      "column_name": "next_status",
+      "data_type": "text"
+    },
+    {
+      "table_name": "attendance_request_review_audit",
+      "column_name": "reason",
+      "data_type": "text"
+    },
+    {
+      "table_name": "attendance_request_review_audit",
+      "column_name": "before_summary",
+      "data_type": "jsonb"
+    },
+    {
+      "table_name": "attendance_request_review_audit",
+      "column_name": "after_summary",
+      "data_type": "jsonb"
+    },
+    {
+      "table_name": "attendance_request_review_audit",
+      "column_name": "created_at",
+      "data_type": "timestamp with time zone"
+    }
+  ]
+}

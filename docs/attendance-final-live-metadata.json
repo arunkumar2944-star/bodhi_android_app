@@ -1,0 +1,29 @@
+{
+  "checkedAt": "2026-11-02T13:55:45.625Z",
+  "requests": [
+    {
+      "url": "https://crm-test-backend-phi.vercel.app/api/v1/health/",
+      "http": 200,
+      "finalUrl": "https://crm-test-backend-phi.vercel.app/api/v1/health/",
+      "headers": {
+        "server": "Vercel",
+        "x-vercel-id": "bom1::iad1::bntkf-1793627746833-0bdbb0098a9f",
+        "x-vercel-cache": "MISS"
+      },
+      "body": {
+        "success": true,
+        "message": "Server is running",
+        "data": {
+          "server": "Running",
+          "database": "Connected",
+          "timestamp": "2026-11-02T13:55:48.540Z"
+        }
+      }
+    },
+    {
+      "url": "https://crm-test-backend-3f8g63hpv-sarunkumar2944-5912s-projects.vercel.app/api/v1/health/",
+      "error": "SyntaxError"
+    }
+  ],
+  "vercelTokenAvailable": false
+}

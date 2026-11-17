@@ -1,0 +1,24 @@
+{
+  "schemaVersion": 1,
+  "application": "Bodhi Attendance Android",
+  "versionName": "1.0.3",
+  "versionCode": 16,
+  "releaseChannel": "test-backend",
+  "releaseStatus": "READY_FOR_TESTING",
+  "releaseDate": "2026-11-06",
+  "gitCommit": "91f546b015ae5036f29d784cbe162de6039abec3",
+  "apkSha256": "804107548352A133580BA63F5CB7C80E54A8CB7BC7B6DC317E2875D7DDD62A5F",
+  "signingCertificateSha256": "ae4c56639f6218143b1ba16516f49010ef6a6f6954e1329a81b074385c9e7ed1",
+  "signerSubject": "CN=Anandh, OU=Software Development, O=Prodigit, L=Trichy, ST=Tamil Nadu, C=IN",
+  "backendTarget": "https://crm-test-backend-phi.vercel.app/",
+  "backendDeployedCommit": "a7e0b8f4647781028f1632fda4c594bff6310384",
+  "notes": {
+    "en": "Enforces 3-minute grace period before BREAK_START, 90-minute continuous absence checkout classification, fast departure evaluation, edge-to-edge UI compliance, and backend Asia/Kolkata timezone persistence."
+  },
+  "physicalDeviceTestingScope": [
+    "Threshold Geofence and Wi-Fi signal transition (RSSI fade vs immediate disconnect)",
+    "OEM aggressive background battery optimization continuity (Samsung, Xiaomi, OnePlus)",
+    "Manager-mediated device recovery approval workflow"
+  ]
+}
+

@@ -70,10 +70,15 @@ private fun getPermissionChecks(context: Context): List<PermissionCheck> {
         else bluetoothManager?.adapter?.isEnabled == true
     } catch (_: SecurityException) { false }
 
+    val notificationsRequired = Build.VERSION.SDK_INT >= 33
+    val notifications = !notificationsRequired || hasPermission(context, Manifest.permission.POST_NOTIFICATIONS)
+
     return listOf(
         PermissionCheck("Precise Location", "Fine location permission for GPS-based presence", fine),
         PermissionCheck("Nearby Devices", "Bluetooth scan and connect permissions", nearby,
             notRequired = !nearbyRequired),
+        PermissionCheck("Notifications", "Push notification permission for attendance alerts", notifications,
+            notRequired = !notificationsRequired),
         PermissionCheck("Location Service", "Android device location is turned on", locationEnabled),
         PermissionCheck("Bluetooth Service", "Bluetooth radio is turned on", bluetoothEnabled)
     )

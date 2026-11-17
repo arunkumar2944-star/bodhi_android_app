@@ -425,8 +425,14 @@ class AttendancePresenceService : Service() {
                     stopSelf(); return
                 }
                 AttendanceMonitorStatus.running()
-                showVerificationNotification(if (OfflineWorkSessionStore.isOffline()) "Offline attendance — saved on phone, pending CRM validation"
-                    else "Monitoring attendance for the work session you started")
+                val currentAttendanceState = com.prodigit.bodhiattendance.domain.attendance.AttendanceEngineRuntimeProvider.getInstance(this)
+                    .runtimeSession.getSnapshot().attendanceState
+                val notificationText = when {
+                    OfflineWorkSessionStore.isOffline() -> "Offline attendance — saved on phone, pending CRM validation"
+                    currentAttendanceState == com.prodigit.bodhiattendance.domain.attendance.AttendanceState.ON_BREAK -> "Tea / Short break active — backdated to exit time"
+                    else -> "Monitoring attendance for the work session you started"
+                }
+                showVerificationNotification(notificationText)
                 Log.i(tag, "Verification burst: " + reason)
                 diagnostics.record("VERIFICATION", "Verification burst: " + reason)
                 TrustedTimeMonitor(applicationContext).report()
