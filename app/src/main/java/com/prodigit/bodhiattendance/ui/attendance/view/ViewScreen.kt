@@ -367,16 +367,6 @@ private fun AttendanceHistoryScreenContent(
 
 
         // ====================================================
-        // HEADER
-        // ====================================================
-
-        item {
-
-            AttendanceHistoryHeader()
-        }
-
-
-        // ====================================================
         // EMPLOYEE + MONTH
         // ====================================================
 
@@ -499,55 +489,6 @@ private fun AttendanceHistoryScreenContent(
                     )
             )
         }
-    }
-}
-
-
-// ============================================================
-// PAGE HEADER
-// ============================================================
-
-@Composable
-private fun AttendanceHistoryHeader() {
-
-    Column {
-
-        Text(
-
-            text =
-                "Attendance History",
-
-            color =
-                MaterialTheme.colorScheme.onSurface,
-
-            fontSize =
-                25.sp,
-
-            fontWeight =
-                FontWeight.Bold
-        )
-
-
-        Spacer(
-
-            modifier =
-                Modifier.height(
-                    2.dp
-                )
-        )
-
-
-        Text(
-
-            text =
-                "View attendance records and holidays for the past 90 calendar days",
-
-            color =
-                MaterialTheme.colorScheme.onSurfaceVariant,
-
-            fontSize =
-                14.sp
-        )
     }
 }
 
