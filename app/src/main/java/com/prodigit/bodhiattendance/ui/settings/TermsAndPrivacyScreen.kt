@@ -17,7 +17,6 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.prodigit.bodhiattendance.ui.common.AppBackground
-import com.prodigit.bodhiattendance.ui.common.AppMasterHeader
 
 private val Blue = Color(0xFF1769E8)
 private val Ink = Color(0xFF0F172A)
@@ -32,73 +31,66 @@ fun TermsAndPrivacyScreen(
     var selectedTab by remember { mutableIntStateOf(initialTab) }
 
     AppBackground {
-        Column(modifier = Modifier.fillMaxSize()) {
-            Box(
+        Surface(
+            modifier = Modifier.fillMaxSize(),
+            color = MaterialTheme.colorScheme.surface.copy(alpha = 0.96f)
+        ) {
+            Column(
                 modifier = Modifier
-                    .fillMaxWidth()
+                    .fillMaxSize()
                     .statusBarsPadding()
-                    .padding(top = 6.dp)
             ) {
-                AppMasterHeader()
-            }
-
-            Surface(
-                modifier = Modifier.fillMaxSize(),
-                color = MaterialTheme.colorScheme.surface.copy(alpha = 0.96f)
-            ) {
-                Column(modifier = Modifier.fillMaxSize()) {
-                    // Top Bar
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(horizontal = 12.dp, vertical = 8.dp),
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        IconButton(onClick = onBack) {
-                            Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
-                        }
-                        Text(
-                            text = if (selectedTab == 0) "Privacy Policy" else "Terms & Conditions",
-                            style = MaterialTheme.typography.titleLarge,
-                            fontWeight = FontWeight.Bold,
-                            color = Ink,
-                            modifier = Modifier.padding(start = 8.dp)
-                        )
+                // Top Bar - Single clean header with back button
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 8.dp, vertical = 8.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    IconButton(onClick = onBack) {
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back", tint = Ink)
                     }
+                    Text(
+                        text = "Terms & Privacy Policy",
+                        style = MaterialTheme.typography.titleLarge,
+                        fontWeight = FontWeight.Bold,
+                        color = Ink,
+                        modifier = Modifier.padding(start = 4.dp)
+                    )
+                }
 
-                    // Tab Selector
-                    TabRow(
-                        selectedTabIndex = selectedTab,
-                        containerColor = Color.Transparent,
-                        contentColor = Blue
-                    ) {
-                        Tab(
-                            selected = selectedTab == 0,
-                            onClick = { selectedTab = 0 },
-                            text = { Text("Privacy Policy", fontWeight = FontWeight.SemiBold) },
-                            icon = { Icon(Icons.Outlined.PrivacyTip, contentDescription = null) }
-                        )
-                        Tab(
-                            selected = selectedTab == 1,
-                            onClick = { selectedTab = 1 },
-                            text = { Text("Terms & Conditions", fontWeight = FontWeight.SemiBold) },
-                            icon = { Icon(Icons.Outlined.Description, contentDescription = null) }
-                        )
-                    }
+                // Tab Selector
+                TabRow(
+                    selectedTabIndex = selectedTab,
+                    containerColor = Color.Transparent,
+                    contentColor = Blue
+                ) {
+                    Tab(
+                        selected = selectedTab == 0,
+                        onClick = { selectedTab = 0 },
+                        text = { Text("Privacy Policy", fontWeight = FontWeight.SemiBold) },
+                        icon = { Icon(Icons.Outlined.PrivacyTip, contentDescription = null) }
+                    )
+                    Tab(
+                        selected = selectedTab == 1,
+                        onClick = { selectedTab = 1 },
+                        text = { Text("Terms & Conditions", fontWeight = FontWeight.SemiBold) },
+                        icon = { Icon(Icons.Outlined.Description, contentDescription = null) }
+                    )
+                }
 
-                    // Scrollable Policy Content
-                    Column(
-                        modifier = Modifier
-                            .fillMaxSize()
-                            .verticalScroll(rememberScrollState())
-                            .padding(18.dp),
-                        verticalArrangement = Arrangement.spacedBy(16.dp)
-                    ) {
-                        if (selectedTab == 0) {
-                            PrivacyPolicyContent()
-                        } else {
-                            TermsAndConditionsContent()
-                        }
+                // Scrollable Policy Content
+                Column(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .verticalScroll(rememberScrollState())
+                        .padding(18.dp),
+                    verticalArrangement = Arrangement.spacedBy(16.dp)
+                ) {
+                    if (selectedTab == 0) {
+                        PrivacyPolicyContent()
+                    } else {
+                        TermsAndConditionsContent()
                     }
                 }
             }
@@ -116,7 +108,6 @@ private fun PrivacyPolicyContent() {
             modifier = Modifier.padding(18.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
-            Text("Bodhi Attendance Privacy Policy", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold, color = Ink)
             Text("Last updated: November 2026", style = MaterialTheme.typography.bodySmall, color = Muted)
 
             HorizontalDivider()
@@ -144,7 +135,6 @@ private fun TermsAndConditionsContent() {
             modifier = Modifier.padding(18.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
-            Text("Bodhi Attendance Terms & Conditions", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold, color = Ink)
             Text("Last updated: November 2026", style = MaterialTheme.typography.bodySmall, color = Muted)
 
             HorizontalDivider()
@@ -168,4 +158,10 @@ private fun PolicySection(title: String, body: String) {
         Text(title, style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.Bold, color = Ink)
         Text(body, style = MaterialTheme.typography.bodyMedium, color = Muted, lineHeight = 20.sp)
     }
+}
+
+@androidx.compose.ui.tooling.preview.Preview(showBackground = true)
+@Composable
+fun TermsAndPrivacyScreenPreview() {
+    TermsAndPrivacyScreen(onBack = {})
 }
