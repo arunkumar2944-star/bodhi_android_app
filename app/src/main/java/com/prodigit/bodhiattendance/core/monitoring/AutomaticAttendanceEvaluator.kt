@@ -235,11 +235,12 @@ class AutomaticAttendanceEvaluator(context: Context, private val workDate: Strin
             val now = location.elapsedRealtimeNanos / 1_000_000L
             // Evidence freshness guard, not a CRM attendance/grace setting.
             needsContinuityChecks = snapshot.attendanceState in setOf(AttendanceState.WORKING, AttendanceState.ON_BREAK)
-            if (!departureEvidence.confirmOutside(now)) {
+            val inGrace = snapshot.phase is AttendanceEnginePhase.AbsenceGrace
+            if (!inGrace && !departureEvidence.confirmOutside(now)) {
                 uncertain("Departure needs another fresh outside observation")
                 // Keep the first fresh outside fix and request a second one promptly.
                 needsContinuityChecks = true
-                nextVerificationElapsedMs = android.os.SystemClock.elapsedRealtime() + 20_000L
+                nextVerificationElapsedMs = android.os.SystemClock.elapsedRealtime() + 15_000L
                 return@withLock
             }
         } else {

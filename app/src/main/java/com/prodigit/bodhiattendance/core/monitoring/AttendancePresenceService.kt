@@ -506,9 +506,12 @@ class AttendancePresenceService : Service() {
                     uploadEvidenceSafely()
                     scheduleArrivalUpload()
                 }
+                val currentPhase = com.prodigit.bodhiattendance.domain.attendance.AttendanceEngineRuntimeProvider
+                    .getInstance(this).runtimeSession.getSnapshot().phase
+                val isAbsenceGrace = currentPhase is com.prodigit.bodhiattendance.domain.attendance.AttendanceEnginePhase.AbsenceGrace
                 val gpsNeedsRetry = refinedLocation == null || evaluator.needsBetterGps
                 val due = if (refinedLocation != null) evaluator.nextVerificationElapsedMs else null
-                waitMs = if (evaluator.needsContinuityChecks || arrivals.hasPending()) {
+                waitMs = if (isAbsenceGrace || evaluator.needsContinuityChecks || arrivals.hasPending()) {
                     gpsRetries = 0
                     // Reconfirm departure promptly; do not let the normal recovery delay invalidate the pair.
                     15_000L
