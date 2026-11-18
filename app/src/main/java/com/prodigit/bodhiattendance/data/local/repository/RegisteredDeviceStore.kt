@@ -33,4 +33,10 @@ class RegisteredDeviceStore(context: Context) {
         }
         dao.upsert(RegisteredDeviceEntity(userId, registrationId, deviceId, companyId, true, onboarded))
     }
+
+    suspend fun clearForUser(userId: Int) {
+        if (userId > 0) {
+            dao.deleteForUser(userId)
+        }
+    }
 }

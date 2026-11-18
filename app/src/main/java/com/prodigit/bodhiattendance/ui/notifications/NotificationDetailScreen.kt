@@ -27,7 +27,7 @@ fun NotificationDetailScreen(id: String, onBack: () -> Unit) {
         if (error != null) {
             Text(error.orEmpty())
             Button(onClick = { attempt++ }) { Text("Retry") }
-        } else if (detail == null) CircularProgressIndicator()
+        } else if (detail == null) com.prodigit.bodhiattendance.ui.common.BodhiOrbitLoadingComponent(message = "Loading notification details…")
         else detail?.let { row ->
             PrototypePanel {
                 Text(row.title, style = MaterialTheme.typography.titleLarge)

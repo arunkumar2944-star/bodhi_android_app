@@ -142,6 +142,7 @@ private const val ROUTE_EVENT_LOG = "event_log"
 private const val ROUTE_PERSONAL_INFORMATION = "personal_information"
 private const val ROUTE_HELP_SUPPORT = "help_support"
 private const val ROUTE_ABOUT_APP = "about_app"
+private const val ROUTE_TERMS_PRIVACY = "terms_privacy"
 
 
 private const val ROUTE_TRUSTED_TIME =
@@ -227,6 +228,11 @@ fun AppNavigation() {
                         launchSingleTop =
                             true
                     }
+                },
+                onTermsPrivacyClick = {
+                    navController.navigate(ROUTE_TERMS_PRIVACY) {
+                        launchSingleTop = true
+                    }
                 }
             )
         }
@@ -306,6 +312,10 @@ fun AppNavigation() {
 
             DeviceBlockedScreen()
         }
+
+        composable(ROUTE_TERMS_PRIVACY) {
+            com.prodigit.bodhiattendance.ui.settings.TermsAndPrivacyScreen(onBack = { navController.popBackStack() })
+        }
     }
 }
 
@@ -350,7 +360,7 @@ private fun MainApplication(onSignedOut: () -> Unit) {
     val mainNavController =
         rememberNavController()
 
-    val activity = LocalContext.current as? android.app.Activity
+    val activity = androidx.activity.compose.LocalActivity.current
     var prefilledDate by remember { mutableStateOf<String?>(null) }
     var prefilledTime by remember { mutableStateOf<String?>(null) }
 
@@ -1145,7 +1155,8 @@ private fun MainApplication(onSignedOut: () -> Unit) {
             composable(ROUTE_EVENT_LOG) { EventLogScreen(onBack = { mainNavController.popBackStack() }) }
             composable(ROUTE_PERSONAL_INFORMATION) { PersonalInformationScreen(onBack = { mainNavController.popBackStack() }) }
             composable(ROUTE_HELP_SUPPORT) { HelpSupportScreen(onBack = { mainNavController.popBackStack() }) }
-            composable(ROUTE_ABOUT_APP) { AboutAppScreen(onBack = { mainNavController.popBackStack() }) }
+            composable(ROUTE_ABOUT_APP) { AboutAppScreen(onBack = { mainNavController.popBackStack() }, onTermsPrivacyClick = { mainNavController.navigate(ROUTE_TERMS_PRIVACY) { launchSingleTop = true } }) }
+            composable(ROUTE_TERMS_PRIVACY) { com.prodigit.bodhiattendance.ui.settings.TermsAndPrivacyScreen(onBack = { mainNavController.popBackStack() }) }
 
             composable(ROUTE_BATTERY_OPTIMIZATION) {
                 BatteryOptimizationScreen(
@@ -1227,6 +1238,10 @@ private fun StartupRoute(
     // ========================================================
 
     val startupError by startupViewModel.startupError.collectAsState()
+
+    LaunchedEffect(Unit) {
+        startupViewModel.resetAndCheckStartupState()
+    }
 
     BodhiLaunchScreen(
         networkError = networkError,

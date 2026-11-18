@@ -174,6 +174,13 @@ class StartupViewModel(
         checkStartupState()
     }
 
+    fun resetAndCheckStartupState() {
+        _destination.value = StartupDestination.LOADING
+        _startupError.value = null
+        _networkError.value = false
+        checkStartupState()
+    }
+
 
     private fun checkStartupState() {
 

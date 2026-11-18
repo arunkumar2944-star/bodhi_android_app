@@ -83,7 +83,8 @@ private val SuccessGreen = Color(0xFF64846E)
 @Composable
 fun LoginScreen(
     loginViewModel: LoginViewModel = viewModel(),
-    onLoginSuccess: () -> Unit = {}
+    onLoginSuccess: () -> Unit = {},
+    onTermsPrivacyClick: () -> Unit = {}
 ) {
 
     // ========================================================
@@ -1058,6 +1059,18 @@ fun LoginScreen(
                                 )
                         )
                     }
+
+                    Spacer(modifier = Modifier.height(6.dp))
+
+                    Text(
+                        text = "Terms & Conditions  •  Privacy Policy",
+                        fontSize = 11.sp,
+                        fontWeight = FontWeight.SemiBold,
+                        color = Color(0xFF1769E8),
+                        modifier = Modifier
+                            .align(Alignment.CenterHorizontally)
+                            .clickable { onTermsPrivacyClick() }
+                    )
 
 
                     // =========================================
