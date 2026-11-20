@@ -24,14 +24,20 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.AccessTime
 import androidx.compose.material.icons.outlined.Assignment
+import androidx.compose.material.icons.outlined.BusinessCenter
 import androidx.compose.material.icons.outlined.ChevronRight
+import androidx.compose.material.icons.outlined.DateRange
 import androidx.compose.material.icons.outlined.Description
 import androidx.compose.material.icons.outlined.DoneAll
+import androidx.compose.material.icons.outlined.EventBusy
 import androidx.compose.material.icons.outlined.FactCheck
+import androidx.compose.material.icons.outlined.Home
+import androidx.compose.material.icons.outlined.HomeWork
 import androidx.compose.material.icons.outlined.HourglassTop
 import androidx.compose.material.icons.outlined.ReportProblem
 import androidx.compose.material.icons.outlined.Shield
 import androidx.compose.material.icons.outlined.SyncProblem
+import androidx.compose.material.icons.outlined.Work
 
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
@@ -63,7 +69,13 @@ enum class EmployeeRequestType {
 
     PERMISSION,
 
-    ATTENDANCE_ISSUE
+    ATTENDANCE_ISSUE,
+
+    LEAVE,
+
+    ON_DUTY,
+
+    WORK_FROM_HOME
 }
 
 
@@ -124,6 +136,12 @@ fun RequestScreen(
     onPermissionClick: () -> Unit = {},
 
     onAttendanceIssueClick: () -> Unit = {},
+
+    onApplyLeaveClick: () -> Unit = {},
+
+    onApplyOnDutyClick: () -> Unit = {},
+
+    onApplyWfhClick: () -> Unit = {},
 
     onViewAllRequestsClick: () -> Unit = {},
 
@@ -222,6 +240,102 @@ fun RequestScreen(
 
                 subtitle =
                     "Select the type of attendance request"
+            )
+        }
+
+
+        // ====================================================
+        // APPLY LEAVE
+        // ====================================================
+
+        item {
+
+            PremiumRequestCard(
+
+                icon =
+                    Icons.Outlined.EventBusy,
+
+                title =
+                    "Apply for Leave",
+
+                subtitle =
+                    "Submit full-day or half-day leave request",
+
+                supportingText =
+                    "Full Day • First Half • Second Half",
+
+                accent =
+                    Color(0xFFE53935),
+
+                lightAccent =
+                    MaterialTheme.colorScheme.surfaceVariant,
+
+                onClick =
+                    onApplyLeaveClick
+            )
+        }
+
+
+        // ====================================================
+        // APPLY ON DUTY
+        // ====================================================
+
+        item {
+
+            PremiumRequestCard(
+
+                icon =
+                    Icons.Outlined.BusinessCenter,
+
+                title =
+                    "Apply for On Duty",
+
+                subtitle =
+                    "Off-site work, client visits or official travel",
+
+                supportingText =
+                    "Client visit • Field duty • Official trip",
+
+                accent =
+                    Color(0xFF1E88E5),
+
+                lightAccent =
+                    MaterialTheme.colorScheme.surfaceVariant,
+
+                onClick =
+                    onApplyOnDutyClick
+            )
+        }
+
+
+        // ====================================================
+        // WORK FROM HOME
+        // ====================================================
+
+        item {
+
+            PremiumRequestCard(
+
+                icon =
+                    Icons.Outlined.HomeWork,
+
+                title =
+                    "Work From Home",
+
+                subtitle =
+                    "Request remote work authorization",
+
+                supportingText =
+                    "Remote shift • Work date • Purpose",
+
+                accent =
+                    Color(0xFF8E24AA),
+
+                lightAccent =
+                    MaterialTheme.colorScheme.surfaceVariant,
+
+                onClick =
+                    onApplyWfhClick
             )
         }
 
@@ -2099,6 +2213,45 @@ private fun requestVisual(
                 accent =
                     Color(
                         0xFF0A9F5A
+                    ),
+                background =
+                    MaterialTheme.colorScheme.surfaceVariant
+            )
+
+        EmployeeRequestType.LEAVE ->
+
+            RequestVisual(
+                icon =
+                    Icons.Outlined.DateRange,
+                accent =
+                    Color(
+                        0xFFE53935
+                    ),
+                background =
+                    MaterialTheme.colorScheme.surfaceVariant
+            )
+
+        EmployeeRequestType.ON_DUTY ->
+
+            RequestVisual(
+                icon =
+                    Icons.Outlined.Work,
+                accent =
+                    Color(
+                        0xFF1E88E5
+                    ),
+                background =
+                    MaterialTheme.colorScheme.surfaceVariant
+            )
+
+        EmployeeRequestType.WORK_FROM_HOME ->
+
+            RequestVisual(
+                icon =
+                    Icons.Outlined.Home,
+                accent =
+                    Color(
+                        0xFF8E24AA
                     ),
                 background =
                     MaterialTheme.colorScheme.surfaceVariant

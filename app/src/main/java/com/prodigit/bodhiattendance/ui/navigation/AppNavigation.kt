@@ -970,8 +970,20 @@ private fun MainApplication(onSignedOut: () -> Unit) {
                     onAttendanceIssueClick = {
                         mainNavController.navigate(ROUTE_ATTENDANCE_ISSUE) {
                             launchSingleTop = true
-                           }
-                        },
+                        }
+                    },
+
+                    onApplyLeaveClick = {
+                        mainNavController.navigate("apply_leave_od_wfh/LEAVE") { launchSingleTop = true }
+                    },
+
+                    onApplyOnDutyClick = {
+                        mainNavController.navigate("apply_leave_od_wfh/ON_DUTY") { launchSingleTop = true }
+                    },
+
+                    onApplyWfhClick = {
+                        mainNavController.navigate("apply_leave_od_wfh/WORK_FROM_HOME") { launchSingleTop = true }
+                    },
 
                     onViewAllRequestsClick = {
                         mainNavController.navigate(ROUTE_REQUEST_HISTORY) {
@@ -1017,6 +1029,17 @@ private fun MainApplication(onSignedOut: () -> Unit) {
                                 java.text.SimpleDateFormat("yyyy-MM-dd", java.util.Locale.US).format(parsed),
                                 "${request.issueType} / ${request.affectedEvent}: ${request.description}", result = ::message)
                         }
+                    }
+                )
+            }
+
+            composable("apply_leave_od_wfh/{requestType}") { entry ->
+                val initialType = entry.arguments?.getString("requestType") ?: "LEAVE"
+                com.prodigit.bodhiattendance.ui.request.LeaveOnDutyWfhRequestScreen(
+                    initialType = initialType,
+                    onBack = { mainNavController.popBackStack() },
+                    onSubmit = { type, date, description, subtype, reqTime ->
+                        liveModel.submit(type, date, description, subtype = subtype, requestedTime = reqTime, result = ::message)
                     }
                 )
             }
