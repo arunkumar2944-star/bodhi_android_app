@@ -46,7 +46,7 @@ class ProvisionalArrivalRecorder(context: Context) {
         val trusted = runCatching { Math.addExact(Instant.parse(anchor.serverTime).toEpochMilli(), observed - anchor.elapsedRealtimeMs) }.getOrNull() ?: return
         val permit = OfflineWorkSessionStore(app).permitForEvent(user, company, device, boot, trusted) ?: return
         if (!ProvisionalArrivalPolicy.canSave(
-                state.mode == AttendanceEngineRuntimeMode.READY && state.userId == user && state.deviceId == device && state.attendanceState == AttendanceState.NOT_CHECKED_IN,
+                state.mode == AttendanceEngineRuntimeMode.READY && state.userId == user && state.deviceId == device && state.attendanceState in setOf(AttendanceState.NOT_CHECKED_IN, AttendanceState.ON_BREAK),
                 office.wifiRequired == true, office.bleRequired != false, disconnected, LocationCompat.isMock(location),
                 distance, location.accuracy.toDouble(), office.geofenceRadiusMeters, office.maxAccuracyMeters ?: Double.NaN,
                 observed, now, anchor.elapsedRealtimeMs, anchor.bootId == boot && anchor.deviceId == device, true)) return
